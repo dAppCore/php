@@ -43,6 +43,29 @@ jobs:
           extensions: ${{ inputs.extensions }}
           coverage: pcov
 
+      - name: Checkout dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Clone path-repository dependencies that composer.json references
+          # These are sister packages not on Packagist
+          if grep -q '"path":' composer.json 2>/dev/null; then
+            for path in $(php -r "
+              \$d = json_decode(file_get_contents('composer.json'), true);
+              foreach (\$d['repositories'] ?? [] as \$r) {
+                if ((\$r['type'] ?? '') === 'path') echo \$r['url'] . \"\\n\";
+              }
+            "); do
+              dir_name=$(basename "$path")
+              if [ ! -d "$path" ]; then
+                echo "Cloning $dir_name into $path"
+                git clone --depth 1 \
+                  "https://x-access-token:${GITHUB_TOKEN}@forge.lthn.ai/core/${dir_name}.git" \
+                  "$path" || echo "Warning: Failed to clone $dir_name"
+              fi
+            done
+          fi
+
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
