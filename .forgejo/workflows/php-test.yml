@@ -1,0 +1,59 @@
+# Reusable PHP test workflow
+# Usage: uses: core/php/.forgejo/workflows/php-test.yml@main
+
+name: PHP Test
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        description: PHP versions to test (JSON array)
+        type: string
+        default: '["8.3", "8.4"]'
+      extensions:
+        description: PHP extensions to install
+        type: string
+        default: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+      coverage:
+        description: Generate coverage report
+        type: boolean
+        default: false
+      pint:
+        description: Run Pint code style check
+        type: boolean
+        default: true
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        php: ${{ fromJson(inputs.php-version) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: https://github.com/shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ${{ inputs.extensions }}
+          coverage: pcov
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run Pint
+        if: inputs.pint
+        run: vendor/bin/pint --test
+
+      - name: Run tests
+        run: |
+          FLAGS="--ci"
+          if [ "${{ inputs.coverage }}" = "true" ]; then
+            FLAGS="$FLAGS --coverage"
+          fi
+          vendor/bin/pest $FLAGS
