@@ -1,0 +1,28 @@
+# Core PHP build configuration
+# Used by: core build
+
+version: 1
+
+project:
+  name: core-php
+  description: PHP development CLI with FrankenPHP integration
+  main: ./cmd/core-php
+  binary: core-php
+
+build:
+  cgo: false
+  flags:
+    - -trimpath
+  ldflags:
+    - -s
+    - -w
+
+targets:
+  - os: linux
+    arch: amd64
+  - os: linux
+    arch: arm64
+  - os: darwin
+    arch: arm64
+  - os: windows
+    arch: amd64
