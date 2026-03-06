@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="8"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedBaselineEntry="false"
+    findUnusedCode="false"
+>
+    <plugins>
+        <pluginClass class="Psalm\LaravelPlugin\Plugin" />
+    </plugins>
+
+    <issueHandlers>
+        <MissingOverrideAttribute>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </MissingOverrideAttribute>
+
+        <!-- Suppress optional dependency errors -->
+        <UndefinedClass>
+            <errorLevel type="suppress">
+                <!-- Optional CDN/storage dependencies -->
+                <referencedClass name="Bunny\Storage\Client" />
+                <referencedClass name="Predis\Client" />
+                <!-- Optional media dependencies -->
+                <referencedClass name="FFMpeg\FFMpeg" />
+                <referencedClass name="FFMpeg\Coordinate\TimeCode" />
+                <referencedClass name="Imagick" />
+                <referencedClass name="Intervention\Image\Image" />
+                <referencedClass name="Intervention\Image\Facades\Image" />
+                <!-- Optional Laravel packages -->
+                <referencedClass name="Laravel\Horizon\Contracts\MasterSupervisorRepository" />
+                <referencedClass name="Flux\Flux" />
+                <referencedClass name="Flux\AssetManager" />
+                <!-- Runtime aliased classes (App\* namespace) -->
+                <referencedClass name="App\Traits\HasCdnUrls" />
+                <referencedClass name="App\Support\UtmHelper" />
+                <referencedClass name="App\Support\LoginRateLimiter" />
+                <referencedClass name="App\Support\File" />
+                <referencedClass name="App\Support\HorizonStatus" />
+                <referencedClass name="App\Support\TimezoneList" />
+                <referencedClass name="App\Support\PrivacyHelper" />
+                <referencedClass name="App\Support\Log" />
+                <referencedClass name="App\Support\RateLimit" />
+                <referencedClass name="App\Support\CommandResult" />
+                <referencedClass name="App\Support\HadesEncrypt" />
+                <referencedClass name="App\Support\RecoveryCode" />
+                <referencedClass name="App\Support\SystemLogs" />
+                <!-- Cross-package dependencies (core-tenant, etc.) -->
+                <referencedClass name="Core\Mod\Tenant\Models\Workspace" />
+                <referencedClass name="Core\Tenant\Models\Workspace" />
+                <referencedClass name="Core\Tenant\Models\User" />
+                <referencedClass name="Core\Tenant\Services\EntitlementService" />
+                <referencedClass name="Core\Config\Workspace" />
+            </errorLevel>
+        </UndefinedClass>
+
+        <!-- Suppress false positives from strict type analysis -->
+        <NoValue>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </NoValue>
+
+        <!-- Laravel HasFactory trait doesn't specify template param -->
+        <MissingTemplateParam>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </MissingTemplateParam>
+    </issueHandlers>
+    <projectFiles>
+        <directory name="src" />
+        <ignoreFiles>
+            <directory name="vendor" />
+            <directory name="src/Core/Activity" />
+            <directory name="src/Core/Tests" />
+            <directory name="src/Core/Config/Tests" />
+            <directory name="src/Core/Input/Tests" />
+            <directory name="src/Core/Bouncer/Tests" />
+            <directory name="src/Core/Bouncer/Gate/Tests" />
+            <directory name="src/Core/Service/Tests" />
+            <directory name="src/Core/Front/Tests" />
+            <directory name="src/Mod/Trees" />
+        </ignoreFiles>
+    </projectFiles>
+</psalm>

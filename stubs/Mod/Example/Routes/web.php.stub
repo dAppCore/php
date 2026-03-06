@@ -1,0 +1,17 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{ name }} Web Routes
+|--------------------------------------------------------------------------
+|
+| Public-facing routes for the {{ name }} module.
+| These routes are wrapped with the 'web' middleware group.
+|
+*/
+
+// Route::get('/{{ slug }}', function () {
+//     return view('{{ slug }}::index');
+// })->name('{{ slug }}.index');

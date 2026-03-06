@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{ name }} Admin Routes
+|--------------------------------------------------------------------------
+|
+| Admin routes for the {{ name }} module.
+| These routes are wrapped with the 'admin' middleware group.
+|
+*/
+
+// Route::prefix('admin/{{ slug }}')->name('admin.{{ slug }}.')->group(function () {
+//     Route::get('/', function () {
+//         return view('{{ slug }}::admin.index');
+//     })->name('index');
+// });

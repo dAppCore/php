@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{ name }} API Routes
+|--------------------------------------------------------------------------
+|
+| API routes for the {{ name }} module.
+| These routes are wrapped with the 'api' middleware group.
+|
+*/
+
+// Route::prefix('{{ slug }}')->name('api.{{ slug }}.')->group(function () {
+//     Route::get('/', function () {
+//         return response()->json(['module' => '{{ name }}']);
+//     })->name('index');
+// });

@@ -1,0 +1,92 @@
+{
+    "name": "core/php",
+    "description": "Modular monolith framework for Laravel - event-driven architecture with lazy module loading",
+    "keywords": [
+        "laravel",
+        "modular",
+        "monolith",
+        "framework",
+        "events",
+        "modules"
+    ],
+    "license": "EUPL-1.2",
+    "authors": [
+        {
+            "name": "Host UK",
+            "email": "support@host.uk.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0|^12.0",
+        "laravel/pennant": "^1.0",
+        "livewire/livewire": "^3.0|^4.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "infection/infection": "^0.32.3",
+        "larastan/larastan": "^3.9",
+        "laravel/pint": "^1.18",
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^8.6",
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpunit/phpunit": "^11.5",
+        "psalm/plugin-laravel": "^3.0",
+        "rector/rector": "^2.3",
+        "roave/security-advisories": "dev-latest",
+        "spatie/laravel-activitylog": "^4.8",
+        "vimeo/psalm": "^6.14"
+    },
+    "suggest": {
+        "spatie/laravel-activitylog": "Required for activity logging features (^4.0)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Core\\": "src/Core/",
+            "Core\\Website\\": "src/Website/",
+            "Core\\Mod\\": "src/Mod/",
+            "Core\\Plug\\": "src/Plug/"
+        },
+        "files": [
+            "src/Core/Media/Thumbnail/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Core\\Tests\\": "tests/",
+            "Core\\TestCore\\": "tests/Fixtures/Core/TestCore/",
+            "App\\Custom\\": "tests/Fixtures/Custom/",
+            "Mod\\": "tests/Fixtures/Mod/",
+            "Plug\\": "tests/Fixtures/Plug/",
+            "Website\\": "tests/Fixtures/Website/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "pint": "vendor/bin/pint"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Core\\LifecycleEventProvider",
+                "Core\\Lang\\LangServiceProvider",
+                "Core\\Bouncer\\Gate\\Boot"
+            ]
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true,
+            "infection/extension-installer": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

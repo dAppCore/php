@@ -1,0 +1,107 @@
+# PHP Quality Assurance Pipeline
+# This file defines the QA process for `core php qa` command
+#
+# Usage: core php qa [--fix] [--full]
+#   --fix   Apply automatic fixes where possible
+#   --full  Run full suite including slow checks (mutation testing)
+
+name: PHP Quality Assurance
+version: 1.0.0
+
+# Tool versions and config files
+tools:
+  pint:
+    config: pint.json
+    description: Code style (PSR-12 + Laravel conventions)
+
+  phpstan:
+    config: phpstan.neon
+    level: 1
+    description: Static analysis (type checking)
+
+  psalm:
+    config: psalm.xml
+    level: 8
+    description: Static analysis (deeper type inference)
+
+  infection:
+    config: infection.json5
+    description: Mutation testing (test quality)
+
+  rector:
+    config: rector.php
+    description: Automated refactoring and upgrades
+
+# QA Pipeline stages
+stages:
+  # Stage 1: Quick checks (< 30 seconds)
+  quick:
+    - name: Security Audit
+      command: composer audit
+      description: Check dependencies for known vulnerabilities
+      fix: false
+
+    - name: Code Style
+      command: ./vendor/bin/pint --test
+      fix_command: ./vendor/bin/pint
+      description: Check PSR-12 and Laravel code style
+
+    - name: PHPStan
+      command: ./vendor/bin/phpstan analyse --no-progress
+      description: Static analysis level 1
+      fix: false
+
+  # Stage 2: Standard checks (< 2 minutes)
+  standard:
+    - name: Psalm
+      command: ./vendor/bin/psalm --no-progress
+      description: Deep static analysis
+      fix: false
+
+    - name: Tests
+      command: ./vendor/bin/phpunit --testdox
+      description: Run test suite
+      fix: false
+
+  # Stage 3: Full checks (can be slow)
+  full:
+    - name: Rector (dry-run)
+      command: ./vendor/bin/rector process --dry-run
+      fix_command: ./vendor/bin/rector process
+      description: Check for automated improvements
+
+    - name: Mutation Testing
+      command: ./vendor/bin/infection --min-msi=50 --min-covered-msi=70 --threads=4
+      description: Test suite quality via mutation testing
+      fix: false
+      slow: true
+
+# Exit codes
+exit_codes:
+  0: All checks passed
+  1: Code style issues (fixable)
+  2: Static analysis errors
+  3: Test failures
+  4: Security vulnerabilities
+  5: Mutation score too low
+
+# Recommended CI configuration
+ci:
+  # Run on every push
+  push:
+    - quick
+    - standard
+
+  # Run on PRs to main
+  pull_request:
+    - quick
+    - standard
+    - full
+
+# Thresholds
+thresholds:
+  phpstan_level: 1
+  psalm_level: 8
+  test_coverage: 70
+  mutation_msi: 50
+  mutation_covered_msi: 70

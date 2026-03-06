@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Website\{{ name }};
+
+use Core\Events\WebRoutesRegistering;
+use Illuminate\Support\ServiceProvider;
+
+/**
+ * Website module for {{ name }}.
+ *
+ * Website modules are domain-scoped and typically serve
+ * marketing sites, landing pages, or standalone web properties.
+ */
+class Boot extends ServiceProvider
+{
+    /**
+     * Events this website listens to.
+     */
+    public static array $listens = [
+        WebRoutesRegistering::class => 'onWebRoutes',
+    ];
+
+    /**
+     * Handle web routes registration.
+     */
+    public function onWebRoutes(WebRoutesRegistering $event): void
+    {
+        $event->views('{{ slug }}', __DIR__.'/Views');
+
+        $event->routes(function () {
+            require __DIR__.'/Routes/web.php';
+        });
+    }
+}

@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Plug\{{ name }};
+
+use Core\Events\FrameworkBooted;
+use Illuminate\Support\ServiceProvider;
+
+/**
+ * Plugin module for {{ name }}.
+ *
+ * Plugins extend core functionality without being a full module.
+ * They typically integrate third-party services or add cross-cutting
+ * features.
+ */
+class Boot extends ServiceProvider
+{
+    /**
+     * Events this plugin listens to.
+     */
+    public static array $listens = [
+        FrameworkBooted::class => 'onBooted',
+    ];
+
+    /**
+     * Handle framework booted event.
+     */
+    public function onBooted(FrameworkBooted $event): void
+    {
+        // Register plugin functionality
+    }
+}

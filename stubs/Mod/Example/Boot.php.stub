@@ -1,0 +1,44 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Mod\{{ name }};
+
+use Core\Events\AdminPanelBooting;
+use Core\Events\WebRoutesRegistering;
+use Illuminate\Support\ServiceProvider;
+
+class Boot extends ServiceProvider
+{
+    /**
+     * Events this module listens to.
+     *
+     * The module is only instantiated when these events fire.
+     */
+    public static array $listens = [
+        WebRoutesRegistering::class => 'onWebRoutes',
+        AdminPanelBooting::class => 'onAdmin',
+    ];
+
+    /**
+     * Handle web routes registration.
+     */
+    public function onWebRoutes(WebRoutesRegistering $event): void
+    {
+        $event->views('{{ slug }}', __DIR__.'/Views');
+
+        $event->routes(function () {
+            require __DIR__.'/Routes/web.php';
+        });
+    }
+
+    /**
+     * Handle admin panel booting.
+     */
+    public function onAdmin(AdminPanelBooting $event): void
+    {
+        $event->routes(function () {
+            require __DIR__.'/Routes/admin.php';
+        });
+    }
+}

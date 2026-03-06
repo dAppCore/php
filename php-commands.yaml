@@ -1,0 +1,325 @@
+# PHP Command Specifications for core CLI
+# Add these commands to the core binary
+#
+# Existing: test, fmt, analyse
+# New: psalm, audit, security, qa, rector, infection
+
+commands:
+  # ==========================================================================
+  # NEW: core php psalm
+  # ==========================================================================
+  psalm:
+    description: Run Psalm static analysis
+    long_description: |
+      Run Psalm deep static analysis with Laravel plugin support.
+
+      Psalm provides deeper type inference than PHPStan and catches
+      different classes of bugs. Both should be run for best coverage.
+
+      Examples:
+        core php psalm              # Run analysis
+        core php psalm --fix        # Auto-fix issues where possible
+        core php psalm --level 3    # Run at specific level (1-8)
+        core php psalm --baseline   # Generate baseline file
+
+    flags:
+      - name: fix
+        type: bool
+        description: Auto-fix issues where possible
+        maps_to: "--alter"
+
+      - name: level
+        type: int
+        default: 8
+        description: Error level (1=strictest, 8=most lenient)
+        maps_to: "--error-level"
+
+      - name: baseline
+        type: bool
+        description: Generate/update baseline file
+        maps_to: "--set-baseline=psalm-baseline.xml"
+
+      - name: show-info
+        type: bool
+        description: Show info-level issues
+        maps_to: "--show-info=true"
+
+    detection:
+      config_file: psalm.xml
+      binary: ./vendor/bin/psalm
+
+    command_template: |
+      {{.Binary}} {{if .Level}}--error-level={{.Level}}{{end}} {{.ExtraFlags}} --no-progress
+
+  # ==========================================================================
+  # NEW: core php audit
+  # ==========================================================================
+  audit:
+    description: Security audit for dependencies
+    long_description: |
+      Check PHP and JavaScript dependencies for known vulnerabilities.
+
+      Runs composer audit and npm audit (if package.json exists).
+
+      Examples:
+        core php audit           # Check all dependencies
+        core php audit --json    # Output as JSON
+        core php audit --fix     # Auto-fix where possible (npm only)
+
+    flags:
+      - name: json
+        type: bool
+        description: Output in JSON format
+
+      - name: fix
+        type: bool
+        description: Auto-fix vulnerabilities (npm only)
+
+    steps:
+      - name: Composer Audit
+        command: composer audit {{if .JSON}}--format=json{{end}}
+        always_run: true
+        fail_on_error: true
+
+      - name: NPM Audit
+        command: npm audit {{if .JSON}}--json{{end}} {{if .Fix}}--fix{{end}}
+        when_file_exists: package.json
+        fail_on_error: true
+
+  # ==========================================================================
+  # NEW: core php security
+  # ==========================================================================
+  security:
+    description: Security vulnerability scanning
+    long_description: |
+      Scan for security vulnerabilities using security-checks.yaml rules.
+
+      Checks environment config, file permissions, code patterns,
+      and runs security-focused static analysis.
+
+      Examples:
+        core php security                    # Run all checks
+        core php security --severity=high   # Only high+ severity
+        core php security --json            # JSON output
+        core php security --sarif           # SARIF format for GitHub
+
+    flags:
+      - name: severity
+        type: string
+        default: "medium"
+        description: Minimum severity (critical, high, medium, low)
+
+      - name: json
+        type: bool
+        description: Output in JSON format
+
+      - name: sarif
+        type: bool
+        description: Output in SARIF format (for GitHub Security)
+
+      - name: url
+        type: string
+        description: URL to check HTTP headers (optional)
+
+    config_file: security-checks.yaml
+
+    implementation_notes: |
+      Parse security-checks.yaml and run checks by category:
+      1. env_checks: Parse .env file
+      2. filesystem_checks: Use os.Stat, filepath.Glob
+      3. config_checks: Regex on PHP files
+      4. pattern_checks: Regex on source files
+      5. tool_checks: Shell out to composer audit, phpstan
+      6. header_checks: HTTP GET if --url provided
+
+  # ==========================================================================
+  # NEW: core php qa
+  # ==========================================================================
+  qa:
+    description: Run full QA pipeline
+    long_description: |
+      Run the complete quality assurance pipeline defined in qa.yaml.
+
+      Stages:
+        quick:    Security audit, code style, PHPStan (< 30s)
+        standard: Psalm, tests (< 2 min)
+        full:     Rector dry-run, mutation testing (slow)
+
+      Examples:
+        core php qa              # Run quick + standard stages
+        core php qa --quick      # Only quick checks
+        core php qa --full       # All stages including slow ones
+        core php qa --fix        # Auto-fix where possible
+
+    flags:
+      - name: quick
+        type: bool
+        description: Only run quick checks
+
+      - name: full
+        type: bool
+        description: Run all stages including slow checks
+
+      - name: fix
+        type: bool
+        description: Auto-fix issues where possible
+
+      - name: json
+        type: bool
+        description: Output results as JSON
+
+    config_file: qa.yaml
+
+    default_stages: [quick, standard]
+
+    implementation_notes: |
+      Parse qa.yaml and run stages in order:
+      1. Load stage definitions from qa.yaml
+      2. For each stage in selected stages:
+         - Run each check command
+         - If --fix and fix_command exists, run that instead
+         - Collect results
+      3. Output summary with pass/fail per stage
+      4. Exit with appropriate code per qa.yaml exit_codes
+
+  # ==========================================================================
+  # NEW: core php rector
+  # ==========================================================================
+  rector:
+    description: Automated code refactoring
+    long_description: |
+      Run Rector for automated code improvements and PHP upgrades.
+
+      Rector can automatically upgrade PHP syntax, improve code quality,
+      and apply framework-specific refactorings.
+
+      Examples:
+        core php rector              # Dry-run (show changes)
+        core php rector --fix        # Apply changes
+        core php rector --diff       # Show detailed diff
+
+    flags:
+      - name: fix
+        type: bool
+        description: Apply changes (default is dry-run)
+
+      - name: diff
+        type: bool
+        description: Show detailed diff of changes
+        maps_to: "--output-format diff"
+
+      - name: clear-cache
+        type: bool
+        description: Clear Rector cache before running
+        maps_to: "--clear-cache"
+
+    detection:
+      config_file: rector.php
+      binary: ./vendor/bin/rector
+
+    command_template: |
+      {{.Binary}} process {{if not .Fix}}--dry-run{{end}} {{.ExtraFlags}}
+
+  # ==========================================================================
+  # NEW: core php infection
+  # ==========================================================================
+  infection:
+    description: Mutation testing for test quality
+    long_description: |
+      Run Infection mutation testing to measure test suite quality.
+
+      Mutation testing modifies your code and checks if tests catch
+      the changes. High mutation score = high quality tests.
+
+      Warning: This can be slow on large codebases.
+
+      Examples:
+        core php infection                    # Run mutation testing
+        core php infection --min-msi=70      # Require 70% mutation score
+        core php infection --filter=User     # Only test User* files
+
+    flags:
+      - name: min-msi
+        type: int
+        default: 50
+        description: Minimum mutation score indicator (0-100)
+        maps_to: "--min-msi"
+
+      - name: min-covered-msi
+        type: int
+        default: 70
+        description: Minimum covered mutation score (0-100)
+        maps_to: "--min-covered-msi"
+
+      - name: threads
+        type: int
+        default: 4
+        description: Number of parallel threads
+        maps_to: "--threads"
+
+      - name: filter
+        type: string
+        description: Filter files by pattern
+        maps_to: "--filter"
+
+      - name: only-covered
+        type: bool
+        description: Only mutate covered code
+        maps_to: "--only-covered"
+
+    detection:
+      config_file: infection.json5
+      binary: ./vendor/bin/infection
+
+    command_template: |
+      {{.Binary}} --min-msi={{.MinMSI}} --min-covered-msi={{.MinCoveredMSI}} --threads={{.Threads}} {{.ExtraFlags}}
+
+# ==========================================================================
+# UPDATED: Enhance existing commands
+# ==========================================================================
+enhancements:
+  analyse:
+    add_flags:
+      - name: psalm
+        type: bool
+        description: Also run Psalm analysis
+        note: "Run both PHPStan and Psalm for comprehensive coverage"
+
+    note: |
+      Consider adding --psalm flag to run both tools:
+      core php analyse --psalm  # Runs PHPStan then Psalm
+
+  test:
+    add_flags:
+      - name: mutation
+        type: bool
+        description: Also run mutation testing
+        note: "Run Infection after tests pass"
+
+    note: |
+      Consider adding --mutation flag:
+      core php test --mutation  # Runs tests then Infection
+
+# ==========================================================================
+# COMMAND GROUPS (for help display)
+# ==========================================================================
+groups:
+  development:
+    description: Development tools
+    commands: [dev, logs, stop, status, shell]
+
+  quality:
+    description: Code quality and testing
+    commands: [test, fmt, analyse, psalm, qa]
+
+  security:
+    description: Security and auditing
+    commands: [audit, security]
+
+  refactoring:
+    description: Code improvement
+    commands: [rector, infection]
+
+  deployment:
+    description: Build and deploy
+    commands: [build, serve, deploy, deploy:status, deploy:rollback, deploy:list]

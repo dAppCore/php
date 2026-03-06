@@ -1,0 +1,536 @@
+# PHP Security Checks Specification
+# For `core php security` command implementation in Go
+#
+# Usage: core php security [--fix] [--json] [--severity=high]
+#
+# This file defines security checks that can be run without PHP runtime
+# by parsing files directly or shelling out to existing tools.
+
+name: PHP Security Checks
+version: 1.0.0
+
+# Severity levels (exit codes)
+severity_levels:
+  critical: 1  # Must fix before deploy
+  high: 2      # Should fix soon
+  medium: 3    # Recommended fix
+  low: 4       # Nice to have
+  info: 0      # Informational only
+
+# =============================================================================
+# ENVIRONMENT CHECKS
+# Parse .env file directly - no PHP needed
+# =============================================================================
+env_checks:
+  - id: debug_mode
+    name: Debug Mode Disabled
+    description: APP_DEBUG must be false in production
+    severity: critical
+    key: APP_DEBUG
+    condition: "!= true"
+    when_env: [production, prod, live, staging]
+    message: "Debug mode exposes sensitive information to users"
+    fix: "Set APP_DEBUG=false in .env"
+    cwe: CWE-215
+
+  - id: app_key_set
+    name: Application Key Set
+    description: APP_KEY must be set and valid
+    severity: critical
+    key: APP_KEY
+    condition: "exists && length >= 32"
+    message: "Missing or weak encryption key"
+    fix: "Run: php artisan key:generate"
+    cwe: CWE-321
+
+  - id: app_key_not_default
+    name: Application Key Not Default
+    description: APP_KEY must not be a known default value
+    severity: critical
+    key: APP_KEY
+    condition: "not_in"
+    bad_values:
+      - "base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      - "SomeRandomString"
+    message: "Using default or example APP_KEY"
+    cwe: CWE-798
+
+  - id: secure_cookies
+    name: Secure Cookies Enabled
+    description: SESSION_SECURE_COOKIE should be true for HTTPS
+    severity: high
+    key: SESSION_SECURE_COOKIE
+    condition: "== true"
+    when_env: [production, prod, live]
+    message: "Cookies can be intercepted over HTTP"
+    fix: "Set SESSION_SECURE_COOKIE=true"
+    cwe: CWE-614
+
+  - id: session_http_only
+    name: HTTP-Only Cookies
+    description: Cookies should not be accessible via JavaScript
+    severity: high
+    key: SESSION_HTTP_ONLY
+    condition: "== true"
+    default_good: true  # Laravel default is true
+    message: "Cookies accessible to JavaScript (XSS risk)"
+    cwe: CWE-1004
+
+  - id: session_same_site
+    name: SameSite Cookie Attribute
+    description: SESSION_SAME_SITE should be 'lax' or 'strict'
+    severity: medium
+    key: SESSION_SAME_SITE
+    condition: "in"
+    good_values: [lax, strict]
+    message: "Missing CSRF protection via SameSite attribute"
+    cwe: CWE-1275
+
+  - id: https_only
+    name: HTTPS Enforced
+    description: APP_URL should use HTTPS in production
+    severity: high
+    key: APP_URL
+    condition: "starts_with https://"
+    when_env: [production, prod, live]
+    message: "Application not enforcing HTTPS"
+    cwe: CWE-319
+
+  - id: mail_encryption
+    name: Mail Encryption Enabled
+    description: MAIL_ENCRYPTION should be set for secure email
+    severity: medium
+    key: MAIL_ENCRYPTION
+    condition: "in"
+    good_values: [tls, ssl, starttls]
+    when_key_exists: MAIL_HOST
+    message: "Email sent without encryption"
+    cwe: CWE-319
+
+  - id: db_password_set
+    name: Database Password Set
+    description: DB_PASSWORD should not be empty in production
+    severity: critical
+    key: DB_PASSWORD
+    condition: "exists && not_empty"
+    when_env: [production, prod, live]
+    message: "Database has no password"
+    cwe: CWE-521
+
+  - id: redis_password
+    name: Redis Password Set
+    description: REDIS_PASSWORD should be set if Redis is used
+    severity: high
+    key: REDIS_PASSWORD
+    condition: "exists && not_empty"
+    when_key_exists: REDIS_HOST
+    when_env: [production, prod, live]
+    message: "Redis accessible without authentication"
+    cwe: CWE-306
+
+  - id: log_level_production
+    name: Log Level Appropriate
+    description: LOG_LEVEL should not be 'debug' in production
+    severity: medium
+    key: LOG_LEVEL
+    condition: "not_in"
+    bad_values: [debug]
+    when_env: [production, prod, live]
+    message: "Verbose logging may expose sensitive data"
+    cwe: CWE-532
+
+  - id: telescope_disabled
+    name: Telescope Disabled in Production
+    description: TELESCOPE_ENABLED should be false in production
+    severity: high
+    key: TELESCOPE_ENABLED
+    condition: "!= true"
+    when_env: [production, prod, live]
+    message: "Telescope exposes application internals"
+    cwe: CWE-215
+
+  - id: debugbar_disabled
+    name: Debugbar Disabled in Production
+    description: DEBUGBAR_ENABLED should be false in production
+    severity: high
+    key: DEBUGBAR_ENABLED
+    condition: "!= true"
+    when_env: [production, prod, live]
+    message: "Debugbar exposes sensitive debug information"
+    cwe: CWE-215
+
+# =============================================================================
+# FILE SYSTEM CHECKS
+# Use Go's os package - no PHP needed
+# =============================================================================
+filesystem_checks:
+  - id: env_not_public
+    name: .env Not Publicly Accessible
+    description: .env file should not be in public directory
+    severity: critical
+    check: file_not_exists
+    paths:
+      - public/.env
+      - public_html/.env
+      - www/.env
+    message: "Environment file exposed to web"
+    cwe: CWE-538
+
+  - id: env_permissions
+    name: .env File Permissions
+    description: .env should not be world-readable
+    severity: high
+    check: file_permissions
+    path: .env
+    max_mode: "0640"  # rw-r----- or stricter
+    message: ".env file is world-readable"
+    cwe: CWE-732
+
+  - id: storage_permissions
+    name: Storage Directory Writable
+    description: storage/ must be writable but not world-writable
+    severity: medium
+    check: dir_permissions
+    path: storage
+    min_mode: "0755"
+    max_mode: "0775"
+    message: "Storage directory has insecure permissions"
+    cwe: CWE-732
+
+  - id: no_git_public
+    name: .git Not Publicly Accessible
+    description: .git directory should not be in public
+    severity: critical
+    check: dir_not_exists
+    paths:
+      - public/.git
+      - public_html/.git
+    message: "Git repository exposed to web (source code leak)"
+    cwe: CWE-538
+
+  - id: no_sensitive_files_public
+    name: No Sensitive Files in Public
+    description: Sensitive files should not be in public directory
+    severity: critical
+    check: files_not_exist
+    patterns:
+      - "public/*.sql"
+      - "public/*.sqlite"
+      - "public/*.log"
+      - "public/*.bak"
+      - "public/*.env*"
+      - "public/composer.json"
+      - "public/composer.lock"
+      - "public/package.json"
+    message: "Sensitive files exposed to web"
+    cwe: CWE-538
+
+  - id: bootstrap_cache_writable
+    name: Bootstrap Cache Writable
+    description: bootstrap/cache must be writable
+    severity: medium
+    check: dir_writable
+    path: bootstrap/cache
+    message: "Bootstrap cache not writable (deployment issues)"
+
+# =============================================================================
+# CONFIG FILE CHECKS
+# Parse PHP config files with regex - no PHP runtime needed
+# =============================================================================
+config_checks:
+  - id: csrf_middleware
+    name: CSRF Middleware Enabled
+    description: VerifyCsrfToken middleware must be active
+    severity: critical
+    check: pattern_exists
+    files:
+      - app/Http/Kernel.php
+      - bootstrap/app.php
+    patterns:
+      - "VerifyCsrfToken"
+      - "ValidateCsrfToken"
+    message: "CSRF protection not enabled"
+    cwe: CWE-352
+
+  - id: auth_throttle
+    name: Login Throttling Enabled
+    description: Rate limiting should be applied to auth routes
+    severity: high
+    check: pattern_exists
+    files:
+      - routes/auth.php
+      - routes/web.php
+      - app/Http/Kernel.php
+    patterns:
+      - "throttle:"
+      - "RateLimiter"
+      - "ThrottleRequests"
+    message: "No rate limiting on authentication routes"
+    cwe: CWE-307
+
+  - id: bcrypt_or_argon
+    name: Strong Password Hashing
+    description: Password hashing should use bcrypt or argon2
+    severity: high
+    check: config_value
+    file: config/hashing.php
+    key: driver
+    good_values: [bcrypt, argon, argon2id]
+    message: "Weak password hashing algorithm"
+    cwe: CWE-916
+
+  - id: session_driver_secure
+    name: Secure Session Driver
+    description: Session driver should not be 'array' in production
+    severity: high
+    check: env_or_config
+    env_key: SESSION_DRIVER
+    config_file: config/session.php
+    config_key: driver
+    bad_values: [array]
+    when_env: [production, prod, live]
+    message: "Session driver 'array' loses sessions on restart"
+    cwe: CWE-384
+
+# =============================================================================
+# STATIC PATTERN CHECKS
+# Grep/regex through source files - no PHP needed
+# =============================================================================
+pattern_checks:
+  - id: blade_unescaped
+    name: Unescaped Blade Output
+    description: "{!! !!}" can lead to XSS if used with user input
+    severity: high
+    check: pattern_warning
+    paths:
+      - "resources/views/**/*.blade.php"
+    pattern: '\{!!\s*\$(?!__env|app|config|errors)'
+    exclude_patterns:
+      - '\{!!\s*\$slot'  # Slots are safe
+      - '\{!!\s*html_entity_decode'  # Intentional
+    message: "Unescaped output may cause XSS vulnerability"
+    cwe: CWE-79
+
+  - id: raw_sql_input
+    name: Raw SQL with User Input
+    description: DB::raw() with user input is SQL injection risk
+    severity: critical
+    check: pattern_search
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+    patterns:
+      - 'DB::raw\s*\(\s*["\'].*\$(?:request|_GET|_POST|input)'
+      - 'whereRaw\s*\(\s*["\'].*\$(?:request|_GET|_POST|input)'
+      - 'selectRaw\s*\(\s*["\'].*\$(?:request|_GET|_POST|input)'
+    message: "Possible SQL injection with raw query"
+    cwe: CWE-89
+
+  - id: dangerous_functions
+    name: No Dangerous Function Usage
+    description: Certain PHP functions should never be used
+    severity: critical
+    check: pattern_forbidden
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+    patterns:
+      - '\b(create_function|assert)\s*\('
+    message: "Dangerous function allows arbitrary code execution"
+    cwe: CWE-94
+
+  - id: shell_exec_input
+    name: Shell Execution with User Input
+    description: shell_exec/exec with user input is command injection
+    severity: critical
+    check: pattern_search
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+    patterns:
+      - '(?:shell_exec|exec|system|passthru|popen)\s*\([^)]*\$(?:request|_GET|_POST|input)'
+    message: "Possible command injection vulnerability"
+    cwe: CWE-78
+
+  - id: unserialize_usage
+    name: Unsafe unserialize()
+    description: unserialize() with user input leads to object injection
+    severity: critical
+    check: pattern_search
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+    patterns:
+      - '\bunserialize\s*\(\s*\$(?:request|_GET|_POST|input)'
+    message: "Possible PHP object injection via unserialize()"
+    cwe: CWE-502
+
+  - id: mass_assignment_unguarded
+    name: Unguarded Models
+    description: Models should have $fillable or $guarded defined
+    severity: high
+    check: model_guard
+    paths:
+      - "app/Models/**/*.php"
+      - "src/**/Models/**/*.php"
+    must_have_one_of:
+      - 'protected\s+\$fillable\s*='
+      - 'protected\s+\$guarded\s*='
+    base_class: "extends Model"
+    message: "Model has no mass assignment protection"
+    cwe: CWE-915
+
+  - id: hardcoded_credentials
+    name: No Hardcoded Credentials
+    description: Passwords and secrets should not be in code
+    severity: critical
+    check: pattern_forbidden
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+      - "config/**/*.php"
+    patterns:
+      - '(?:password|secret|api_key|apikey|token)\s*[=:]\s*["\'][^"\']{8,}["\']'
+    exclude_patterns:
+      - 'env\s*\('  # Using env() is fine
+      - 'config\s*\('  # Using config() is fine
+      - '@param|@var|@return'  # PHPDoc
+    message: "Hardcoded credentials found in source code"
+    cwe: CWE-798
+
+  - id: debug_functions
+    name: No Debug Functions in Production Code
+    description: dd(), dump(), var_dump() should not be in production
+    severity: medium
+    check: pattern_forbidden
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+    exclude_paths:
+      - "**/Tests/**"
+      - "**/test/**"
+    patterns:
+      - '\b(?:dd|dump|var_dump|print_r|var_export)\s*\('
+    message: "Debug function found in production code"
+    cwe: CWE-489
+
+  - id: error_display
+    name: No Direct Error Display
+    description: Errors should not be displayed directly to users
+    severity: medium
+    check: pattern_forbidden
+    paths:
+      - "app/**/*.php"
+      - "src/**/*.php"
+    patterns:
+      - 'ini_set\s*\(\s*["\']display_errors["\']\s*,\s*["\']?(?:1|on|true)'
+      - 'error_reporting\s*\(\s*E_ALL\s*\)'
+    message: "Direct error display exposes sensitive information"
+    cwe: CWE-209
+
+# =============================================================================
+# EXTERNAL TOOL CHECKS
+# Shell out to existing tools
+# =============================================================================
+tool_checks:
+  - id: composer_audit
+    name: Composer Security Audit
+    description: Check PHP dependencies for known vulnerabilities
+    severity: critical
+    command: composer audit --format=json
+    success_exit_code: 0
+    parse: json
+    error_path: advisories
+    message: "Vulnerable PHP dependencies found"
+    cwe: CWE-1395
+
+  - id: npm_audit
+    name: NPM Security Audit
+    description: Check JS dependencies for known vulnerabilities
+    severity: high
+    command: npm audit --json
+    success_exit_code: 0
+    parse: json
+    error_path: vulnerabilities
+    when_file_exists: package.json
+    message: "Vulnerable JavaScript dependencies found"
+    cwe: CWE-1395
+
+  - id: phpstan_security
+    name: PHPStan Security Analysis
+    description: Run PHPStan for security-related issues
+    severity: high
+    command: ./vendor/bin/phpstan analyse --error-format=json --no-progress
+    success_exit_code: 0
+    parse: json
+    error_path: totals.file_errors
+    message: "Static analysis found potential issues"
+
+# =============================================================================
+# HEADER CHECKS (for deployed apps)
+# Requires HTTP access - optional check
+# =============================================================================
+header_checks:
+  - id: hsts_header
+    name: HSTS Header Present
+    description: Strict-Transport-Security header should be set
+    severity: high
+    header: Strict-Transport-Security
+    condition: exists
+    when: url_provided
+    message: "Missing HSTS header (HTTPS downgrade attacks possible)"
+    cwe: CWE-319
+
+  - id: content_type_options
+    name: X-Content-Type-Options Header
+    description: Prevent MIME type sniffing
+    severity: medium
+    header: X-Content-Type-Options
+    expected: nosniff
+    when: url_provided
+    message: "Missing X-Content-Type-Options header"
+    cwe: CWE-693
+
+  - id: frame_options
+    name: X-Frame-Options Header
+    description: Prevent clickjacking attacks
+    severity: medium
+    header: X-Frame-Options
+    condition: "in"
+    good_values: [DENY, SAMEORIGIN]
+    when: url_provided
+    message: "Missing clickjacking protection"
+    cwe: CWE-1021
+
+  - id: csp_header
+    name: Content-Security-Policy Header
+    description: CSP helps prevent XSS attacks
+    severity: medium
+    header: Content-Security-Policy
+    condition: exists
+    when: url_provided
+    message: "Missing Content-Security-Policy header"
+    cwe: CWE-693
+
+# =============================================================================
+# OUTPUT FORMAT
+# =============================================================================
+output:
+  formats:
+    - text      # Human readable (default)
+    - json      # Machine readable
+    - sarif     # GitHub/GitLab security format
+    - markdown  # For PR comments
+
+# =============================================================================
+# CI INTEGRATION
+# =============================================================================
+ci:
+  # Fail CI if any of these severities found
+  fail_on: [critical, high]
+
+  # GitHub Actions annotation format
+  github_annotations: true
+
+  # GitLab code quality report
+  gitlab_codequality: true

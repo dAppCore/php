@@ -1,0 +1,23 @@
+parameters:
+    paths:
+        - src
+    level: 1
+    ignoreErrors:
+        - '#Unsafe usage of new static#'
+        - '#env\(\).*outside of the config directory#'
+        - identifier: larastan.noEnvCallsOutsideOfConfig
+        - identifier: trait.unused
+        - identifier: class.notFound
+        - identifier: function.deprecated
+        - identifier: method.notFound
+    excludePaths:
+        - src/Core/Activity
+        - src/Core/Config/Tests
+        - src/Core/Input/Tests
+        - src/Core/Tests
+        - src/Core/Bouncer/Tests
+        - src/Core/Bouncer/Gate/Tests
+        - src/Core/Service/Tests
+        - src/Core/Front/Tests
+        - src/Mod/Trees
+    reportUnmatchedIgnoredErrors: false
