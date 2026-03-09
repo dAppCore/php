@@ -1,8 +1,6 @@
 # Core PHP Framework
 
-[![Tests](https://github.com/host-uk/core-php/workflows/Tests/badge.svg)](https://github.com/host-uk/core-php/actions)
-[![Code Coverage](https://codecov.io/gh/host-uk/core-php/branch/main/graph/badge.svg)](https://codecov.io/gh/host-uk/core-php)
-[![Latest Stable Version](https://poser.pugx.org/host-uk/core/v/stable)](https://packagist.org/packages/host-uk/core)
+[![Latest Stable Version](https://poser.pugx.org/lthn/php/v/stable)](https://packagist.org/packages/lthn/php)
 [![License](https://img.shields.io/badge/license-EUPL--1.2-blue.svg)](LICENSE)
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2-8892BF.svg)](https://php.net/)
 [![Laravel Version](https://img.shields.io/badge/laravel-%5E11.0%7C%5E12.0-FF2D20.svg)](https://laravel.com)
@@ -32,7 +30,7 @@ A modular monolith framework for Laravel with event-driven architecture, lazy mo
 ## Installation
 
 ```bash
-composer require host-uk/core
+composer require lthn/php
 ```
 
 The service provider will be auto-discovered.
