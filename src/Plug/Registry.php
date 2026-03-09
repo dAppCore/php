@@ -68,6 +68,21 @@ class Registry
     }
 
     /**
+     * Register a provider programmatically.
+     *
+     * Used by plug packages to self-register without filesystem scanning.
+     */
+    public function register(string $identifier, string $category, string $name, string $namespace): void
+    {
+        $this->providers[$identifier] = [
+            'category' => $category,
+            'name' => $name,
+            'namespace' => $namespace,
+            'path' => null,
+        ];
+    }
+
+    /**
      * Get all registered provider identifiers.
      *
      * @return string[]
