@@ -1,5 +1,5 @@
 {
-    "name": "core/php",
+    "name": "lthn/php",
     "description": "Modular monolith framework for Laravel - event-driven architecture with lazy module loading",
     "keywords": [
         "laravel",
@@ -88,5 +88,8 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "replace": {
+        "core/php": "self.version"
+    }
 }

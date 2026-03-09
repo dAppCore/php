@@ -1,0 +1,16 @@
+# Exclude non-PHP files from Composer dist archives
+*.go              export-ignore
+go.mod            export-ignore
+go.sum            export-ignore
+cmd/              export-ignore
+bin/              export-ignore
+docker/           export-ignore
+changelog/        export-ignore
+tests/            export-ignore
+.core/            export-ignore
+.forgejo/         export-ignore
+phpunit.xml       export-ignore
+phpstan.neon      export-ignore
+qa.yaml           export-ignore
+CLAUDE.md         export-ignore
+CONTRIBUTING.md   export-ignore
