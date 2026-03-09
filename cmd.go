@@ -49,20 +49,9 @@ var (
 	phpStatusError   = cli.ErrorStyle
 )
 
-// QA command styles (from shared)
+// QA command styles (from shared) — most moved to core/lint
 var (
-	phpQAPassedStyle  = cli.SuccessStyle
-	phpQAFailedStyle  = cli.ErrorStyle
 	phpQAWarningStyle = cli.WarningStyle
-	phpQAStageStyle   = cli.HeaderStyle
-)
-
-// Security severity styles (from shared)
-var (
-	phpSecurityCriticalStyle = cli.NewStyle().Bold().Foreground(cli.ColourRed500)
-	phpSecurityHighStyle     = cli.NewStyle().Bold().Foreground(cli.ColourOrange500)
-	phpSecurityMediumStyle   = cli.NewStyle().Foreground(cli.ColourAmber500)
-	phpSecurityLowStyle      = cli.NewStyle().Foreground(cli.ColourGray500)
 )
 
 // AddPHPCommands adds PHP/Laravel development commands.
@@ -127,19 +116,6 @@ func AddPHPCommands(root *cli.Command) {
 	addPHPBuildCommand(phpCmd)
 	addPHPServeCommand(phpCmd)
 	addPHPShellCommand(phpCmd)
-
-	// Quality (existing)
-	addPHPTestCommand(phpCmd)
-	addPHPFmtCommand(phpCmd)
-	addPHPStanCommand(phpCmd)
-
-	// Quality (new)
-	addPHPPsalmCommand(phpCmd)
-	addPHPAuditCommand(phpCmd)
-	addPHPSecurityCommand(phpCmd)
-	addPHPQACommand(phpCmd)
-	addPHPRectorCommand(phpCmd)
-	addPHPInfectionCommand(phpCmd)
 
 	// CI/CD Integration
 	addPHPCICommand(phpCmd)
