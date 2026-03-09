@@ -1,0 +1,27 @@
+{
+  "$schema": "https://claude.ai/schemas/hooks.json",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.php$\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/php-format.sh"
+          }
+        ],
+        "description": "Auto-format PHP files after edits using Pint"
+      },
+      {
+        "matcher": "tool == \"Edit\" && tool_input.file_path matches \"\\.php$\"",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-debug.sh"
+          }
+        ],
+        "description": "Warn about debug statements (dd, dump, var_dump, print_r)"
+      }
+    ]
+  }
+}
