@@ -10,6 +10,6 @@ import (
 
 func main() {
 	cli.Main(
-		cli.WithCommands("php", php.AddPHPCommands),
+		cli.WithCommands("php", php.AddPHPRootCommands),
 	)
 }

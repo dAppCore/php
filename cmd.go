@@ -134,3 +134,63 @@ func AddPHPCommands(root *cli.Command) {
 
 // registerFrankenPHP is set by cmd_serve_frankenphp.go when CGO is enabled.
 var registerFrankenPHP func(phpCmd *cli.Command)
+
+// AddPHPRootCommands adds PHP commands directly to root (for standalone core-php binary).
+func AddPHPRootCommands(root *cli.Command) {
+	root.PersistentPreRunE = func(cmd *cli.Command, args []string) error {
+		wsRoot, err := findWorkspaceRoot()
+		if err != nil {
+			return nil
+		}
+		config, err := loadWorkspaceConfig(wsRoot)
+		if err != nil || config == nil {
+			return nil
+		}
+		if config.Active == "" {
+			return nil
+		}
+		pkgDir := config.PackagesDir
+		if pkgDir == "" {
+			pkgDir = "./packages"
+		}
+		if !filepath.IsAbs(pkgDir) {
+			pkgDir = filepath.Join(wsRoot, pkgDir)
+		}
+		targetDir := filepath.Join(pkgDir, config.Active)
+		if !getMedium().IsDir(targetDir) {
+			cli.Warnf("Active package directory not found: %s", targetDir)
+			return nil
+		}
+		if err := os.Chdir(targetDir); err != nil {
+			return cli.Err("failed to change directory to active package: %w", err)
+		}
+		cli.Print("%s %s\n", dimStyle.Render("Workspace:"), config.Active)
+		return nil
+	}
+
+	// Development
+	addPHPDevCommand(root)
+	addPHPLogsCommand(root)
+	addPHPStopCommand(root)
+	addPHPStatusCommand(root)
+	addPHPSSLCommand(root)
+
+	// Build & Deploy
+	addPHPBuildCommand(root)
+	addPHPServeCommand(root)
+	addPHPShellCommand(root)
+
+	// CI/CD Integration
+	addPHPCICommand(root)
+
+	// Package Management
+	addPHPPackagesCommands(root)
+
+	// Deployment
+	addPHPDeployCommands(root)
+
+	// FrankenPHP embedded commands (CGO only)
+	if registerFrankenPHP != nil {
+		registerFrankenPHP(root)
+	}
+}
