@@ -169,11 +169,9 @@ return [
                 'style-src' => ["'unsafe-inline'"],
             ],
             'production' => [
-                // Livewire and Alpine require unsafe-inline for their
-                // runtime-injected scripts and styles. Enable nonces
-                // (SECURITY_CSP_NONCE_ENABLED=true) only if all inline
-                // content carries the nonce attribute.
-                'script-src' => ["'unsafe-inline'"],
+                // Livewire and Alpine require unsafe-inline and unsafe-eval
+                // for runtime-injected scripts/styles and expression evaluation.
+                'script-src' => ["'unsafe-inline'", "'unsafe-eval'"],
                 'style-src' => ["'unsafe-inline'"],
             ],
         ],
