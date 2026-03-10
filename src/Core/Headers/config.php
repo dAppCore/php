@@ -214,13 +214,6 @@ return [
                 'script-src' => ['https://connect.facebook.net'],
                 'frame-src' => ['https://www.facebook.com'],
             ],
-
-            'host_analytics' => [
-                'enabled' => env('SECURITY_CSP_HOST_ANALYTICS', false),
-                'script-src' => ['https://analytics.host.uk.com'],
-                'connect-src' => ['https://analytics.host.uk.com'],
-                'img-src' => ['https://analytics.host.uk.com'],
-            ],
         ],
     ],
 
