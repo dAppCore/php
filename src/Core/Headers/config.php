@@ -50,8 +50,8 @@ return [
     | CSP controls which resources can be loaded. Configure directives below.
     | Set 'enabled' to false to disable CSP entirely.
     |
-    | IMPORTANT: Avoid 'unsafe-inline' and 'unsafe-eval' in production.
-    | Use nonces or hashes for inline scripts/styles instead.
+    | Livewire and Alpine require 'unsafe-inline' for runtime-injected
+    | content. Nonce-based CSP is available but opt-in via env var.
     |
     */
 
@@ -79,8 +79,10 @@ return [
         |
         */
 
-        // Enable nonce-based CSP (recommended for production)
-        'nonce_enabled' => env('SECURITY_CSP_NONCE_ENABLED', true),
+        // Enable nonce-based CSP. Disabled by default because Livewire and
+        // Alpine inject inline scripts/styles that cannot carry nonces.
+        // Enable only if your app does not use Livewire.
+        'nonce_enabled' => env('SECURITY_CSP_NONCE_ENABLED', false),
 
         // Nonce length in bytes (16 = 128 bits, recommended minimum)
         'nonce_length' => env('SECURITY_CSP_NONCE_LENGTH', 16),
@@ -167,8 +169,12 @@ return [
                 'style-src' => ["'unsafe-inline'"],
             ],
             'production' => [
-                // Production should be strict - no unsafe-inline
-                // Add nonce support or specific hashes as needed
+                // Livewire and Alpine require unsafe-inline for their
+                // runtime-injected scripts and styles. Enable nonces
+                // (SECURITY_CSP_NONCE_ENABLED=true) only if all inline
+                // content carries the nonce attribute.
+                'script-src' => ["'unsafe-inline'"],
+                'style-src' => ["'unsafe-inline'"],
             ],
         ],
 
@@ -207,6 +213,13 @@ return [
                 'enabled' => env('SECURITY_CSP_FACEBOOK', false),
                 'script-src' => ['https://connect.facebook.net'],
                 'frame-src' => ['https://www.facebook.com'],
+            ],
+
+            'host_analytics' => [
+                'enabled' => env('SECURITY_CSP_HOST_ANALYTICS', false),
+                'script-src' => ['https://analytics.host.uk.com'],
+                'connect-src' => ['https://analytics.host.uk.com'],
+                'img-src' => ['https://analytics.host.uk.com'],
             ],
         ],
     ],
