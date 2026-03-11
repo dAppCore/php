@@ -1,126 +1,96 @@
 ---
-layout: home
-
-hero:
-  name: Core PHP Framework
-  text: Modular Monolith for Laravel
-  tagline: Event-driven architecture with lazy module loading and built-in multi-tenancy
-  actions:
-    - theme: brand
-      text: Get Started
-      link: /guide/getting-started
-    - theme: alt
-      text: View on GitHub
-      link: https://github.com/host-uk/core-php
-
-features:
-  - icon: ⚡️
-    title: Event-Driven Modules
-    details: Modules declare interest in lifecycle events and are only loaded when needed, reducing overhead for unused features.
-
-  - icon: 🔒
-    title: Multi-Tenant Isolation
-    details: Automatic workspace scoping for Eloquent models with strict mode enforcement prevents data leakage.
-
-  - icon: 🎯
-    title: Actions Pattern
-    details: Extract business logic into testable, reusable classes with automatic dependency injection.
-
-  - icon: 📝
-    title: Activity Logging
-    details: Built-in audit trails for model changes with minimal setup using Spatie Activity Log.
-
-  - icon: 🌱
-    title: Seeder Auto-Discovery
-    details: Automatic seeder ordering via priority and dependency attributes eliminates manual registration.
-
-  - icon: 🎨
-    title: HLCRF Layouts
-    details: Data-driven composable layouts with infinite nesting for flexible UI structures.
-
-  - icon: 🔐
-    title: Security First
-    details: Bouncer action gates, request whitelisting, and comprehensive input sanitization.
-
-  - icon: 🚀
-    title: Production Ready
-    details: Battle-tested in production with comprehensive test coverage and security audits.
+title: core/php
+description: Go-powered PHP/Laravel development toolkit with FrankenPHP embedding, service orchestration, CI pipelines, and Coolify deployment.
 ---
+
+# core/php
+
+`forge.lthn.ai/core/php` is a Go module that provides a comprehensive CLI toolkit
+for PHP and Laravel development. It covers the full lifecycle: local development
+with service orchestration, code quality assurance, Docker/LinuxKit image building,
+and production deployment via the Coolify API.
+
+The module also embeds FrankenPHP, allowing Laravel applications to be served
+from a single Go binary with Octane worker mode for sub-millisecond response
+times.
+
 
 ## Quick Start
 
+### As a standalone binary
+
 ```bash
-# Install via Composer
-composer require host-uk/core
+# Build the core-php binary
+core build
+# -- or --
+go build -o bin/core-php ./cmd/core-php
 
-# Create a module
-php artisan make:mod Commerce
+# Start the Laravel development environment
+core-php dev
 
-# Register lifecycle events
-class Boot
-{
-    public static array $listens = [
-        WebRoutesRegistering::class => 'onWebRoutes',
-    ];
-
-    public function onWebRoutes(WebRoutesRegistering $event): void
-    {
-        $event->routes(fn () => require __DIR__.'/Routes/web.php');
-    }
-}
+# Run the CI pipeline
+core-php ci
 ```
 
-## Why Core PHP?
+### As a library in a Go application
 
-Traditional Laravel applications grow into monoliths with tight coupling and unclear boundaries. Microservices add complexity you may not need. **Core PHP provides a middle ground**: a structured monolith with clear module boundaries, lazy loading, and the ability to extract services later if needed.
+```go
+import php "forge.lthn.ai/core/php"
 
-### Key Benefits
+// Register commands under a "php" parent command
+cli.Main(
+    cli.WithCommands("php", php.AddPHPRootCommands),
+)
+```
 
-- **Reduced Complexity** - No network overhead, distributed tracing, or service mesh
-- **Clear Boundaries** - Modules have explicit dependencies via lifecycle events
-- **Performance** - Lazy loading means unused modules aren't loaded
-- **Flexibility** - Start monolithic, extract services when it makes sense
-- **Type Safety** - Full IDE support with no RPC serialization
 
-## Packages
+## Package Layout
 
-<div class="package-grid">
+| File / Directory | Purpose |
+|---|---|
+| `cmd/core-php/main.go` | Binary entry point -- registers all commands and calls `cli.Main()` |
+| `cmd.go` | Top-level command registration (`AddPHPCommands`, `AddPHPRootCommands`) |
+| `cmd_dev.go` | `dev`, `logs`, `stop`, `status`, `ssl` commands |
+| `cmd_build.go` | `build` (Docker/LinuxKit) and `serve` (production container) commands |
+| `cmd_ci.go` | `ci` command -- full QA pipeline with JSON/Markdown/SARIF output |
+| `cmd_deploy.go` | `deploy`, `deploy:status`, `deploy:rollback`, `deploy:list` commands |
+| `cmd_packages.go` | `packages link/unlink/update/list` commands |
+| `cmd_serve_frankenphp.go` | `serve:embedded` and `exec` commands (CGO only) |
+| `cmd_commands.go` | `AddCommands()` convenience wrapper |
+| `handler.go` | FrankenPHP HTTP handler (`Handler`) -- CGO build tag |
+| `bridge.go` | Native bridge -- localhost HTTP API for PHP-to-Go calls |
+| `php.go` | `DevServer` -- multi-service orchestration (start, stop, logs, status) |
+| `services.go` | `Service` interface and concrete implementations (FrankenPHP, Vite, Horizon, Reverb, Redis) |
+| `detect.go` | Project detection: Laravel, FrankenPHP, Vite, Horizon, Reverb, Redis, package managers |
+| `dockerfile.go` | Auto-generated Dockerfiles from `composer.json` analysis |
+| `container.go` | `DockerBuildOptions`, `LinuxKitBuildOptions`, `ServeOptions`, and build/serve functions |
+| `deploy.go` | Deployment orchestration -- `Deploy()`, `Rollback()`, `DeployStatus()` |
+| `coolify.go` | Coolify API client (`CoolifyClient`) with deploy, rollback, status, and list operations |
+| `quality.go` | QA tools: Pint, PHPStan/Larastan, Psalm, Rector, Infection, security checks, audit |
+| `testing.go` | Test runner detection (Pest/PHPUnit) and execution |
+| `ssl.go` | SSL certificate management via mkcert |
+| `packages.go` | Composer path repository management (link/unlink local packages) |
+| `env.go` | Runtime environment setup for embedded apps (CGO only) |
+| `extract.go` | `Extract()` -- copies an `embed.FS` Laravel app to a temporary directory |
+| `workspace.go` | Workspace configuration (`.core/workspace.yaml`) for multi-package repos |
+| `i18n.go` | Locale registration for internationalised CLI strings |
+| `services_unix.go` | Unix process group management (SIGTERM/SIGKILL) |
+| `services_windows.go` | Windows process termination |
+| `.core/build.yaml` | Build configuration for `core build` |
 
-### [Core](/packages/core)
-Event-driven architecture, module system, actions pattern, and multi-tenancy.
 
-### [Admin](/packages/admin)
-Livewire-powered admin panel with global search and service management.
+## Dependencies
 
-### [API](/packages/api)
-REST API with OpenAPI docs, rate limiting, webhook signing, and secure keys.
+| Module | Role |
+|---|---|
+| `forge.lthn.ai/core/cli` | CLI framework (Cobra wrapper, TUI styles, output helpers) |
+| `forge.lthn.ai/core/go-i18n` | Internationalisation for command descriptions and messages |
+| `forge.lthn.ai/core/go-io` | Filesystem abstraction (`Medium` interface) for testability |
+| `forge.lthn.ai/core/go-process` | Process management utilities |
+| `github.com/dunglas/frankenphp` | FrankenPHP embedding (CGO, optional) |
+| `gopkg.in/yaml.v3` | YAML parsing for workspace configuration |
 
-### [MCP](/packages/mcp)
-Model Context Protocol tools for AI integrations with analytics and security.
 
-</div>
+## Licence
 
-## Community
-
-- **GitHub Discussions** - Ask questions and share ideas
-- **Issue Tracker** - Report bugs and request features
-- **Contributing** - See our [contributing guide](/contributing)
-
-<style>
-.package-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.package-grid > div {
-  padding: 1rem;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
-}
-
-.package-grid h3 {
-  margin-top: 0;
-}
-</style>
+EUPL-1.2
