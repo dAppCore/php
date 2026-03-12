@@ -27,3 +27,6 @@ docs/.vitepress/cache/
 infection.log
 infection-summary.log
 .rector-cache/
+
+# Worktrees
+.worktrees/
