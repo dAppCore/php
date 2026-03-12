@@ -35,6 +35,8 @@ class Boot extends ServiceProvider
             return;
         }
 
+        $this->app->register(\Core\Actions\ScheduleServiceProvider::class);
+
         $this->fireConsoleBooting();
     }
 
