@@ -30,5 +30,6 @@ class Boot
         $event->command(Commands\MakePlugCommand::class);
         $event->command(Commands\MakeWebsiteCommand::class);
         $event->command(Commands\PruneEmailShieldStatsCommand::class);
+        $event->command(Commands\ScheduleSyncCommand::class);
     }
 }
