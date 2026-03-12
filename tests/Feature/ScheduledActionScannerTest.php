@@ -70,4 +70,21 @@ class ScheduledActionScannerTest extends TestCase
         $results = $this->scanner->scan(['/nonexistent/path']);
         $this->assertEmpty($results);
     }
+
+    public function test_scan_skips_test_directories(): void
+    {
+        $results = $this->scanner->scan([
+            dirname(__DIR__).'/Fixtures/Mod/Scheduled',
+        ]);
+
+        // FakeScheduledTest is inside a Tests/ directory and should be skipped
+        $classes = array_keys($results);
+        foreach ($classes as $class) {
+            $this->assertStringNotContainsString('FakeScheduledTest', $class);
+        }
+
+        // But real actions are still discovered
+        $this->assertArrayHasKey(EveryMinuteAction::class, $results);
+        $this->assertArrayHasKey(DailyAction::class, $results);
+    }
 }

@@ -52,9 +52,26 @@ class ScheduledActionScanner
                     continue;
                 }
 
+                // Skip test directories — test files extend base classes
+                // that aren't available without dev dependencies.
+                // Convention: module test dirs use capital "Tests/" (e.g. app/Mod/Lem/Tests/).
+                if (preg_match('#[/\\\\]Tests[/\\\\]#', $file->getPathname())
+                    || str_ends_with($file->getBasename(), 'Test.php')) {
+                    continue;
+                }
+
                 $class = $this->classFromFile($file->getPathname());
 
-                if ($class === null || ! class_exists($class)) {
+                if ($class === null) {
+                    continue;
+                }
+
+                try {
+                    if (! class_exists($class)) {
+                        continue;
+                    }
+                } catch (\Throwable) {
+                    // Class may reference unavailable dependencies (e.g. dev-only)
                     continue;
                 }
 
