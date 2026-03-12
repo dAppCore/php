@@ -60,7 +60,13 @@ class ScheduledActionScanner
                     continue;
                 }
 
-                $class = $this->classFromFile($file->getPathname());
+                $contents = file_get_contents($file->getPathname());
+
+                if ($contents === false || ! str_contains($contents, '#[Scheduled')) {
+                    continue;
+                }
+
+                $class = $this->classFromFile($file->getPathname(), $contents);
 
                 if ($class === null) {
                     continue;
@@ -110,9 +116,9 @@ class ScheduledActionScanner
      *
      * Reads the file's namespace declaration and class name.
      */
-    private function classFromFile(string $file): ?string
+    private function classFromFile(string $file, ?string $contents = null): ?string
     {
-        $contents = file_get_contents($file);
+        $contents ??= file_get_contents($file);
 
         if ($contents === false) {
             return null;

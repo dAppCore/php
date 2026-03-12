@@ -81,9 +81,9 @@ class Activity extends SpatieActivity
     /**
      * Get the changed attributes.
      *
-     * @return array<string, array{old: mixed, new: mixed}>
+     * @return \Illuminate\Support\Collection<string, array{old: mixed, new: mixed}>
      */
-    public function getChangesAttribute(): array
+    public function getChangesAttribute(): \Illuminate\Support\Collection
     {
         $old = $this->old_values;
         $new = $this->new_values;
@@ -99,7 +99,7 @@ class Activity extends SpatieActivity
             }
         }
 
-        return $changes;
+        return collect($changes);
     }
 
     /**
@@ -117,7 +117,7 @@ class Activity extends SpatieActivity
     {
         $changes = $this->changes;
 
-        if (empty($changes)) {
+        if ($changes->isEmpty()) {
             return 'No changes recorded';
         }
 
