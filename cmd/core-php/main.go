@@ -3,7 +3,7 @@
 package main
 
 import (
-	php "forge.lthn.ai/core/php"
+	php "forge.lthn.ai/core/php/pkg/php"
 
 	"forge.lthn.ai/core/cli/pkg/cli"
 )
