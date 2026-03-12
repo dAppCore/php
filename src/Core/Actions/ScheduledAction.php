@@ -76,8 +76,11 @@ class ScheduledAction extends Model
      * Parse the frequency string and return the arguments.
      *
      * 'dailyAt:09:00' → ['09:00']
-     * 'weeklyOn:1,09:00' → ['1', '09:00']
+     * 'weeklyOn:1,09:00' → [1, '09:00']
      * 'everyMinute' → []
+     *
+     * Numeric strings are cast to integers so methods like weeklyOn()
+     * receive the correct types.
      */
     public function frequencyArgs(): array
     {
@@ -87,7 +90,10 @@ class ScheduledAction extends Model
             return [];
         }
 
-        return explode(',', $parts[1]);
+        return array_map(
+            static fn (string $arg) => ctype_digit($arg) ? (int) $arg : $arg,
+            explode(',', $parts[1])
+        );
     }
 
     /**

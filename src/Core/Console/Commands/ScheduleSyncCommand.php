@@ -74,13 +74,18 @@ class ScheduleSyncCommand extends Command
 
         // Disable actions no longer in codebase
         $discoveredClasses = array_keys($discovered);
-        $stale = ScheduledAction::where('is_enabled', true)
-            ->whereNotIn('action_class', $discoveredClasses)
-            ->get();
 
-        foreach ($stale as $action) {
-            $action->update(['is_enabled' => false]);
-            $disabled++;
+        if (empty($discoveredClasses)) {
+            $this->warn('No scheduled actions discovered — skipping stale cleanup to avoid disabling all rows.');
+        } else {
+            $stale = ScheduledAction::where('is_enabled', true)
+                ->whereNotIn('action_class', $discoveredClasses)
+                ->get();
+
+            foreach ($stale as $action) {
+                $action->update(['is_enabled' => false]);
+                $disabled++;
+            }
         }
 
         $this->info("Schedule sync complete: {$added} added, {$disabled} disabled, {$unchanged} unchanged.");

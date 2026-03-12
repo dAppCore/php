@@ -101,20 +101,49 @@ class ScheduledActionScanner
             return null;
         }
 
+        $tokens = token_get_all($contents);
         $namespace = null;
         $class = null;
 
-        foreach (token_get_all($contents) as $token) {
+        $count = count($tokens);
+
+        for ($i = 0; $i < $count; $i++) {
+            $token = $tokens[$i];
+
             if (! is_array($token)) {
                 continue;
             }
 
             if ($token[0] === T_NAMESPACE) {
-                $namespace = $this->extractNamespace($contents);
+                $namespaceParts = [];
+
+                for ($j = $i + 1; $j < $count; $j++) {
+                    $t = $tokens[$j];
+
+                    if (is_array($t) && in_array($t[0], [T_NAME_QUALIFIED, T_STRING, T_NS_SEPARATOR], true)) {
+                        $namespaceParts[] = $t[1];
+                    } elseif ($t === ';' || $t === '{') {
+                        break;
+                    }
+                }
+
+                $namespace = implode('', $namespaceParts) ?: null;
             }
 
             if ($token[0] === T_CLASS) {
-                $class = $this->extractClassName($contents);
+                for ($j = $i + 1; $j < $count; $j++) {
+                    $t = $tokens[$j];
+
+                    if (is_array($t) && $t[0] === T_WHITESPACE) {
+                        continue;
+                    }
+                    if (is_array($t) && $t[0] === T_STRING) {
+                        $class = $t[1];
+                    }
+
+                    break;
+                }
+
                 break;
             }
         }
@@ -124,63 +153,5 @@ class ScheduledActionScanner
         }
 
         return $namespace !== null ? "{$namespace}\\{$class}" : $class;
-    }
-
-    /**
-     * Extract the namespace string from file contents.
-     */
-    private function extractNamespace(string $contents): ?string
-    {
-        $tokens = token_get_all($contents);
-        $capture = false;
-        $parts = [];
-
-        foreach ($tokens as $token) {
-            if (is_array($token) && $token[0] === T_NAMESPACE) {
-                $capture = true;
-
-                continue;
-            }
-
-            if ($capture) {
-                if (is_array($token) && in_array($token[0], [T_NAME_QUALIFIED, T_STRING, T_NS_SEPARATOR], true)) {
-                    $parts[] = $token[1];
-                } elseif ($token === ';' || $token === '{') {
-                    break;
-                }
-            }
-        }
-
-        return ! empty($parts) ? implode('', $parts) : null;
-    }
-
-    /**
-     * Extract class name from tokens after T_CLASS.
-     */
-    private function extractClassName(string $contents): ?string
-    {
-        $tokens = token_get_all($contents);
-        $nextIsClass = false;
-
-        foreach ($tokens as $token) {
-            if (is_array($token) && $token[0] === T_CLASS) {
-                $nextIsClass = true;
-
-                continue;
-            }
-
-            if ($nextIsClass && is_array($token)) {
-                if ($token[0] === T_WHITESPACE) {
-                    continue;
-                }
-                if ($token[0] === T_STRING) {
-                    return $token[1];
-                }
-
-                return null;
-            }
-        }
-
-        return null;
     }
 }

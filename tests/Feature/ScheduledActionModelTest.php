@@ -70,7 +70,7 @@ class ScheduledActionModelTest extends TestCase
     {
         $action = new ScheduledAction(['frequency' => 'weeklyOn:1,09:00']);
         $this->assertSame('weeklyOn', $action->frequencyMethod());
-        $this->assertSame(['1', '09:00'], $action->frequencyArgs());
+        $this->assertSame([1, '09:00'], $action->frequencyArgs());
     }
 
     public function test_mark_run_updates_last_run_at(): void
