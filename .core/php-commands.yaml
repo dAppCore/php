@@ -92,7 +92,7 @@ commands:
   security:
     description: Security vulnerability scanning
     long_description: |
-      Scan for security vulnerabilities using security-checks.yaml rules.
+      Scan for security vulnerabilities using .core/security-checks.yaml rules.
 
       Checks environment config, file permissions, code patterns,
       and runs security-focused static analysis.
@@ -121,10 +121,10 @@ commands:
         type: string
         description: URL to check HTTP headers (optional)
 
-    config_file: security-checks.yaml
+    config_file: .core/security-checks.yaml
 
     implementation_notes: |
-      Parse security-checks.yaml and run checks by category:
+      Parse .core/security-checks.yaml and run checks by category:
       1. env_checks: Parse .env file
       2. filesystem_checks: Use os.Stat, filepath.Glob
       3. config_checks: Regex on PHP files
@@ -138,7 +138,7 @@ commands:
   qa:
     description: Run full QA pipeline
     long_description: |
-      Run the complete quality assurance pipeline defined in qa.yaml.
+      Run the complete quality assurance pipeline defined in .core/qa.yaml.
 
       Stages:
         quick:    Security audit, code style, PHPStan (< 30s)
@@ -168,19 +168,19 @@ commands:
         type: bool
         description: Output results as JSON
 
-    config_file: qa.yaml
+    config_file: .core/qa.yaml
 
     default_stages: [quick, standard]
 
     implementation_notes: |
-      Parse qa.yaml and run stages in order:
-      1. Load stage definitions from qa.yaml
+      Parse .core/qa.yaml and run stages in order:
+      1. Load stage definitions from .core/qa.yaml
       2. For each stage in selected stages:
          - Run each check command
          - If --fix and fix_command exists, run that instead
          - Collect results
       3. Output summary with pass/fail per stage
-      4. Exit with appropriate code per qa.yaml exit_codes
+      4. Exit with appropriate code per .core/qa.yaml exit_codes
 
   # ==========================================================================
   # NEW: core php rector

@@ -11,6 +11,5 @@ tests/            export-ignore
 .forgejo/         export-ignore
 phpunit.xml       export-ignore
 phpstan.neon      export-ignore
-qa.yaml           export-ignore
 CLAUDE.md         export-ignore
 CONTRIBUTING.md   export-ignore
