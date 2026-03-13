@@ -7,11 +7,5 @@
     "email": "hello@host.uk.com"
   },
   "license": "EUPL-1.2",
-  "commands": [
-    {
-      "name": "api:generate",
-      "description": "Generate TypeScript/JavaScript API client from Laravel routes",
-      "file": "api/commands/generate.md"
-    }
-  ]
+  "repository": "https://forge.lthn.ai/core/php.git"
 }
