@@ -1,0 +1,30 @@
+{
+  "name": "@lthn/core-claude-php",
+  "version": "0.1.0",
+  "description": "Claude Code plugin for PHP/Laravel development — skills, API generation, and formatting",
+  "license": "EUPL-1.2",
+  "author": {
+    "name": "Host UK",
+    "email": "hello@host.uk.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://forge.lthn.ai/core/php.git",
+    "directory": ".claude-plugin"
+  },
+  "files": [
+    "plugin.json",
+    "commands/",
+    "skills/",
+    "hooks.json",
+    "hooks/",
+    "scripts/",
+    "api/"
+  ],
+  "keywords": [
+    "claude-code-plugin",
+    "php",
+    "laravel",
+    "pint"
+  ]
+}
