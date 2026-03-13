@@ -7,12 +7,11 @@
     "email": "hello@host.uk.com"
   },
   "license": "EUPL-1.2",
-  "skills": [
-    "skills/php",
-    "skills/php-agent",
-    "skills/laravel"
-  ],
   "commands": [
-    "api/commands/generate.md"
+    {
+      "name": "api:generate",
+      "description": "Generate TypeScript/JavaScript API client from Laravel routes",
+      "file": "api/commands/generate.md"
+    }
   ]
 }

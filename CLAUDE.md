@@ -10,7 +10,15 @@ composer test -- --filter=Name      # Run single test by name
 composer test -- --testsuite=Unit   # Run specific test suite
 composer pint                       # Format code with Laravel Pint
 ./vendor/bin/pint --dirty           # Format only changed files
+vendor/bin/phpstan analyse --memory-limit=2G   # Static analysis (level 1)
+vendor/bin/psalm --show-info=false             # Type checking (level 8)
+vendor/bin/rector process --dry-run            # Code modernisation preview
+composer audit                                 # Security vulnerability check
 ```
+
+## CI Matrix
+
+Tests run against PHP 8.2/8.3/8.4 × Laravel 11/12 (excluding PHP 8.2 + Laravel 12). CI also runs Pint (`--test`), PHPStan, Psalm, and `composer audit`.
 
 ## Coding Standards
 
@@ -53,15 +61,19 @@ Frontages are ServiceProviders in `src/Core/Front/` that fire context-specific l
 Subdirectories under `src/Core/` are self-contained "L1 packages" with their own Boot.php, migrations, tests, and views:
 
 ```
+src/Core/Actions/         # Action pattern + scheduled action scanning
 src/Core/Activity/        # Activity logging (wraps spatie/laravel-activitylog)
-src/Core/Bouncer/         # Security blocking/redirects
+src/Core/Bouncer/         # Security blocking/redirects + honeypot + action gate
 src/Core/Cdn/             # CDN integration
-src/Core/Config/          # Dynamic configuration
+src/Core/Config/          # Dynamic configuration with two-tier caching
 src/Core/Front/           # Frontage system (Web, Admin, Api, Client, Cli, Mcp)
-src/Core/Lang/            # Translation system
+src/Core/Lang/            # Translation system with ICU + locale fallback chains
 src/Core/Media/           # Media handling with thumbnail helpers
 src/Core/Search/          # Search functionality
 src/Core/Seo/             # SEO utilities
+src/Core/Service/         # Service discovery and dependency resolution
+src/Core/Storage/         # Storage with Redis circuit breaker + fallback
+src/Core/Webhook/         # Webhook system + CronTrigger scheduled action
 ```
 
 ### Module Pattern
@@ -71,7 +83,7 @@ class Boot
 {
     public static array $listens = [
         WebRoutesRegistering::class => 'onWebRoutes',
-        AdminPanelBooting::class => ['onAdmin', 10],  // With priority
+        AdminPanelBooting::class => ['onAdmin', 10],  // With priority (higher = runs first)
     ];
 
     public function onWebRoutes(WebRoutesRegistering $event): void
@@ -82,6 +94,8 @@ class Boot
     }
 }
 ```
+
+Scaffold new modules with artisan: `make:mod`, `make:website`, `make:plug`.
 
 ### Namespace Mapping
 
@@ -115,24 +129,35 @@ class CreateOrder
 // Usage: CreateOrder::run($user, $validated);
 ```
 
+### Scheduled Actions
+
+Actions can be marked for scheduled execution with the `#[Scheduled]` attribute. `ScheduledActionScanner` discovers these by scanning for the attribute.
+
+```php
+use Core\Actions\Scheduled;
+
+#[Scheduled(frequency: 'dailyAt:09:00', timezone: 'Europe/London')]
+class PublishDigest
+{
+    use Action;
+    public function handle(): void { /* ... */ }
+}
+```
+
+Frequency strings map to Laravel Schedule methods: `everyMinute`, `dailyAt:09:00`, `weeklyOn:1,09:00`, etc.
+
+### Multi-Tenant Isolation
+
+Models using `Core\Mod\Tenant\Concerns\BelongsToWorkspace` are automatically scoped to the current workspace. The `workspace_id` is set on create and queries are filtered transparently.
+
 ### Seeder Ordering
 
 Seeders use PHP attributes for dependency ordering:
 
 ```php
-use Core\Database\Seeders\Attributes\SeederPriority;
-use Core\Database\Seeders\Attributes\SeederAfter;
-
 #[SeederPriority(50)]           // Lower runs first (default 50)
 #[SeederAfter(FeatureSeeder::class)]
-class PackageSeeder extends Seeder
-{
-    public function run(): void
-    {
-        if (! Schema::hasTable('packages')) return;  // Guard missing tables
-        // ...
-    }
-}
+class PackageSeeder extends Seeder { }
 ```
 
 ### HLCRF Layout System
@@ -140,15 +165,14 @@ class PackageSeeder extends Seeder
 Data-driven layouts with five regions (Header, Left, Content, Right, Footer):
 
 ```php
-use Core\Front\Components\Layout;
-
-$page = Layout::make('HCF')          // Variant: Header-Content-Footer
-    ->h(view('header'))
-    ->c($content)
-    ->f(view('footer'));
+$page = Layout::make('HCF')->h(view('header'))->c($content)->f(view('footer'));
 ```
 
 Variant strings: `C` (content only), `HCF` (standard page), `HLCF` (with sidebar), `HLCRF` (full dashboard).
+
+### Go Bridge
+
+`pkg/php/` contains Go code for a native desktop HTTP bridge (PHP-to-native calls), container/deployment utilities (Coolify), and Dockerfile generation.
 
 ## Testing
 
@@ -157,9 +181,7 @@ Uses Orchestra Testbench with in-memory SQLite. Tests can live:
 - `src/Core/{Package}/Tests/` - L1 package co-located tests
 - `src/Mod/{Module}/Tests/` - module co-located tests
 
-Test fixtures are in `tests/Fixtures/`.
-
-Base test class provides:
+Test fixtures are in `tests/Fixtures/`. Base test class provides:
 ```php
 $this->getFixturePath('Mod')  // Returns tests/Fixtures/Mod path
 ```
