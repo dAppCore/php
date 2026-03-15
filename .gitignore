@@ -30,3 +30,4 @@ infection-summary.log
 
 # Worktrees
 .worktrees/
+.core/
