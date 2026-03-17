@@ -3,16 +3,16 @@ module forge.lthn.ai/core/php
 go 1.26.0
 
 require (
-	forge.lthn.ai/core/cli v0.3.6
-	forge.lthn.ai/core/go-i18n v0.1.6
-	forge.lthn.ai/core/go-io v0.1.5
+	forge.lthn.ai/core/cli v0.3.7
+	forge.lthn.ai/core/go-i18n v0.1.7
+	forge.lthn.ai/core/go-io v0.1.7
 	github.com/dunglas/frankenphp v1.12.1
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	forge.lthn.ai/core/go v0.3.1 // indirect
+	forge.lthn.ai/core/go v0.3.3 // indirect
 	forge.lthn.ai/core/go-inference v0.1.6 // indirect
 	forge.lthn.ai/core/go-log v0.0.4 // indirect
 	github.com/MauriceGit/skiplist v0.0.0-20211105230623-77f5c8d3e145 // indirect
