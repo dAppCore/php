@@ -8,6 +8,9 @@
  */
 
 declare(strict_types=1);
+use Core\Mod\Commerce\Database\Seeders\TaxRateSeeder;
+use Core\Tenant\Database\Seeders\PackageSeeder;
+use Database\Seeders\DatabaseSeeder;
 
 /**
  * Database Migration Tests
@@ -84,15 +87,15 @@ describe('Database Migrations', function () {
     });
 
     it('DatabaseSeeder class exists and has run method', function () {
-        expect(class_exists(\Database\Seeders\DatabaseSeeder::class))->toBeTrue();
-        expect(method_exists(\Database\Seeders\DatabaseSeeder::class, 'run'))->toBeTrue();
+        expect(class_exists(DatabaseSeeder::class))->toBeTrue();
+        expect(method_exists(DatabaseSeeder::class, 'run'))->toBeTrue();
     });
 
     it('critical seeder classes exist in modules', function () {
         // Check for module seeders - these live in Mod namespaces
         $moduleSeederClasses = [
-            \Core\Tenant\Database\Seeders\PackageSeeder::class,
-            \Core\Mod\Commerce\Database\Seeders\TaxRateSeeder::class,
+            PackageSeeder::class,
+            TaxRateSeeder::class,
         ];
 
         $found = 0;

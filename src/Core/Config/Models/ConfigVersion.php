@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Core\Config\Models;
 
+use Carbon\Carbon;
+use Core\Tenant\Models\Workspace;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -26,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $label
  * @property string $snapshot
  * @property string|null $author
- * @property \Carbon\Carbon $created_at
+ * @property Carbon $created_at
  */
 class ConfigVersion extends Model
 {
@@ -65,8 +68,8 @@ class ConfigVersion extends Model
      */
     public function workspace(): BelongsTo
     {
-        if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-            return $this->belongsTo(\Core\Tenant\Models\Workspace::class);
+        if (class_exists(Workspace::class)) {
+            return $this->belongsTo(Workspace::class);
         }
 
         // Return a null relationship when Tenant module is not installed
@@ -136,9 +139,9 @@ class ConfigVersion extends Model
      * Get versions for a scope.
      *
      * @param  int|null  $workspaceId  Workspace ID or null for system
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forScope(?int $workspaceId = null): \Illuminate\Database\Eloquent\Collection
+    public static function forScope(?int $workspaceId = null): Collection
     {
         return static::where('workspace_id', $workspaceId)
             ->orderByDesc('created_at')
@@ -160,9 +163,9 @@ class ConfigVersion extends Model
     /**
      * Get versions created by a specific author.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function byAuthor(string $author): \Illuminate\Database\Eloquent\Collection
+    public static function byAuthor(string $author): Collection
     {
         return static::where('author', $author)
             ->orderByDesc('created_at')
@@ -172,11 +175,11 @@ class ConfigVersion extends Model
     /**
      * Get versions created within a date range.
      *
-     * @param  \Carbon\Carbon  $from  Start date
-     * @param  \Carbon\Carbon  $to  End date
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @param  Carbon  $from  Start date
+     * @param  Carbon  $to  End date
+     * @return Collection<int, self>
      */
-    public static function inDateRange(\Carbon\Carbon $from, \Carbon\Carbon $to): \Illuminate\Database\Eloquent\Collection
+    public static function inDateRange(Carbon $from, Carbon $to): Collection
     {
         return static::whereBetween('created_at', [$from, $to])
             ->orderByDesc('created_at')

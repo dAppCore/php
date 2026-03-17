@@ -9,6 +9,7 @@ use Core\Events\WebRoutesRegistering;
 use Core\LazyModuleListener;
 use Core\Tests\TestCase;
 use Illuminate\Support\ServiceProvider;
+use Mod\ServiceProviderModule\Boot;
 
 class LazyModuleListenerTest extends TestCase
 {
@@ -129,7 +130,7 @@ class LazyModuleListenerTest extends TestCase
         require_once $this->getFixturePath('Mod/ServiceProviderModule/Boot.php');
 
         $listener = new LazyModuleListener(
-            \Mod\ServiceProviderModule\Boot::class,
+            Boot::class,
             'onWebRoutes'
         );
 

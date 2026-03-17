@@ -9,6 +9,12 @@ use Core\Database\Seeders\Attributes\SeederBefore;
 use Core\Database\Seeders\Exceptions\CircularDependencyException;
 use Core\Database\Seeders\SeederDiscovery;
 use Core\Tests\TestCase;
+use Mod\Alpha\Database\Seeders\AlphaSeeder;
+use Mod\Beta\Database\Seeders\BetaSeeder;
+use Mod\Circular\Database\Seeders\CircularASeeder;
+use Mod\Circular\Database\Seeders\CircularBSeeder;
+use Mod\Gamma\Database\Seeders\DeltaSeeder;
+use Mod\Gamma\Database\Seeders\GammaSeeder;
 
 class SeederDiscoveryTest extends TestCase
 {
@@ -50,30 +56,30 @@ class SeederDiscoveryTest extends TestCase
     {
         // Exclude circular dependency seeders for this test
         $this->discovery->exclude([
-            \Mod\Circular\Database\Seeders\CircularASeeder::class,
-            \Mod\Circular\Database\Seeders\CircularBSeeder::class,
+            CircularASeeder::class,
+            CircularBSeeder::class,
         ]);
 
         $seeders = $this->discovery->getSeeders();
 
-        $this->assertArrayHasKey(\Mod\Alpha\Database\Seeders\AlphaSeeder::class, $seeders);
-        $this->assertArrayHasKey(\Mod\Beta\Database\Seeders\BetaSeeder::class, $seeders);
-        $this->assertArrayHasKey(\Mod\Gamma\Database\Seeders\GammaSeeder::class, $seeders);
-        $this->assertArrayHasKey(\Mod\Gamma\Database\Seeders\DeltaSeeder::class, $seeders);
+        $this->assertArrayHasKey(AlphaSeeder::class, $seeders);
+        $this->assertArrayHasKey(BetaSeeder::class, $seeders);
+        $this->assertArrayHasKey(GammaSeeder::class, $seeders);
+        $this->assertArrayHasKey(DeltaSeeder::class, $seeders);
     }
 
     public function test_extracts_priority_from_property(): void
     {
         $seeders = $this->discovery->getSeeders();
 
-        $this->assertEquals(10, $seeders[\Mod\Alpha\Database\Seeders\AlphaSeeder::class]['priority']);
+        $this->assertEquals(10, $seeders[AlphaSeeder::class]['priority']);
     }
 
     public function test_extracts_priority_from_attribute(): void
     {
         $seeders = $this->discovery->getSeeders();
 
-        $this->assertEquals(50, $seeders[\Mod\Beta\Database\Seeders\BetaSeeder::class]['priority']);
+        $this->assertEquals(50, $seeders[BetaSeeder::class]['priority']);
     }
 
     public function test_uses_default_priority_when_not_specified(): void
@@ -83,7 +89,7 @@ class SeederDiscoveryTest extends TestCase
         // CircularASeeder has no priority declaration
         $this->assertEquals(
             SeederDiscovery::DEFAULT_PRIORITY,
-            $seeders[\Mod\Circular\Database\Seeders\CircularASeeder::class]['priority']
+            $seeders[CircularASeeder::class]['priority']
         );
     }
 
@@ -92,8 +98,8 @@ class SeederDiscoveryTest extends TestCase
         $seeders = $this->discovery->getSeeders();
 
         $this->assertContains(
-            \Mod\Beta\Database\Seeders\BetaSeeder::class,
-            $seeders[\Mod\Gamma\Database\Seeders\GammaSeeder::class]['after']
+            BetaSeeder::class,
+            $seeders[GammaSeeder::class]['after']
         );
     }
 
@@ -102,8 +108,8 @@ class SeederDiscoveryTest extends TestCase
         $seeders = $this->discovery->getSeeders();
 
         $this->assertContains(
-            \Mod\Alpha\Database\Seeders\AlphaSeeder::class,
-            $seeders[\Mod\Beta\Database\Seeders\BetaSeeder::class]['after']
+            AlphaSeeder::class,
+            $seeders[BetaSeeder::class]['after']
         );
     }
 
@@ -112,8 +118,8 @@ class SeederDiscoveryTest extends TestCase
         $seeders = $this->discovery->getSeeders();
 
         $this->assertContains(
-            \Mod\Beta\Database\Seeders\BetaSeeder::class,
-            $seeders[\Mod\Gamma\Database\Seeders\DeltaSeeder::class]['before']
+            BetaSeeder::class,
+            $seeders[DeltaSeeder::class]['before']
         );
     }
 
@@ -123,11 +129,11 @@ class SeederDiscoveryTest extends TestCase
         $discovery = new SeederDiscovery(
             [$this->getFixturePath('Mod')],
             [
-                \Mod\Beta\Database\Seeders\BetaSeeder::class,
-                \Mod\Gamma\Database\Seeders\GammaSeeder::class,
-                \Mod\Gamma\Database\Seeders\DeltaSeeder::class,
-                \Mod\Circular\Database\Seeders\CircularASeeder::class,
-                \Mod\Circular\Database\Seeders\CircularBSeeder::class,
+                BetaSeeder::class,
+                GammaSeeder::class,
+                DeltaSeeder::class,
+                CircularASeeder::class,
+                CircularBSeeder::class,
             ]
         );
 
@@ -135,21 +141,21 @@ class SeederDiscoveryTest extends TestCase
 
         // Only AlphaSeeder should remain
         $this->assertCount(1, $ordered);
-        $this->assertEquals(\Mod\Alpha\Database\Seeders\AlphaSeeder::class, $ordered[0]);
+        $this->assertEquals(AlphaSeeder::class, $ordered[0]);
     }
 
     public function test_respects_dependency_ordering(): void
     {
         $this->discovery->exclude([
-            \Mod\Circular\Database\Seeders\CircularASeeder::class,
-            \Mod\Circular\Database\Seeders\CircularBSeeder::class,
+            CircularASeeder::class,
+            CircularBSeeder::class,
         ]);
 
         $ordered = $this->discovery->discover();
 
-        $alphaIndex = array_search(\Mod\Alpha\Database\Seeders\AlphaSeeder::class, $ordered);
-        $betaIndex = array_search(\Mod\Beta\Database\Seeders\BetaSeeder::class, $ordered);
-        $gammaIndex = array_search(\Mod\Gamma\Database\Seeders\GammaSeeder::class, $ordered);
+        $alphaIndex = array_search(AlphaSeeder::class, $ordered);
+        $betaIndex = array_search(BetaSeeder::class, $ordered);
+        $gammaIndex = array_search(GammaSeeder::class, $ordered);
 
         // Alpha must come before Beta (Beta has SeederAfter(Alpha))
         $this->assertLessThan($betaIndex, $alphaIndex, 'Alpha should run before Beta');
@@ -161,14 +167,14 @@ class SeederDiscoveryTest extends TestCase
     public function test_respects_before_dependency(): void
     {
         $this->discovery->exclude([
-            \Mod\Circular\Database\Seeders\CircularASeeder::class,
-            \Mod\Circular\Database\Seeders\CircularBSeeder::class,
+            CircularASeeder::class,
+            CircularBSeeder::class,
         ]);
 
         $ordered = $this->discovery->discover();
 
-        $deltaIndex = array_search(\Mod\Gamma\Database\Seeders\DeltaSeeder::class, $ordered);
-        $betaIndex = array_search(\Mod\Beta\Database\Seeders\BetaSeeder::class, $ordered);
+        $deltaIndex = array_search(DeltaSeeder::class, $ordered);
+        $betaIndex = array_search(BetaSeeder::class, $ordered);
 
         // Delta must come before Beta (Delta has SeederBefore(Beta))
         $this->assertLessThan($betaIndex, $deltaIndex, 'Delta should run before Beta');
@@ -203,14 +209,14 @@ class SeederDiscoveryTest extends TestCase
     public function test_exclusion_filter_works(): void
     {
         $this->discovery->exclude([
-            \Mod\Alpha\Database\Seeders\AlphaSeeder::class,
-            \Mod\Circular\Database\Seeders\CircularASeeder::class,
-            \Mod\Circular\Database\Seeders\CircularBSeeder::class,
+            AlphaSeeder::class,
+            CircularASeeder::class,
+            CircularBSeeder::class,
         ]);
 
         $seeders = $this->discovery->getSeeders();
 
-        $this->assertArrayNotHasKey(\Mod\Alpha\Database\Seeders\AlphaSeeder::class, $seeders);
+        $this->assertArrayNotHasKey(AlphaSeeder::class, $seeders);
     }
 
     public function test_add_paths_appends_to_existing(): void
@@ -222,8 +228,8 @@ class SeederDiscoveryTest extends TestCase
 
         $seeders = $discovery->getSeeders();
 
-        $this->assertArrayHasKey(\Mod\Alpha\Database\Seeders\AlphaSeeder::class, $seeders);
-        $this->assertArrayHasKey(\Mod\Beta\Database\Seeders\BetaSeeder::class, $seeders);
+        $this->assertArrayHasKey(AlphaSeeder::class, $seeders);
+        $this->assertArrayHasKey(BetaSeeder::class, $seeders);
     }
 
     public function test_set_paths_replaces_existing(): void
@@ -234,15 +240,15 @@ class SeederDiscoveryTest extends TestCase
         $discovery->setPaths([$this->getFixturePath('Mod/Beta')]);
         $seeders = $discovery->getSeeders();
 
-        $this->assertArrayNotHasKey(\Mod\Alpha\Database\Seeders\AlphaSeeder::class, $seeders);
-        $this->assertArrayHasKey(\Mod\Beta\Database\Seeders\BetaSeeder::class, $seeders);
+        $this->assertArrayNotHasKey(AlphaSeeder::class, $seeders);
+        $this->assertArrayHasKey(BetaSeeder::class, $seeders);
     }
 
     public function test_reset_clears_cache(): void
     {
         $this->discovery->exclude([
-            \Mod\Circular\Database\Seeders\CircularASeeder::class,
-            \Mod\Circular\Database\Seeders\CircularBSeeder::class,
+            CircularASeeder::class,
+            CircularBSeeder::class,
         ]);
 
         $seeders1 = $this->discovery->getSeeders();

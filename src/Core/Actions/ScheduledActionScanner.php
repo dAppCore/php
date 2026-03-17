@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Actions;
 
+use Core\ModuleScanner;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -24,7 +25,7 @@ use ReflectionClass;
  * It uses PHP's native reflection to read attributes — no file parsing.
  *
  * @see Scheduled The attribute this scanner discovers
- * @see \Core\ModuleScanner Similar pattern for Boot.php discovery
+ * @see ModuleScanner Similar pattern for Boot.php discovery
  */
 class ScheduledActionScanner
 {
@@ -32,7 +33,7 @@ class ScheduledActionScanner
      * Scan directories for classes with #[Scheduled] attribute.
      *
      * @param  array<string>  $paths  Directories to scan recursively
-     * @return array<class-string, Scheduled>  Map of class name to attribute instance
+     * @return array<class-string, Scheduled> Map of class name to attribute instance
      */
     public function scan(array $paths): array
     {

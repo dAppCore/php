@@ -7,8 +7,9 @@ use Core\Mod\Trees\Models\TreePlantingStats;
 use Core\Mod\Trees\Models\TreeReserve;
 use Core\Tenant\Models\User;
 use Core\Tenant\Models\Workspace;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();

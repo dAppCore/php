@@ -7,6 +7,7 @@ namespace Core\Tests\Feature;
 use Core\Activity\Services\ActivityLogService;
 use Core\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogServiceTest extends TestCase
@@ -18,7 +19,7 @@ class ActivityLogServiceTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return array_merge(parent::getPackageProviders($app), [
-            \Spatie\Activitylog\ActivitylogServiceProvider::class,
+            ActivitylogServiceProvider::class,
         ]);
     }
 

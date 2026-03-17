@@ -13,6 +13,8 @@ namespace Core\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Core PHP Framework Installation Command.
@@ -484,8 +486,8 @@ class InstallCommand extends Command
      * but implements the method for consistency with other commands.
      */
     public function complete(
-        \Symfony\Component\Console\Completion\CompletionInput $input,
-        \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions
+        CompletionInput $input,
+        CompletionSuggestions $suggestions
     ): void {
         // No argument/option values need completion for this command
         // All options are flags (--force, --no-interaction, --dry-run)

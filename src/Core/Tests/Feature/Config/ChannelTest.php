@@ -10,9 +10,10 @@
 declare(strict_types=1);
 
 use Core\Config\Models\Channel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 describe('Channel', function () {
     describe('inheritanceChain', function () {

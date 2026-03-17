@@ -14,6 +14,7 @@ namespace Core;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Session\Middleware\StartSession;
 
 /**
  * Application bootstrap - configures Laravel with Core framework patterns.
@@ -36,16 +37,16 @@ class Boot
      */
     public static array $providers = [
         // Lifecycle events - must load first to wire lazy listeners
-        \Core\LifecycleEventProvider::class,
+        LifecycleEventProvider::class,
 
         // Websites - domain-scoped, must wire before frontages fire events
-        \Core\Website\Boot::class,
+        Website\Boot::class,
 
         // Core frontages - fire lifecycle events
-        \Core\Front\Boot::class,
+        Front\Boot::class,
 
         // Base modules (from core-php package)
-        \Core\Mod\Boot::class,
+        Mod\Boot::class,
     ];
 
     /**
@@ -58,7 +59,7 @@ class Boot
             ->withMiddleware(function (Middleware $middleware): void {
                 // Session middleware priority
                 $middleware->priority([
-                    \Illuminate\Session\Middleware\StartSession::class,
+                    StartSession::class,
                 ]);
 
                 $middleware->redirectGuestsTo('/login');

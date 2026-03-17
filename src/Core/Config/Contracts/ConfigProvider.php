@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Config\Contracts;
 
+use Core\Config\ConfigResolver;
 use Core\Config\Models\Channel;
 
 /**
@@ -72,7 +73,7 @@ use Core\Config\Models\Channel;
  * ```
  *
  *
- * @see \Core\Config\ConfigResolver::registerProvider()
+ * @see ConfigResolver::registerProvider()
  */
 interface ConfigProvider
 {

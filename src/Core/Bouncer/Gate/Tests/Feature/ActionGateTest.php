@@ -13,6 +13,7 @@ namespace Core\Bouncer\Gate\Tests\Feature;
 
 use Core\Bouncer\Gate\ActionGateService;
 use Core\Bouncer\Gate\Attributes\Action;
+use Core\Bouncer\Gate\Boot;
 use Core\Bouncer\Gate\Models\ActionPermission;
 use Core\Bouncer\Gate\Models\ActionRequest;
 use Core\Bouncer\Gate\RouteActionMacro;
@@ -40,7 +41,7 @@ class ActionGateTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [
-            \Core\Bouncer\Gate\Boot::class,
+            Boot::class,
         ];
     }
 

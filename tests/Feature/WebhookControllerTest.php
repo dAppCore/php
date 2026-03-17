@@ -6,6 +6,7 @@ namespace Core\Tests\Feature;
 
 use Core\Tests\TestCase;
 use Core\Webhook\WebhookCall;
+use Core\Webhook\WebhookController;
 use Core\Webhook\WebhookReceived;
 use Core\Webhook\WebhookVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,7 @@ class WebhookControllerTest extends TestCase
 
     protected function defineRoutes($router): void
     {
-        $router->post('/webhooks/{source}', [\Core\Webhook\WebhookController::class, 'handle'])
+        $router->post('/webhooks/{source}', [WebhookController::class, 'handle'])
             ->where('source', '[a-z0-9\-]+');
     }
 

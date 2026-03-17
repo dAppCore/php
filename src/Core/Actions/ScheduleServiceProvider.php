@@ -99,7 +99,7 @@ class ScheduleServiceProvider extends ServiceProvider
                 }
 
                 // Verify the class uses the Action trait
-                if (! in_array(\Core\Actions\Action::class, class_uses_recursive($class), true)) {
+                if (! in_array(Action::class, class_uses_recursive($class), true)) {
                     logger()->warning("Scheduled action {$class} does not use the Action trait — skipping");
 
                     continue;

@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Core\Search\Suggestions;
 
+use Core\Mod\Uptelligence\Models\Asset;
+use Core\Mod\Uptelligence\Models\Pattern;
+use Core\Search\Analytics\SearchAnalytics;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +46,7 @@ use Illuminate\Support\Facades\Schema;
  *       'sources' => ['popular', 'recent', 'content'],
  *   ]
  *
- * @see \Core\Search\Analytics\SearchAnalytics For search tracking integration
+ * @see SearchAnalytics For search tracking integration
  */
 class SearchSuggestions
 {
@@ -259,9 +262,9 @@ class SearchSuggestions
         $escaped = $this->escapeLikeQuery($prefix);
 
         // Search patterns if available
-        if (class_exists(\Core\Mod\Uptelligence\Models\Pattern::class)) {
+        if (class_exists(Pattern::class)) {
             try {
-                $patterns = \Core\Mod\Uptelligence\Models\Pattern::where('name', 'like', "{$escaped}%")
+                $patterns = Pattern::where('name', 'like', "{$escaped}%")
                     ->limit($limit)
                     ->pluck('name')
                     ->map(fn ($name) => [
@@ -278,9 +281,9 @@ class SearchSuggestions
         }
 
         // Search assets if available
-        if (class_exists(\Core\Mod\Uptelligence\Models\Asset::class)) {
+        if (class_exists(Asset::class)) {
             try {
-                $assets = \Core\Mod\Uptelligence\Models\Asset::where('name', 'like', "{$escaped}%")
+                $assets = Asset::where('name', 'like', "{$escaped}%")
                     ->limit($limit)
                     ->pluck('name')
                     ->map(fn ($name) => [

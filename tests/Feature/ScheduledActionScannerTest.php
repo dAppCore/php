@@ -17,7 +17,7 @@ class ScheduledActionScannerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->scanner = new ScheduledActionScanner();
+        $this->scanner = new ScheduledActionScanner;
     }
 
     public function test_scan_discovers_scheduled_actions(): void

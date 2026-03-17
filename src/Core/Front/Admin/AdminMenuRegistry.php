@@ -14,6 +14,7 @@ namespace Core\Front\Admin;
 use Core\Front\Admin\Contracts\AdminMenuProvider;
 use Core\Front\Admin\Contracts\DynamicMenuProvider;
 use Core\Front\Admin\Validation\IconValidator;
+use Core\Tenant\Services\EntitlementService;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -111,8 +112,8 @@ class AdminMenuRegistry
 
     public function __construct(?object $entitlements = null, ?IconValidator $iconValidator = null)
     {
-        if ($entitlements === null && class_exists(\Core\Tenant\Services\EntitlementService::class)) {
-            $this->entitlements = app(\Core\Tenant\Services\EntitlementService::class);
+        if ($entitlements === null && class_exists(EntitlementService::class)) {
+            $this->entitlements = app(EntitlementService::class);
         } else {
             $this->entitlements = $entitlements;
         }

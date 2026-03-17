@@ -9,6 +9,7 @@ use Core\Events\FrameworkBooted;
 use Core\Events\WebRoutesRegistering;
 use Core\ModuleScanner;
 use Core\Tests\TestCase;
+use Mod\PrivateListens\Boot;
 
 class ModuleScannerTest extends TestCase
 {
@@ -145,7 +146,7 @@ PHP);
     {
         require_once $this->getFixturePath('Mod/PrivateListens/Boot.php');
 
-        $result = $this->scanner->extractListens(\Mod\PrivateListens\Boot::class);
+        $result = $this->scanner->extractListens(Boot::class);
 
         $this->assertIsArray($result);
         $this->assertEmpty($result);

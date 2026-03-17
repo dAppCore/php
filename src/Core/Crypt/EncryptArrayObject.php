@@ -12,7 +12,9 @@ declare(strict_types=1);
 namespace Core\Crypt;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Casts\ArrayObject;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +29,7 @@ class EncryptArrayObject implements CastsAttributes
     /**
      * Cast the given value to an ArrayObject.
      *
-     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  Model  $model
      * @param  mixed  $value
      * @param  array<string, mixed>  $attributes
      */
@@ -36,7 +38,7 @@ class EncryptArrayObject implements CastsAttributes
         if (isset($attributes[$key])) {
             try {
                 $decrypted = Crypt::decryptString($attributes[$key]);
-            } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            } catch (DecryptException $e) {
                 Log::warning('Failed to decrypt array object', ['key' => $key, 'error' => $e->getMessage()]);
 
                 return null;
@@ -59,7 +61,7 @@ class EncryptArrayObject implements CastsAttributes
     /**
      * Prepare the given value for storage.
      *
-     * @param  \Illuminate\Database\Eloquent\Model  $model
+     * @param  Model  $model
      * @param  mixed  $value
      * @param  array<string, mixed>  $attributes
      * @return array<string, string>|null

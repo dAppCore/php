@@ -42,7 +42,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string vBucketPath(string $domain, string $path)
  * @method static array vBucketUrls(string $domain, string $path)
  *
- * @see \Core\Cdn\Services\StorageUrlResolver
+ * @see StorageUrlResolver
  */
 class Cdn extends Facade
 {
