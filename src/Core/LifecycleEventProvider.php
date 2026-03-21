@@ -261,6 +261,79 @@ class LifecycleEventProvider extends ServiceProvider
     }
 
     /**
+     * Register view namespaces collected by a lifecycle event.
+     */
+    protected static function processViews(Events\LifecycleEvent $event): void
+    {
+        foreach ($event->viewRequests() as [$namespace, $path]) {
+            if (is_dir($path)) {
+                view()->addNamespace($namespace, $path);
+            }
+        }
+    }
+
+    /**
+     * Register Livewire components collected by a lifecycle event.
+     */
+    protected static function processLivewire(Events\LifecycleEvent $event): void
+    {
+        if (! class_exists(Livewire::class)) {
+            return;
+        }
+
+        foreach ($event->livewireRequests() as [$alias, $class]) {
+            Livewire::component($alias, $class);
+        }
+    }
+
+    /**
+     * Deduplicate route names and refresh router lookups.
+     *
+     * Called after every route-registering fire* method so that multi-domain
+     * registrations of the same route file do not produce duplicate names,
+     * and so that name/action lookups reflect the newly added routes.
+     */
+    protected static function refreshRoutes(): void
+    {
+        static::deduplicateRouteNames();
+
+        $routes = app('router')->getRoutes();
+        $routes->refreshNameLookups();
+        $routes->refreshActionLookups();
+    }
+
+    /**
+     * Strip duplicate route names from the route collection.
+     *
+     * When the same route file is registered on multiple domains, each domain
+     * gets identical route names (e.g. 'hub.dashboard' appears for core.test,
+     * hub.core.test, core.localhost). Laravel's route:cache fails with
+     * "Another route has already been assigned name" when duplicates exist.
+     *
+     * This keeps the name on the first registered route and strips it from
+     * subsequent duplicates, allowing route:cache to succeed.
+     */
+    protected static function deduplicateRouteNames(): void
+    {
+        $routes = app('router')->getRoutes();
+        $seen = [];
+
+        foreach ($routes->getRoutes() as $route) {
+            $name = $route->getName();
+
+            if ($name === null || $name === '') {
+                continue;
+            }
+
+            if (isset($seen[$name])) {
+                unset($route->action['as']);
+            } else {
+                $seen[$name] = true;
+            }
+        }
+    }
+
+    /**
      * Fire WebRoutesRegistering and process collected requests.
      *
      * Called by Front/Web/Boot when web middleware is being set up. This method:
@@ -280,29 +353,14 @@ class LifecycleEventProvider extends ServiceProvider
         event($event);
 
         static::processMiddleware($event);
+        static::processViews($event);
+        static::processLivewire($event);
 
-        // Process view namespace requests
-        foreach ($event->viewRequests() as [$namespace, $path]) {
-            if (is_dir($path)) {
-                view()->addNamespace($namespace, $path);
-            }
-        }
-
-        // Process Livewire component requests
-        foreach ($event->livewireRequests() as [$alias, $class]) {
-            if (class_exists(Livewire::class)) {
-                Livewire::component($alias, $class);
-            }
-        }
-
-        // Process route requests
         foreach ($event->routeRequests() as $callback) {
             Route::middleware('web')->group($callback);
         }
 
-        // Refresh route lookups after adding routes
-        app('router')->getRoutes()->refreshNameLookups();
-        app('router')->getRoutes()->refreshActionLookups();
+        static::refreshRoutes();
     }
 
     /**
@@ -327,38 +385,21 @@ class LifecycleEventProvider extends ServiceProvider
         event($event);
 
         static::processMiddleware($event);
+        static::processViews($event);
 
-        // Process view namespace requests
-        foreach ($event->viewRequests() as [$namespace, $path]) {
-            if (is_dir($path)) {
-                view()->addNamespace($namespace, $path);
-            }
-        }
-
-        // Process translation requests
         foreach ($event->translationRequests() as [$namespace, $path]) {
             if (is_dir($path)) {
                 app('translator')->addNamespace($namespace, $path);
             }
         }
 
-        // Process Livewire component requests
-        foreach ($event->livewireRequests() as [$alias, $class]) {
-            if (class_exists(Livewire::class)) {
-                Livewire::component($alias, $class);
-            }
-        }
+        static::processLivewire($event);
 
-        // Process route requests with admin middleware
         foreach ($event->routeRequests() as $callback) {
             Route::middleware('admin')->group($callback);
         }
 
-        // Note: Navigation is handled via AdminMenuProvider interface.
-        // Modules implementing that interface will have their navigation
-        // registered through the existing AdminMenuRegistry::register() call.
-        // The $event->navigation() requests are available for future use
-        // when we move away from the AdminMenuProvider pattern.
+        static::refreshRoutes();
     }
 
     /**
@@ -377,29 +418,14 @@ class LifecycleEventProvider extends ServiceProvider
         event($event);
 
         static::processMiddleware($event);
+        static::processViews($event);
+        static::processLivewire($event);
 
-        // Process view namespace requests
-        foreach ($event->viewRequests() as [$namespace, $path]) {
-            if (is_dir($path)) {
-                view()->addNamespace($namespace, $path);
-            }
-        }
-
-        // Process Livewire component requests
-        foreach ($event->livewireRequests() as [$alias, $class]) {
-            if (class_exists(Livewire::class)) {
-                Livewire::component($alias, $class);
-            }
-        }
-
-        // Process route requests with client middleware
         foreach ($event->routeRequests() as $callback) {
             Route::middleware('client')->group($callback);
         }
 
-        // Refresh route lookups after adding routes
-        app('router')->getRoutes()->refreshNameLookups();
-        app('router')->getRoutes()->refreshActionLookups();
+        static::refreshRoutes();
     }
 
     /**
@@ -419,10 +445,11 @@ class LifecycleEventProvider extends ServiceProvider
 
         static::processMiddleware($event);
 
-        // Process route requests with api middleware
         foreach ($event->routeRequests() as $callback) {
             Route::middleware('api')->group($callback);
         }
+
+        static::refreshRoutes();
     }
 
     /**
@@ -442,10 +469,11 @@ class LifecycleEventProvider extends ServiceProvider
 
         static::processMiddleware($event);
 
-        // Process route requests with mcp middleware
         foreach ($event->routeRequests() as $callback) {
             Route::middleware('mcp')->group($callback);
         }
+
+        static::refreshRoutes();
     }
 
     /**

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Core\Tests\Feature;
 
+use Core\Events\ApiRoutesRegistering;
 use Core\Events\FrameworkBooted;
+use Core\Events\WebRoutesRegistering;
 use Core\LifecycleEventProvider;
 use Core\ModuleRegistry;
 use Core\ModuleScanner;
 use Core\Tests\TestCase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 
 class LifecycleEventProviderTest extends TestCase
 {
@@ -78,5 +82,78 @@ class LifecycleEventProviderTest extends TestCase
     {
         $handlers = LifecycleEventProvider::fireMcpTools();
         $this->assertIsArray($handlers);
+    }
+
+    public function test_fire_web_routes_deduplicates_route_names_across_domains(): void
+    {
+        // Register the same named route on two different domains
+        Event::listen(WebRoutesRegistering::class, function (WebRoutesRegistering $event) {
+            $event->routes(fn () => Route::domain('example.test')
+                ->name('hub.')
+                ->group(function () {
+                    Route::get('/dashboard', fn () => 'ok')->name('dashboard');
+                }));
+
+            $event->routes(fn () => Route::domain('hub.example.test')
+                ->name('hub.')
+                ->group(function () {
+                    Route::get('/dashboard', fn () => 'ok')->name('dashboard');
+                }));
+        });
+
+        LifecycleEventProvider::fireWebRoutes();
+
+        $routes = app('router')->getRoutes();
+        $named = collect($routes->getRoutes())
+            ->filter(fn ($r) => $r->getName() === 'hub.dashboard');
+
+        $this->assertCount(1, $named, 'Only one route should keep the name "hub.dashboard"');
+
+        // Both routes should still exist (just one unnamed)
+        $allDashboard = collect($routes->getRoutes())
+            ->filter(fn ($r) => $r->uri() === 'dashboard');
+        $this->assertCount(2, $allDashboard, 'Both domain routes should still be registered');
+    }
+
+    public function test_fire_api_routes_deduplicates_route_names_across_domains(): void
+    {
+        Event::listen(ApiRoutesRegistering::class, function (ApiRoutesRegistering $event) {
+            $event->routes(fn () => Route::domain('api.example.test')
+                ->name('api.')
+                ->group(function () {
+                    Route::get('/users', fn () => 'ok')->name('users.index');
+                }));
+
+            $event->routes(fn () => Route::domain('api.hub.example.test')
+                ->name('api.')
+                ->group(function () {
+                    Route::get('/users', fn () => 'ok')->name('users.index');
+                }));
+        });
+
+        LifecycleEventProvider::fireApiRoutes();
+
+        $routes = app('router')->getRoutes();
+        $named = collect($routes->getRoutes())
+            ->filter(fn ($r) => $r->getName() === 'api.users.index');
+
+        $this->assertCount(1, $named, 'Only one route should keep the name "api.users.index"');
+    }
+
+    public function test_deduplication_preserves_unique_route_names(): void
+    {
+        Event::listen(WebRoutesRegistering::class, function (WebRoutesRegistering $event) {
+            $event->routes(fn () => Route::domain('example.test')
+                ->group(function () {
+                    Route::get('/home', fn () => 'ok')->name('home');
+                    Route::get('/about', fn () => 'ok')->name('about');
+                }));
+        });
+
+        LifecycleEventProvider::fireWebRoutes();
+
+        $routes = app('router')->getRoutes();
+        $this->assertNotNull($routes->getByName('home'));
+        $this->assertNotNull($routes->getByName('about'));
     }
 }
