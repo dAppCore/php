@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Core\Cdn\Console;
 
+use Core\Plug\Cdn\Bunny\Purge;
+use Core\Tenant\Models\Workspace;
 use Illuminate\Console\Command;
 
 class CdnPurge extends Command
@@ -43,8 +45,8 @@ class CdnPurge extends Command
     {
         parent::__construct();
 
-        if (class_exists(\Core\Plug\Cdn\Bunny\Purge::class)) {
-            $this->purger = new \Core\Plug\Cdn\Bunny\Purge;
+        if (class_exists(Purge::class)) {
+            $this->purger = new Purge;
         }
     }
 
@@ -96,8 +98,8 @@ class CdnPurge extends Command
         // Purge by workspace
         if (empty($workspaceArg)) {
             $workspaceOptions = ['all', 'Select specific URLs'];
-            if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-                $workspaceOptions = array_merge($workspaceOptions, \Core\Tenant\Models\Workspace::pluck('slug')->toArray());
+            if (class_exists(Workspace::class)) {
+                $workspaceOptions = array_merge($workspaceOptions, Workspace::pluck('slug')->toArray());
             }
             $workspaceArg = $this->choice(
                 'What would you like to purge?',
@@ -218,13 +220,13 @@ class CdnPurge extends Command
 
     protected function purgeAllWorkspaces(bool $dryRun): int
     {
-        if (! class_exists(\Core\Tenant\Models\Workspace::class)) {
+        if (! class_exists(Workspace::class)) {
             $this->error('Workspace purge requires Tenant module to be installed.');
 
             return self::FAILURE;
         }
 
-        $workspaces = \Core\Tenant\Models\Workspace::all();
+        $workspaces = Workspace::all();
 
         if ($workspaces->isEmpty()) {
             $this->error('No workspaces found');
@@ -276,19 +278,19 @@ class CdnPurge extends Command
 
     protected function purgeWorkspace(string $slug, bool $dryRun): int
     {
-        if (! class_exists(\Core\Tenant\Models\Workspace::class)) {
+        if (! class_exists(Workspace::class)) {
             $this->error('Workspace purge requires Tenant module to be installed.');
 
             return self::FAILURE;
         }
 
-        $workspace = \Core\Tenant\Models\Workspace::where('slug', $slug)->first();
+        $workspace = Workspace::where('slug', $slug)->first();
 
         if (! $workspace) {
             $this->error("Workspace not found: {$slug}");
             $this->newLine();
             $this->info('Available workspaces:');
-            \Core\Tenant\Models\Workspace::pluck('slug')->each(fn ($s) => $this->line("  - {$s}"));
+            Workspace::pluck('slug')->each(fn ($s) => $this->line("  - {$s}"));
 
             return self::FAILURE;
         }

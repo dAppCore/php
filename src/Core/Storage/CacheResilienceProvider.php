@@ -17,6 +17,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Predis\Client;
 
 /**
  * Provides resilient cache/session configuration.
@@ -178,7 +179,7 @@ class CacheResilienceProvider extends ServiceProvider
             }
 
             // Fall back to Predis library
-            if (class_exists(\Predis\Client::class)) {
+            if (class_exists(Client::class)) {
                 return $this->checkPredis($host, $port, $password, $timeout);
             }
 
@@ -233,7 +234,7 @@ class CacheResilienceProvider extends ServiceProvider
                 $options['password'] = $password;
             }
 
-            $client = new \Predis\Client($options, [
+            $client = new Client($options, [
                 'exceptions' => true,
             ]);
 

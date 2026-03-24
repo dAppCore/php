@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 
@@ -56,7 +57,7 @@ class LogsActivityTraitTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return array_merge(parent::getPackageProviders($app), [
-            \Spatie\Activitylog\ActivitylogServiceProvider::class,
+            ActivitylogServiceProvider::class,
         ]);
     }
 

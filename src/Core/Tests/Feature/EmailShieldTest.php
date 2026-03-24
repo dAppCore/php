@@ -14,10 +14,11 @@ use Core\Mail\EmailShield;
 use Core\Mail\EmailShieldStat;
 use Core\Mail\EmailValidationResult;
 use Core\Mail\Rules\ValidatedEmail;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Clear the cache before each test to ensure clean state

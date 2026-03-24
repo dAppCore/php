@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Search;
 
+use App\Services\Search\UnifiedSearchService;
 use Core\Search\Analytics\SearchAnalytics;
 use Core\Search\Suggestions\SearchSuggestions;
 use Illuminate\Support\ServiceProvider;
@@ -72,8 +73,8 @@ class Boot extends ServiceProvider
      */
     protected function registerBackwardCompatAliases(): void
     {
-        if (! class_exists(\App\Services\Search\UnifiedSearchService::class)) {
-            class_alias(Unified::class, \App\Services\Search\UnifiedSearchService::class);
+        if (! class_exists(UnifiedSearchService::class)) {
+            class_alias(Unified::class, UnifiedSearchService::class);
         }
     }
 }

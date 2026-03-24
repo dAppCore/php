@@ -15,6 +15,9 @@ use Core\Config\ConfigService;
 use Core\Config\Models\ConfigKey;
 use Core\Config\Models\ConfigProfile;
 use Core\Config\Models\ConfigValue;
+use Core\Tenant\Models\Workspace;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -24,7 +27,7 @@ use Livewire\Component;
  *
  * @property-read ConfigProfile $activeProfile
  * @property-read array<string> $categories
- * @property-read \Illuminate\Database\Eloquent\Collection $workspaces
+ * @property-read Collection $workspaces
  */
 class ConfigPanel extends Component
 {
@@ -79,17 +82,17 @@ class ConfigPanel extends Component
      * Get all workspaces (requires Tenant module).
      */
     #[Computed]
-    public function workspaces(): \Illuminate\Database\Eloquent\Collection
+    public function workspaces(): Collection
     {
-        if (! class_exists(\Core\Tenant\Models\Workspace::class)) {
-            return new \Illuminate\Database\Eloquent\Collection;
+        if (! class_exists(Workspace::class)) {
+            return new Collection;
         }
 
-        return \Core\Tenant\Models\Workspace::orderBy('name')->get();
+        return Workspace::orderBy('name')->get();
     }
 
     #[Computed]
-    public function keys(): \Illuminate\Database\Eloquent\Collection
+    public function keys(): Collection
     {
         return ConfigKey::query()
             ->when($this->category, fn ($q) => $q->where('category', $this->category))
@@ -119,8 +122,8 @@ class ConfigPanel extends Component
     #[Computed]
     public function selectedWorkspace(): ?object
     {
-        if ($this->workspaceId && class_exists(\Core\Tenant\Models\Workspace::class)) {
-            return \Core\Tenant\Models\Workspace::find($this->workspaceId);
+        if ($this->workspaceId && class_exists(Workspace::class)) {
+            return Workspace::find($this->workspaceId);
         }
 
         return null;
@@ -271,7 +274,7 @@ class ConfigPanel extends Component
         $this->dispatch('config-cleared');
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('core.config::admin.config-panel')
             ->layout('hub::admin.layouts.app', ['title' => 'Configuration']);

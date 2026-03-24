@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Core\Cdn\Services;
 
 use Core\Helpers\Cdn;
+use Flux\AssetManager;
 use Flux\Flux;
 
 /**
@@ -83,7 +84,7 @@ class FluxCdnService
 
         // Use CDN when enabled (respects CDN_FORCE_LOCAL for testing)
         if (! $this->shouldUseCdn()) {
-            return \Flux\AssetManager::editorScripts();
+            return AssetManager::editorScripts();
         }
 
         // In production, use CDN URL (no vBucket - shared platform asset)
@@ -109,7 +110,7 @@ class FluxCdnService
 
         // Use CDN when enabled (respects CDN_FORCE_LOCAL for testing)
         if (! $this->shouldUseCdn()) {
-            return \Flux\AssetManager::editorStyles();
+            return AssetManager::editorStyles();
         }
 
         // In production, use CDN URL (no vBucket - shared platform asset)

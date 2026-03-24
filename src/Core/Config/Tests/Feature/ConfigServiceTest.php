@@ -19,8 +19,9 @@ use Core\Config\Models\ConfigProfile;
 use Core\Config\Models\ConfigResolved;
 use Core\Config\Models\ConfigValue;
 use Core\Tenant\Models\Workspace;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Clear hash for clean test state

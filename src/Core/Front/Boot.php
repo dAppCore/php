@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace Core\Front;
 
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\AggregateServiceProvider;
 
 /**
@@ -54,12 +56,12 @@ class Boot extends AggregateServiceProvider
         // Application::configure(), before package providers load.
         // Packages add their own aliases during boot via lifecycle events.
         $middleware->group('api', [
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            ThrottleRequests::class.':api',
+            SubstituteBindings::class,
         ]);
         $middleware->group('mcp', [
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            ThrottleRequests::class.':api',
+            SubstituteBindings::class,
         ]);
     }
 }

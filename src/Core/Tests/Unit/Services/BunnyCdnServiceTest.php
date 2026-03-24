@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Core PHP Framework
  *
@@ -11,8 +13,9 @@ use Core\Cdn\Services\BunnyCdnService;
 use Core\Config\ConfigService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Tests\TestCase;
 
-uses(\Tests\TestCase::class);
+uses(TestCase::class);
 
 function createMockedService(bool $configured = true): BunnyCdnService
 {

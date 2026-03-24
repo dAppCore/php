@@ -6,6 +6,7 @@ namespace Core\Mod\Trees\View\Modal\Web;
 
 use Core\Mod\Trees\Models\TreePlanting;
 use Core\Mod\Trees\Models\TreePlantingStats;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -17,7 +18,7 @@ use Livewire\Component;
  */
 class Index extends Component
 {
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('trees::web.index', [
             'stats' => $this->getGlobalStats(),

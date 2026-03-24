@@ -17,6 +17,7 @@ declare(strict_types=1);
  */
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Component;
 
 uses()->group('admin-components');
@@ -307,7 +308,7 @@ describe('Admin Component Integration', function () {
         $errors = [];
         foreach ($files as $file) {
             try {
-                $compiler = app(\Illuminate\View\Compilers\BladeCompiler::class);
+                $compiler = app(BladeCompiler::class);
                 $compiler->compile($file);
             } catch (Throwable $e) {
                 $errors[] = [

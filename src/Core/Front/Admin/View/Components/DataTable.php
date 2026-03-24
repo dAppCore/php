@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Front\Admin\View\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class DataTable extends Component
@@ -45,7 +46,7 @@ class DataTable extends Component
         return $align === 'right' ? 'text-right' : '';
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.data-table');
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Core PHP Framework
  *
@@ -11,12 +13,14 @@ namespace Core\Tests\Feature;
 
 use Core\Cdn\Models\StorageOffload as StorageOffloadModel;
 use Core\Cdn\Services\StorageOffload;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
-#[\PHPUnit\Framework\Attributes\Group('slow')]
+#[Group('slow')]
 class StorageOffloadTest extends TestCase
 {
     use RefreshDatabase;
@@ -406,7 +410,7 @@ class StorageOffloadTest extends TestCase
     {
         $disk = $this->offloadService->getDisk();
 
-        $this->assertInstanceOf(\Illuminate\Contracts\Filesystem\Filesystem::class, $disk);
+        $this->assertInstanceOf(Filesystem::class, $disk);
     }
 
     public function test_can_get_disk_name(): void

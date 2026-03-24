@@ -13,6 +13,8 @@ namespace Core\Storage\Commands;
 
 use Core\Storage\CacheWarmer;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Warm registered cache items.
@@ -271,8 +273,8 @@ class WarmCacheCommand extends Command
      * Get shell completion suggestions for options.
      */
     public function complete(
-        \Symfony\Component\Console\Completion\CompletionInput $input,
-        \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions
+        CompletionInput $input,
+        CompletionSuggestions $suggestions
     ): void {
         if ($input->mustSuggestOptionValuesFor('store')) {
             // Suggest common cache stores

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Seo;
 
+use App\Services\Content\SchemaService;
 use Core\Seo\Analytics\SeoScoreTrend;
 use Core\Seo\Console\Commands\AuditCanonicalUrls;
 use Core\Seo\Console\Commands\RecordSeoScores;
@@ -105,8 +106,8 @@ class Boot extends ServiceProvider
     protected function registerBackwardCompatAliases(): void
     {
         // Schema (high-level JSON-LD generator)
-        if (! class_exists(\App\Services\Content\SchemaService::class)) {
-            class_alias(Schema::class, \App\Services\Content\SchemaService::class);
+        if (! class_exists(SchemaService::class)) {
+            class_alias(Schema::class, SchemaService::class);
         }
 
         // Services

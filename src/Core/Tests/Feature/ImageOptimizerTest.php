@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Core PHP Framework
  *
@@ -110,7 +112,7 @@ describe('ImageOptimizer service', function () {
         $optimizer = new ImageOptimizer;
 
         $optimizer->optimize('/path/to/nonexistent/file.jpg');
-    })->throws(\InvalidArgumentException::class, 'File not found');
+    })->throws(InvalidArgumentException::class, 'File not found');
 
     it('handles invalid image files gracefully', function () {
         // Create a text file pretending to be an image

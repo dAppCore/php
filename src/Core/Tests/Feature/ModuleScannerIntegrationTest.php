@@ -10,6 +10,7 @@
 declare(strict_types=1);
 
 use Core\Events\AdminPanelBooting;
+use Core\Events\WebRoutesRegistering;
 use Core\LazyModuleListener;
 use Core\ModuleScanner;
 use Illuminate\Support\ServiceProvider;
@@ -27,8 +28,8 @@ describe('ModuleScanner integration', function () {
 
         // Common events should have listeners
         $commonEvents = [
-            \Core\Events\AdminPanelBooting::class,
-            \Core\Events\WebRoutesRegistering::class,
+            AdminPanelBooting::class,
+            WebRoutesRegistering::class,
         ];
 
         foreach ($commonEvents as $event) {

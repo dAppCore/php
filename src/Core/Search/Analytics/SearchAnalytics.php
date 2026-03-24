@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Search\Analytics;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -210,9 +211,9 @@ class SearchAnalytics
      *
      * @param  int  $limit  Maximum number of queries to return
      * @param  int  $days  Number of days to look back
-     * @return \Illuminate\Support\Collection<int, object>
+     * @return Collection<int, object>
      */
-    public function getPopularQueries(int $limit = 10, int $days = 7): \Illuminate\Support\Collection
+    public function getPopularQueries(int $limit = 10, int $days = 7): Collection
     {
         if (! $this->isEnabled()) {
             return collect();
@@ -232,9 +233,9 @@ class SearchAnalytics
      *
      * @param  int  $limit  Maximum number of queries to return
      * @param  int  $days  Number of days to look back
-     * @return \Illuminate\Support\Collection<int, object>
+     * @return Collection<int, object>
      */
-    public function getZeroResultQueries(int $limit = 20, int $days = 30): \Illuminate\Support\Collection
+    public function getZeroResultQueries(int $limit = 20, int $days = 30): Collection
     {
         if (! $this->isEnabled()) {
             return collect();
@@ -254,9 +255,9 @@ class SearchAnalytics
      * Get search trend over time.
      *
      * @param  int  $days  Number of days to look back
-     * @return \Illuminate\Support\Collection<int, object>
+     * @return Collection<int, object>
      */
-    public function getTrend(int $days = 30): \Illuminate\Support\Collection
+    public function getTrend(int $days = 30): Collection
     {
         if (! $this->isEnabled()) {
             return collect();

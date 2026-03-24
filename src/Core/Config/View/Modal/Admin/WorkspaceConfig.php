@@ -15,6 +15,9 @@ use Core\Config\ConfigService;
 use Core\Config\Models\ConfigKey;
 use Core\Config\Models\ConfigProfile;
 use Core\Config\Models\ConfigValue;
+use Core\Tenant\Services\WorkspaceService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -28,7 +31,7 @@ use Livewire\Component;
  * @property-read ConfigProfile $systemProfile
  * @property-read object|null $workspace
  * @property-read string $prefix
- * @property-read array<int, array{namespace: string, label: string, keys: \Illuminate\Support\Collection}> $tabs
+ * @property-read array<int, array{namespace: string, label: string, keys: Collection}> $tabs
  */
 class WorkspaceConfig extends Component
 {
@@ -46,8 +49,8 @@ class WorkspaceConfig extends Component
         $this->config = $config;
 
         // Try to resolve WorkspaceService if Tenant module is installed
-        if (class_exists(\Core\Tenant\Services\WorkspaceService::class)) {
-            $this->workspaceService = app(\Core\Tenant\Services\WorkspaceService::class);
+        if (class_exists(WorkspaceService::class)) {
+            $this->workspaceService = app(WorkspaceService::class);
         }
     }
 
@@ -277,7 +280,7 @@ class WorkspaceConfig extends Component
         $this->dispatch('config-cleared');
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('core.config::admin.workspace-config')
             ->layout('hub::admin.layouts.app', ['title' => 'Settings']);

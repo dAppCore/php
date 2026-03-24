@@ -16,8 +16,9 @@ use Core\Config\Models\ConfigKey;
 use Core\Config\Models\ConfigProfile;
 use Core\Config\Models\ConfigResolved;
 use Core\Config\Models\ConfigValue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Create essential test fixtures

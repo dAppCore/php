@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Core PHP Framework
  *
@@ -12,10 +14,12 @@ namespace Core\Tests\Feature;
 use Core\Cdn\Services\AssetPipeline;
 use Core\Cdn\Services\CdnUrlBuilder;
 use Core\Cdn\Services\StorageUrlResolver;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
@@ -27,7 +31,7 @@ use Tests\TestCase;
  * - CDN delivery
  * - vBucket isolation
  */
-#[\PHPUnit\Framework\Attributes\Group('slow')]
+#[Group('slow')]
 class CdnIntegrationTest extends TestCase
 {
     use RefreshDatabase;
@@ -309,14 +313,14 @@ class CdnIntegrationTest extends TestCase
     {
         $disk = $this->urlResolver->publicDisk();
 
-        $this->assertInstanceOf(\Illuminate\Contracts\Filesystem\Filesystem::class, $disk);
+        $this->assertInstanceOf(Filesystem::class, $disk);
     }
 
     public function test_url_resolver_returns_private_disk_instance(): void
     {
         $disk = $this->urlResolver->privateDisk();
 
-        $this->assertInstanceOf(\Illuminate\Contracts\Filesystem\Filesystem::class, $disk);
+        $this->assertInstanceOf(Filesystem::class, $disk);
     }
 
     public function test_asset_pipeline_handles_large_files(): void

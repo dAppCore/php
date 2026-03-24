@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Core\Bouncer\Gate\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -29,9 +31,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $source How this was created ('trained', 'seeded', 'manual')
  * @property string|null $trained_route The route used during training
  * @property int|null $trained_by User ID who trained this action
- * @property \Carbon\Carbon|null $trained_at When training occurred
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon|null $trained_at When training occurred
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ActionPermission extends Model
 {
@@ -174,9 +176,9 @@ class ActionPermission extends Model
     /**
      * Get all actions for a guard.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forGuard(string $guard): \Illuminate\Database\Eloquent\Collection
+    public static function forGuard(string $guard): Collection
     {
         return static::where('guard', $guard)->get();
     }
@@ -184,9 +186,9 @@ class ActionPermission extends Model
     /**
      * Get all allowed actions for a guard/role combination.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function allowedFor(string $guard, ?string $role = null): \Illuminate\Database\Eloquent\Collection
+    public static function allowedFor(string $guard, ?string $role = null): Collection
     {
         $query = static::where('guard', $guard)
             ->where('allowed', true);

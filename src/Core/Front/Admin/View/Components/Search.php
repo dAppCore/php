@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Front\Admin\View\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Search extends Component
@@ -24,7 +25,7 @@ class Search extends Component
         $this->wireModel = $this->model ? "wire:model.live.debounce.300ms=\"{$this->model}\"" : '';
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.search');
     }

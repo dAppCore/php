@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Core\Activity\View\Modal\Admin;
 
 use Core\Activity\Services\ActivityLogService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -362,7 +363,7 @@ class ActivityFeed extends Component
         };
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('core.activity::admin.activity-feed');
     }

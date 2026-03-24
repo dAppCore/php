@@ -20,6 +20,8 @@ use Core\Events\McpRoutesRegistering;
 use Core\Events\McpToolsRegistering;
 use Core\Events\QueueWorkerBooting;
 use Core\Events\WebRoutesRegistering;
+use Core\Front\Mcp\Contracts\McpToolHandler;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -252,7 +254,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     protected static function processMiddleware(Events\LifecycleEvent $event): void
     {
-        /** @var \Illuminate\Routing\Router $router */
+        /** @var Router $router */
         $router = app('router');
 
         foreach ($event->middlewareRequests() as [$alias, $class]) {
@@ -484,7 +486,7 @@ class LifecycleEventProvider extends ServiceProvider
      *
      * @return array<string> Fully qualified class names of McpToolHandler implementations
      *
-     * @see \Core\Front\Mcp\Contracts\McpToolHandler (in php-mcp package)
+     * @see McpToolHandler (in php-mcp package)
      */
     public static function fireMcpTools(): array
     {

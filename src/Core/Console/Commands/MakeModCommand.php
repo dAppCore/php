@@ -14,6 +14,8 @@ namespace Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Generate a new module scaffold.
@@ -508,8 +510,8 @@ BLADE;
      * Get shell completion suggestions for arguments.
      */
     public function complete(
-        \Symfony\Component\Console\Completion\CompletionInput $input,
-        \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions
+        CompletionInput $input,
+        CompletionSuggestions $suggestions
     ): void {
         if ($input->mustSuggestArgumentValuesFor('name')) {
             // Suggest common module naming patterns

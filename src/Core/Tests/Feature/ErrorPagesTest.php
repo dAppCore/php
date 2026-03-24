@@ -16,6 +16,8 @@ declare(strict_types=1);
  * Error handling is configured in bootstrap/app.php.
  */
 
+use App\Support\HadesEncrypt;
+use Core\Tenant\Models\User;
 use Illuminate\Support\Facades\Config;
 
 describe('Static Error Files', function () {
@@ -87,7 +89,7 @@ describe('404 Error Page', function () {
 describe('403 Error Page', function () {
     it('returns 403 for forbidden access', function () {
         // Create a regular user (not hades)
-        $user = \Core\Tenant\Models\User::factory()->create([
+        $user = User::factory()->create([
             'account_type' => 'apollo',
         ]);
 
@@ -152,11 +154,11 @@ describe('Error Page Brand Consistency', function () {
 
 describe('HADES Encryption', function () {
     it('HadesEncrypt class exists and is functional', function () {
-        expect(class_exists(\App\Support\HadesEncrypt::class))->toBeTrue();
+        expect(class_exists(HadesEncrypt::class))->toBeTrue();
 
         // Test encryption with a sample exception
-        $exception = new \Exception('Test error message');
-        $encrypted = \App\Support\HadesEncrypt::encrypt($exception);
+        $exception = new Exception('Test error message');
+        $encrypted = HadesEncrypt::encrypt($exception);
 
         // Should return encrypted string or null if no public key
         expect($encrypted === null || is_string($encrypted))->toBeTrue();
