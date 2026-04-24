@@ -3,8 +3,8 @@ package php
 import (
 	"os"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
-	"forge.lthn.ai/core/go-i18n"
+	"dappco.re/go/cli/pkg/cli"
+	"dappco.re/go/i18n"
 )
 
 func addPHPPackagesCommands(parent *cli.Command) {

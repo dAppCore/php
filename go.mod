@@ -1,29 +1,29 @@
-module dappco.re/go/core/php
+module dappco.re/go/php
 
 go 1.26.0
 
 require (
-	dappco.re/go/core/cli v0.3.7
-	dappco.re/go/core/i18n v0.1.7
-	dappco.re/go/core/io v0.1.7
+	dappco.re/go/cli v0.8.0-alpha.1
+	dappco.re/go/i18n v0.8.0-alpha.1
+	dappco.re/go/io v0.8.0-alpha.1
 	github.com/dunglas/frankenphp v1.12.1
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	dappco.re/go/core v0.5.0
-	dappco.re/go/core/api v0.2.0
-	dappco.re/go/core/i18n v0.2.0
-	dappco.re/go/core/io v0.2.0
-	dappco.re/go/core/log v0.1.0
-	dappco.re/go/core/process v0.3.0
-	dappco.re/go/core/scm v0.4.0
-	dappco.re/go/core/store v0.2.0
-	dappco.re/go/core/ws v0.3.0
-	dappco.re/go/core v0.3.3 // indirect
-	dappco.re/go/core/inference v0.1.6 // indirect
-	dappco.re/go/core/log v0.0.4 // indirect
+	dappco.re/go/core v0.8.0-alpha.1
+	dappco.re/go/api v0.8.0-alpha.1
+	dappco.re/go/i18n v0.8.0-alpha.1
+	dappco.re/go/io v0.8.0-alpha.1
+	dappco.re/go/log v0.8.0-alpha.1
+	dappco.re/go/process v0.8.0-alpha.1
+	dappco.re/go/scm v0.8.0-alpha.1
+	dappco.re/go/store v0.8.0-alpha.1
+	dappco.re/go/ws v0.8.0-alpha.1
+	dappco.re/go/core v0.8.0-alpha.1 // indirect
+	dappco.re/go/inference v0.8.0-alpha.1 // indirect
+	dappco.re/go/log v0.8.0-alpha.1 // indirect
 	github.com/MauriceGit/skiplist v0.0.0-20211105230623-77f5c8d3e145 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.15.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

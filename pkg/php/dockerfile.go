@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
+	"dappco.re/go/cli/pkg/cli"
 )
 
 // DockerfileConfig holds configuration for generating a Dockerfile.

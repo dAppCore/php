@@ -33,7 +33,7 @@
 //   - deploy:list: List recent deployments
 package php
 
-import "forge.lthn.ai/core/cli/pkg/cli"
+import "dappco.re/go/cli/pkg/cli"
 
 // AddCommands registers the 'php' command and all subcommands.
 func AddCommands(root *cli.Command) {

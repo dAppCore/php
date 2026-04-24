@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
+	"dappco.re/go/cli/pkg/cli"
 )
 
 // DockerBuildOptions configures Docker image building for PHP projects.

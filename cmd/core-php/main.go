@@ -3,9 +3,9 @@
 package main
 
 import (
-	php "forge.lthn.ai/core/php/pkg/php"
+	php "dappco.re/go/php/pkg/php"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
+	"dappco.re/go/cli/pkg/cli"
 )
 
 func main() {

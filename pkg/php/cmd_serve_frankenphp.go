@@ -11,7 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
+	"dappco.re/go/cli/pkg/cli"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
+	"dappco.re/go/cli/pkg/cli"
 )
 
 // TestOptions configures PHP test execution.
