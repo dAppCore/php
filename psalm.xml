@@ -69,6 +69,8 @@
                 <referencedClass name="Core\Service\HealthCheckResult" />
                 <!-- Pending Front\Client frontage subpackage -->
                 <referencedClass name="Core\Front\Client\Boot" />
+                <!-- Laravel framework classes Psalm CI doesn't always resolve -->
+                <referencedClass name="Illuminate\Foundation\Auth\User" />
             </errorLevel>
         </UndefinedClass>
 
