@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Cdn\Jobs;
 
+use Core\Plug\Storage\StorageManager;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -60,7 +61,7 @@ class PushAssetToCdn implements ShouldQueue
      */
     public function handle(?object $storage = null): void
     {
-        if (! class_exists(\Core\Plug\Storage\StorageManager::class)) {
+        if (! class_exists(StorageManager::class)) {
             Log::warning('PushAssetToCdn: StorageManager not available, Plug module not installed');
 
             return;
@@ -68,7 +69,7 @@ class PushAssetToCdn implements ShouldQueue
 
         // Resolve from container if not injected
         if ($storage === null) {
-            $storage = app(\Core\Plug\Storage\StorageManager::class);
+            $storage = app(StorageManager::class);
         }
 
         if (! config('cdn.bunny.push_enabled', false)) {

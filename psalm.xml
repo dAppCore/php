@@ -19,6 +19,15 @@
             </errorLevel>
         </MissingOverrideAttribute>
 
+        <!-- Laravel plugin (Psalm) flags env() calls outside config/. PHPStan
+             ignores the equivalent identifier (larastan.noEnvCallsOutsideOfConfig).
+             Plugin-registered issues use <PluginIssue name="..."> form. -->
+        <PluginIssue name="NoEnvOutsideConfig">
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </PluginIssue>
+
         <!-- Suppress optional dependency errors -->
         <UndefinedClass>
             <errorLevel type="suppress">
@@ -55,8 +64,22 @@
                 <referencedClass name="Core\Tenant\Models\User" />
                 <referencedClass name="Core\Tenant\Services\EntitlementService" />
                 <referencedClass name="Core\Config\Workspace" />
+                <!-- Pending Core\Service module (see plans/code/core/lint/RFC.md) -->
+                <referencedClass name="Core\Service\Contracts\HealthCheckable" />
+                <referencedClass name="Core\Service\HealthCheckResult" />
+                <!-- Pending Front\Client frontage subpackage -->
+                <referencedClass name="Core\Front\Client\Boot" />
+                <!-- Laravel framework classes Psalm CI doesn't always resolve -->
+                <referencedClass name="Illuminate\Foundation\Auth\User" />
             </errorLevel>
         </UndefinedClass>
+
+        <!-- Pending Core\Service module — referenced by Cdn BunnyStorageService and app variant -->
+        <MissingDependency>
+            <errorLevel type="suppress">
+                <directory name="src/Core/Cdn" />
+            </errorLevel>
+        </MissingDependency>
 
         <!-- Suppress false positives from strict type analysis -->
         <NoValue>
@@ -82,7 +105,6 @@
             <directory name="src/Core/Input/Tests" />
             <directory name="src/Core/Bouncer/Tests" />
             <directory name="src/Core/Bouncer/Gate/Tests" />
-            <directory name="src/Core/Service/Tests" />
             <directory name="src/Core/Front/Tests" />
             <directory name="src/Mod/Trees" />
         </ignoreFiles>

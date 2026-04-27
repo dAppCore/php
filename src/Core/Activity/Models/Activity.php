@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Core\Activity\Models;
 
 use Core\Activity\Scopes\ActivityScopes;
+use Illuminate\Support\Collection;
 use Spatie\Activitylog\Models\Activity as SpatieActivity;
 
 /**
@@ -81,9 +82,9 @@ class Activity extends SpatieActivity
     /**
      * Get the changed attributes.
      *
-     * @return \Illuminate\Support\Collection<string, array{old: mixed, new: mixed}>
+     * @return Collection<string, array{old: mixed, new: mixed}>
      */
-    public function getChangesAttribute(): \Illuminate\Support\Collection
+    public function getChangesAttribute(): Collection
     {
         $old = $this->old_values;
         $new = $this->new_values;

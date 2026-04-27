@@ -13,6 +13,8 @@ namespace Core\Console\Commands;
 
 use Core\Mail\EmailShieldStat;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Prune old Email Shield statistics records.
@@ -135,8 +137,8 @@ class PruneEmailShieldStatsCommand extends Command
      * Get shell completion suggestions for options.
      */
     public function complete(
-        \Symfony\Component\Console\Completion\CompletionInput $input,
-        \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions
+        CompletionInput $input,
+        CompletionSuggestions $suggestions
     ): void {
         if ($input->mustSuggestOptionValuesFor('days')) {
             // Suggest common retention periods

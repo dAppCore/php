@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace Core\Cdn\Services;
 
 use Carbon\Carbon;
+use Core\Cdn\Jobs\PushAssetToCdn;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Storage;
@@ -372,7 +374,7 @@ class StorageUrlResolver
     /**
      * Get the public storage disk.
      *
-     * @return \Illuminate\Contracts\Filesystem\Filesystem
+     * @return Filesystem
      */
     public function publicDisk()
     {
@@ -382,7 +384,7 @@ class StorageUrlResolver
     /**
      * Get the private storage disk.
      *
-     * @return \Illuminate\Contracts\Filesystem\Filesystem
+     * @return Filesystem
      */
     public function privateDisk()
     {
@@ -403,7 +405,7 @@ class StorageUrlResolver
         if ($stored && $pushToCdn && config('cdn.pipeline.auto_push', true)) {
             // Queue the push if configured, otherwise push synchronously
             if ($queue = config('cdn.pipeline.queue')) {
-                dispatch(new \Core\Cdn\Jobs\PushAssetToCdn('hetzner-public', $path, 'public'))->onQueue($queue);
+                dispatch(new PushAssetToCdn('hetzner-public', $path, 'public'))->onQueue($queue);
             } else {
                 $this->pushToCdn('hetzner-public', $path, 'public');
             }
@@ -425,7 +427,7 @@ class StorageUrlResolver
 
         if ($stored && $pushToCdn && config('cdn.pipeline.auto_push', true)) {
             if ($queue = config('cdn.pipeline.queue')) {
-                dispatch(new \Core\Cdn\Jobs\PushAssetToCdn('hetzner-private', $path, 'private'))->onQueue($queue);
+                dispatch(new PushAssetToCdn('hetzner-private', $path, 'private'))->onQueue($queue);
             } else {
                 $this->pushToCdn('hetzner-private', $path, 'private');
             }

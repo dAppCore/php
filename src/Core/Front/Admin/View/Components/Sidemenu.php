@@ -12,6 +12,9 @@ declare(strict_types=1);
 namespace Core\Front\Admin\View\Components;
 
 use Core\Front\Admin\AdminMenuRegistry;
+use Core\Tenant\Models\User;
+use Core\Tenant\Services\WorkspaceService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Component;
 
@@ -39,19 +42,19 @@ class Sidemenu extends Component
 
         // Use current workspace from session, not default
         $workspace = null;
-        if (class_exists(\Core\Tenant\Services\WorkspaceService::class)) {
-            $workspace = app(\Core\Tenant\Services\WorkspaceService::class)->currentModel();
+        if (class_exists(WorkspaceService::class)) {
+            $workspace = app(WorkspaceService::class)->currentModel();
         }
 
         $isAdmin = false;
-        if (class_exists(\Core\Tenant\Models\User::class) && $user instanceof \Core\Tenant\Models\User) {
+        if (class_exists(User::class) && $user instanceof User) {
             $isAdmin = $user->isHades();
         }
 
         return app(AdminMenuRegistry::class)->build($workspace, $isAdmin);
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.sidemenu');
     }

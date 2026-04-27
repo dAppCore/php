@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"forge.lthn.ai/core/cli/pkg/cli"
+	"dappco.re/go/cli/pkg/cli"
 )
 
 // Environment represents a deployment environment.

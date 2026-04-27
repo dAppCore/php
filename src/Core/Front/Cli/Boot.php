@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Core\Front\Cli;
 
+use Core\Actions\ScheduleServiceProvider;
 use Core\Events\ConsoleBooting;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -35,7 +37,7 @@ class Boot extends ServiceProvider
             return;
         }
 
-        $this->app->register(\Core\Actions\ScheduleServiceProvider::class);
+        $this->app->register(ScheduleServiceProvider::class);
 
         $this->fireConsoleBooting();
     }
@@ -58,7 +60,7 @@ class Boot extends ServiceProvider
         }
 
         // Process middleware aliases
-        $router = $this->app->make(\Illuminate\Routing\Router::class);
+        $router = $this->app->make(Router::class);
         foreach ($event->middlewareRequests() as [$alias, $class]) {
             $router->aliasMiddleware($alias, $class);
         }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Core PHP Framework
  *
@@ -19,12 +21,23 @@ use Core\Mod\Analytics\Models\AnalyticsGoal;
 use Core\Mod\Analytics\Models\AnalyticsWebsite;
 use Core\Mod\Commerce\Models\Order;
 use Core\Mod\Commerce\Models\Payment;
+use Core\Mod\Commerce\Services\PaymentGateway\BTCPayGateway;
+use Core\Mod\Commerce\View\Modal\Web\CheckoutCancel;
+use Core\Mod\Commerce\View\Modal\Web\CheckoutSuccess;
+use Core\Mod\Social\View\Modal\Admin\MediaPicker;
+use Core\Mod\Social\View\Modal\Admin\TemplateIndex;
 use Core\Tenant\Models\Package;
 use Core\Tenant\Models\User;
 use Core\Tenant\Models\Workspace;
 use Core\Tenant\Services\EntitlementService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
+use Livewire\Livewire;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -51,10 +64,10 @@ describe('Checkout Authorization Fixes', function () {
             ]);
 
             // Test authorization via component mount logic
-            $component = new \Core\Mod\Commerce\View\Modal\Web\CheckoutSuccess;
+            $component = new CheckoutSuccess;
 
             // Use reflection to call protected authorizeOrder
-            \Illuminate\Support\Facades\Auth::login($this->user);
+            Auth::login($this->user);
             $reflection = new ReflectionClass($component);
             $method = $reflection->getMethod('authorizeOrder');
             $method->setAccessible(true);
@@ -77,9 +90,9 @@ describe('Checkout Authorization Fixes', function () {
             ]);
 
             // Test authorization via component logic
-            $component = new \Core\Mod\Commerce\View\Modal\Web\CheckoutSuccess;
+            $component = new CheckoutSuccess;
 
-            \Illuminate\Support\Facades\Auth::login($this->user);
+            Auth::login($this->user);
             $reflection = new ReflectionClass($component);
             $method = $reflection->getMethod('authorizeOrder');
             $method->setAccessible(true);
@@ -106,9 +119,9 @@ describe('Checkout Authorization Fixes', function () {
             ]);
 
             // Test authorization via component logic
-            $component = new \Core\Mod\Commerce\View\Modal\Web\CheckoutCancel;
+            $component = new CheckoutCancel;
 
-            \Illuminate\Support\Facades\Auth::login($this->user);
+            Auth::login($this->user);
             $reflection = new ReflectionClass($component);
             $method = $reflection->getMethod('authorizeOrder');
             $method->setAccessible(true);
@@ -233,7 +246,7 @@ describe('Analytics Goal Controller N+1 Fix', function () {
 
     it('eager loads website relationship on show', function () {
         // Skip if route not registered (Analytics API routes not wired up in Boot.php)
-        if (! \Illuminate\Support\Facades\Route::has('api.analytics.goals.show')) {
+        if (! Route::has('api.analytics.goals.show')) {
             $this->markTestSkipped('Analytics goals API route not registered');
         }
 
@@ -248,13 +261,13 @@ describe('Analytics Goal Controller N+1 Fix', function () {
         ]);
 
         // Count queries
-        \Illuminate\Support\Facades\DB::enableQueryLog();
+        DB::enableQueryLog();
 
         $response = $this->actingAs($this->user)
             ->getJson("/api/v1/analytics/goals/{$goal->id}");
 
-        $queries = \Illuminate\Support\Facades\DB::getQueryLog();
-        \Illuminate\Support\Facades\DB::disableQueryLog();
+        $queries = DB::getQueryLog();
+        DB::disableQueryLog();
 
         // Should be 200 OK
         expect($response->status())->toBe(200);
@@ -321,11 +334,11 @@ describe('BTCPay Gateway Return Type', function () {
             'commerce.gateways.btcpay.webhook_secret' => 'test_webhook_secret',
         ]);
 
-        $gateway = new \Core\Mod\Commerce\Services\PaymentGateway\BTCPayGateway;
+        $gateway = new BTCPayGateway;
 
         // Mock HTTP to fail so we test the error path
-        \Illuminate\Support\Facades\Http::fake([
-            '*' => \Illuminate\Support\Facades\Http::response(['error' => 'Test error'], 400),
+        Http::fake([
+            '*' => Http::response(['error' => 'Test error'], 400),
         ]);
 
         $result = $gateway->refund($payment, 50.00, 'Test refund');
@@ -356,11 +369,11 @@ describe('BTCPay Gateway Return Type', function () {
             'commerce.gateways.btcpay.webhook_secret' => 'test_webhook_secret',
         ]);
 
-        $gateway = new \Core\Mod\Commerce\Services\PaymentGateway\BTCPayGateway;
+        $gateway = new BTCPayGateway;
 
         // Mock HTTP to succeed
-        \Illuminate\Support\Facades\Http::fake([
-            '*' => \Illuminate\Support\Facades\Http::response([
+        Http::fake([
+            '*' => Http::response([
                 'id' => 'refund_123',
                 'status' => 'processed',
             ], 200),
@@ -394,7 +407,7 @@ describe('SocialPost Controller User Type Check', function () {
 describe('LIKE Wildcard Injection Fix', function () {
     it('escapes LIKE wildcards in MediaPicker search', function () {
         // Test the escapeLikeWildcards helper directly
-        $component = new \Core\Mod\Social\View\Modal\Admin\MediaPicker;
+        $component = new MediaPicker;
 
         $reflection = new ReflectionClass($component);
         $method = $reflection->getMethod('escapeLikeWildcards');
@@ -410,7 +423,7 @@ describe('LIKE Wildcard Injection Fix', function () {
     });
 
     it('does not affect normal search terms', function () {
-        $component = new \Core\Mod\Social\View\Modal\Admin\MediaPicker;
+        $component = new MediaPicker;
 
         $reflection = new ReflectionClass($component);
         $method = $reflection->getMethod('escapeLikeWildcards');
@@ -429,8 +442,8 @@ describe('Null Workspace Checks', function () {
         $freshUser = User::factory()->create();
 
         // Test without a default workspace - should not crash
-        \Livewire\Livewire::actingAs($freshUser)
-            ->test(\Core\Mod\Social\View\Modal\Admin\TemplateIndex::class)
+        Livewire::actingAs($freshUser)
+            ->test(TemplateIndex::class)
             ->assertStatus(200);
     });
 
@@ -502,8 +515,8 @@ describe('Checkout Edge Cases', function () {
             'currency' => 'GBP',
         ]);
 
-        $component = new \Core\Mod\Commerce\View\Modal\Web\CheckoutSuccess;
-        \Illuminate\Support\Facades\Auth::login($freshUser);
+        $component = new CheckoutSuccess;
+        Auth::login($freshUser);
 
         $reflection = new ReflectionClass($component);
         $method = $reflection->getMethod('authorizeOrder');
@@ -528,8 +541,8 @@ describe('Checkout Edge Cases', function () {
             'currency' => 'GBP',
         ]);
 
-        $component = new \Core\Mod\Commerce\View\Modal\Web\CheckoutCancel;
-        \Illuminate\Support\Facades\Auth::login($freshUser);
+        $component = new CheckoutCancel;
+        Auth::login($freshUser);
 
         $reflection = new ReflectionClass($component);
         $method = $reflection->getMethod('authorizeOrder');

@@ -15,48 +15,15 @@ use Core\Events\MediaRequested;
 use Core\Events\QueueWorkerBooting;
 use Core\Events\SearchRequested;
 use Core\Events\WebRoutesRegistering;
-use Core\Front\Mcp\Contracts\McpToolHandler;
 use Core\Tests\TestCase;
 
-// Test fixture implementing McpToolHandler
-class TestMcpHandler implements McpToolHandler
-{
-    public static function schema(): array
-    {
-        return ['name' => 'test', 'description' => 'Test', 'inputSchema' => []];
-    }
+// Test fixtures — McpToolsRegistering stores class names as strings,
+// so these don't need to implement the McpToolHandler interface (lives in core-mcp).
+class TestMcpHandler {}
 
-    public function handle(array $args, \Core\Front\Mcp\McpContext $context): array
-    {
-        return [];
-    }
-}
+class TestMcpHandler2 {}
 
-class TestMcpHandler2 implements McpToolHandler
-{
-    public static function schema(): array
-    {
-        return ['name' => 'test2', 'description' => 'Test 2', 'inputSchema' => []];
-    }
-
-    public function handle(array $args, \Core\Front\Mcp\McpContext $context): array
-    {
-        return [];
-    }
-}
-
-class TestMcpHandler3 implements McpToolHandler
-{
-    public static function schema(): array
-    {
-        return ['name' => 'test3', 'description' => 'Test 3', 'inputSchema' => []];
-    }
-
-    public function handle(array $args, \Core\Front\Mcp\McpContext $context): array
-    {
-        return [];
-    }
-}
+class TestMcpHandler3 {}
 
 class LifecycleEventsTest extends TestCase
 {

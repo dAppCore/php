@@ -43,7 +43,7 @@ class CronTrigger
                     usleep($stagger * 1_000_000);
                 }
 
-                $url = $baseUrl . $endpoint . '?key=' . $key;
+                $url = $baseUrl.$endpoint.'?key='.$key;
 
                 try {
                     Http::timeout(30)->get($url);

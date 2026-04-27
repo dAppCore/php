@@ -57,6 +57,4 @@ class ScheduledAttributeTest extends TestCase
 }
 
 #[Scheduled(frequency: 'everyMinute')]
-class ScheduledAttributeTest_Stub
-{
-}
+class ScheduledAttributeTest_Stub {}

@@ -14,10 +14,11 @@ use Core\Mod\Social\Enums\ResourceStatus;
 use Core\Tenant\Models\User;
 use Core\Tenant\Rules\CheckUserPasswordRule;
 use Core\Tenant\Rules\ResourceStatusRule;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 describe('CheckUserPasswordRule', function () {
     it('passes validation when password matches', function () {

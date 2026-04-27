@@ -11,8 +11,11 @@ declare(strict_types=1);
 
 namespace Core\Config\Models;
 
+use Carbon\Carbon;
 use Core\Config\ConfigResolver;
 use Core\Config\Enums\ScopeType;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
@@ -31,8 +34,8 @@ use Illuminate\Support\Facades\Crypt;
  * @property mixed $value
  * @property bool $locked
  * @property int|null $inherited_from
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ConfigValue extends Model
 {
@@ -76,7 +79,7 @@ class ConfigValue extends Model
                 $encrypted = substr($decoded, strlen(self::ENCRYPTED_PREFIX));
 
                 return json_decode(Crypt::decryptString($encrypted), true);
-            } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+            } catch (DecryptException) {
                 // Return null if decryption fails (key rotation, corruption, etc.)
                 return null;
             }
@@ -255,9 +258,9 @@ class ConfigValue extends Model
      *
      * @param  array<int>  $profileIds
      * @param  array<int>|null  $channelIds  Include null for "all channels" values
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forKeyInProfiles(int $keyId, array $profileIds, ?array $channelIds = null): \Illuminate\Database\Eloquent\Collection
+    public static function forKeyInProfiles(int $keyId, array $profileIds, ?array $channelIds = null): Collection
     {
         return static::where('key_id', $keyId)
             ->whereIn('profile_id', $profileIds)

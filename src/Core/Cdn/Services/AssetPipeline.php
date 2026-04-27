@@ -13,6 +13,7 @@ namespace Core\Cdn\Services;
 
 use Core\Cdn\Jobs\PushAssetToCdn;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -339,7 +340,7 @@ class AssetPipeline
             PushAssetToCdn::dispatch($disk, $path, $zone);
         } elseif ($this->storage !== null) {
             // Synchronous push if no queue configured (requires StorageManager from Plug module)
-            $diskInstance = \Illuminate\Support\Facades\Storage::disk($disk);
+            $diskInstance = Storage::disk($disk);
             if ($diskInstance->exists($path)) {
                 $contents = $diskInstance->get($path);
                 $this->storage->zone($zone)->upload()->contents($path, $contents);

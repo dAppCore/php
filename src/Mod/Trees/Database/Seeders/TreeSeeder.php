@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Core\Mod\Trees\Database\Seeders;
 
 use Core\Mod\Trees\Models\TreePlanting;

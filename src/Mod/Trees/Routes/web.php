@@ -1,6 +1,7 @@
 <?php
 
 use Core\Mod\Trees\View\Modal\Web\Index as TreesIndex;
+use Core\Tenant\Controllers\ReferralController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,6 +15,6 @@ Route::middleware(['web'])->group(function () {
     Route::get('/trees', TreesIndex::class)->name('trees');
 
     // Agent referral tracking (Trees for Agents)
-    Route::get('/ref/{provider}/{model?}', [\Core\Tenant\Controllers\ReferralController::class, 'track'])
+    Route::get('/ref/{provider}/{model?}', [ReferralController::class, 'track'])
         ->name('referral.agent');
 });

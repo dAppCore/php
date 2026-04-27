@@ -11,8 +11,11 @@ declare(strict_types=1);
 
 namespace Core\Lang\Console\Commands;
 
+use Core\Lang\TranslationMemory\FuzzyMatcher;
 use Core\Lang\TranslationMemory\TranslationMemory;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Translation Memory management command.
@@ -388,7 +391,7 @@ class TranslationMemoryCommand extends Command
             $confidence = $suggestion['confidence'];
 
             $similarityColor = $similarity >= 0.9 ? 'green' : ($similarity >= 0.75 ? 'yellow' : 'red');
-            $category = \Core\Lang\TranslationMemory\FuzzyMatcher::categorizeSimilarity($similarity);
+            $category = FuzzyMatcher::categorizeSimilarity($similarity);
 
             $this->line("  <fg={$similarityColor};options=bold>".sprintf('%.0f%%', $similarity * 100).'</> match ('.$category.')');
             $this->line("    <fg=cyan>Source:</> {$entry->getSource()}");
@@ -566,8 +569,8 @@ class TranslationMemoryCommand extends Command
      * Get shell completion suggestions.
      */
     public function complete(
-        \Symfony\Component\Console\Completion\CompletionInput $input,
-        \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions
+        CompletionInput $input,
+        CompletionSuggestions $suggestions
     ): void {
         if ($input->mustSuggestArgumentValuesFor('action')) {
             $suggestions->suggestValues([

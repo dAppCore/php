@@ -71,7 +71,6 @@ src/Core/Lang/            # Translation system with ICU + locale fallback chains
 src/Core/Media/           # Media handling with thumbnail helpers
 src/Core/Search/          # Search functionality
 src/Core/Seo/             # SEO utilities
-src/Core/Service/         # Service discovery and dependency resolution
 src/Core/Storage/         # Storage with Redis circuit breaker + fallback
 src/Core/Webhook/         # Webhook system + CronTrigger scheduled action
 ```

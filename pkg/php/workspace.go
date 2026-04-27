@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"forge.lthn.ai/core/go-io"
+	"dappco.re/go/io"
 	"gopkg.in/yaml.v3"
 )
 

@@ -8,6 +8,7 @@
  */
 
 declare(strict_types=1);
+use Core\Tenant\Models\User;
 
 /**
  * Security Headers Tests (TASK-010 Phase 4)
@@ -74,7 +75,7 @@ describe('Security Headers on Public Routes', function () {
 
 describe('Security Headers on Authenticated Routes', function () {
     beforeEach(function () {
-        $this->user = \Core\Tenant\Models\User::factory()->create();
+        $this->user = User::factory()->create();
     });
 
     it('has security headers on hub routes', function () {
@@ -98,7 +99,7 @@ describe('Security Headers on Authenticated Routes', function () {
 
 describe('Security Headers on API Routes', function () {
     beforeEach(function () {
-        $this->user = \Core\Tenant\Models\User::factory()->create([
+        $this->user = User::factory()->create([
             'account_type' => 'hades',
         ]);
     });
