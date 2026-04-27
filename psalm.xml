@@ -19,6 +19,15 @@
             </errorLevel>
         </MissingOverrideAttribute>
 
+        <!-- Laravel plugin (Psalm) flags env() calls outside config/. PHPStan
+             ignores the equivalent identifier (larastan.noEnvCallsOutsideOfConfig).
+             Suppress here for parity with PHPStan baseline. -->
+        <NoEnvOutsideConfig>
+            <errorLevel type="suppress">
+                <directory name="src" />
+            </errorLevel>
+        </NoEnvOutsideConfig>
+
         <!-- Suppress optional dependency errors -->
         <UndefinedClass>
             <errorLevel type="suppress">
