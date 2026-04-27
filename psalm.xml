@@ -21,12 +21,12 @@
 
         <!-- Laravel plugin (Psalm) flags env() calls outside config/. PHPStan
              ignores the equivalent identifier (larastan.noEnvCallsOutsideOfConfig).
-             Suppress here for parity with PHPStan baseline. -->
-        <NoEnvOutsideConfig>
+             Plugin-registered issues use <PluginIssue name="..."> form. -->
+        <PluginIssue name="NoEnvOutsideConfig">
             <errorLevel type="suppress">
                 <directory name="src" />
             </errorLevel>
-        </NoEnvOutsideConfig>
+        </PluginIssue>
 
         <!-- Suppress optional dependency errors -->
         <UndefinedClass>
