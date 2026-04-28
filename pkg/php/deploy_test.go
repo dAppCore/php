@@ -3,10 +3,9 @@ package php
 import (
 	"os"
 	"path/filepath"
-	"testing"
 )
 
-func TestLoadCoolifyConfig_Good(t *testing.T) {
+func TestPHP_LoadCoolifyConfig_Good(t *T) {
 	tests := []struct {
 		name        string
 		envContent  string
@@ -51,7 +50,7 @@ COOLIFY_APP_ID=app-123
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(t *T) {
 			// Create temp directory
 			dir := t.TempDir()
 			envPath := filepath.Join(dir, ".env")
@@ -83,7 +82,7 @@ COOLIFY_APP_ID=app-123
 	}
 }
 
-func TestLoadCoolifyConfig_Bad(t *testing.T) {
+func TestPHP_LoadCoolifyConfig_Bad(t *T) {
 	tests := []struct {
 		name       string
 		envContent string
@@ -107,7 +106,7 @@ func TestLoadCoolifyConfig_Bad(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(t *T) {
 			// Create temp directory
 			dir := t.TempDir()
 			envPath := filepath.Join(dir, ".env")
@@ -130,7 +129,7 @@ func TestLoadCoolifyConfig_Bad(t *testing.T) {
 	}
 }
 
-func TestGetAppIDForEnvironment_Good(t *testing.T) {
+func TestPHP_GetAppIDForEnvironment_Good(t *T) {
 	config := &CoolifyConfig{
 		URL:          "https://coolify.example.com",
 		Token:        "token",
@@ -161,7 +160,7 @@ func TestGetAppIDForEnvironment_Good(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(t *T) {
 			id := getAppIDForEnvironment(config, tt.env)
 			if id != tt.wantID {
 				t.Errorf("getAppIDForEnvironment() = %q, want %q", id, tt.wantID)
@@ -170,7 +169,7 @@ func TestGetAppIDForEnvironment_Good(t *testing.T) {
 	}
 }
 
-func TestGetAppIDForEnvironment_FallbackToProduction(t *testing.T) {
+func TestGetAppIDForEnvironment_FallbackToProduction(t *T) {
 	config := &CoolifyConfig{
 		URL:   "https://coolify.example.com",
 		Token: "token",
@@ -185,7 +184,7 @@ func TestGetAppIDForEnvironment_FallbackToProduction(t *testing.T) {
 	}
 }
 
-func TestIsDeploymentComplete_Good(t *testing.T) {
+func TestPHP_IsDeploymentComplete_Good(t *T) {
 	completeStatuses := []string{"finished", "success", "failed", "error", "cancelled"}
 	for _, status := range completeStatuses {
 		if !IsDeploymentComplete(status) {
@@ -201,7 +200,7 @@ func TestIsDeploymentComplete_Good(t *testing.T) {
 	}
 }
 
-func TestIsDeploymentSuccessful_Good(t *testing.T) {
+func TestPHP_IsDeploymentSuccessful_Good(t *T) {
 	successStatuses := []string{"finished", "success"}
 	for _, status := range successStatuses {
 		if !IsDeploymentSuccessful(status) {
@@ -217,7 +216,7 @@ func TestIsDeploymentSuccessful_Good(t *testing.T) {
 	}
 }
 
-func TestNewCoolifyClient_Good(t *testing.T) {
+func TestPHP_NewCoolifyClient_Good(t *T) {
 	tests := []struct {
 		name        string
 		baseURL     string
@@ -241,7 +240,7 @@ func TestNewCoolifyClient_Good(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(t *T) {
 			client := NewCoolifyClient(tt.baseURL, "token")
 			if client.BaseURL != tt.wantBaseURL {
 				t.Errorf("BaseURL = %q, want %q", client.BaseURL, tt.wantBaseURL)

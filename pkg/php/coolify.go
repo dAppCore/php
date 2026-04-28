@@ -56,7 +56,7 @@ type CoolifyApp struct {
 // NewCoolifyClient creates a new Coolify API client.
 func NewCoolifyClient(baseURL, token string) *CoolifyClient {
 	// Ensure baseURL doesn't have trailing slash
-	baseURL = strings.TrimSuffix(baseURL, "/")
+	baseURL = strings.TrimRight(baseURL, "/")
 
 	return &CoolifyClient{
 		BaseURL: baseURL,

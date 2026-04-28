@@ -195,7 +195,9 @@ func (d *DevServer) Start(ctx context.Context, opts Options) error {
 	if len(startErrors) > 0 {
 		// Stop any services that did start
 		for _, svc := range d.services {
-			_ = svc.Stop()
+			if err := svc.Stop(); err != nil {
+				startErrors = append(startErrors, cli.Err("cleanup %s: %v", svc.Name(), err))
+			}
 		}
 		return cli.Err("failed to start services: %v", startErrors)
 	}
@@ -295,8 +297,14 @@ func (d *DevServer) unifiedLogs(follow bool) (io.ReadCloser, error) {
 		reader, err := svc.Logs(follow)
 		if err != nil {
 			// Close any readers we already opened
+			var closeErrors []error
 			for _, r := range readers {
-				_ = r.Close()
+				if closeErr := r.Close(); closeErr != nil {
+					closeErrors = append(closeErrors, closeErr)
+				}
+			}
+			if len(closeErrors) > 0 {
+				return nil, cli.Err("failed to get logs for %s: %v; failed to close readers: %v", svc.Name(), err, closeErrors)
 			}
 			return nil, cli.Err("failed to get logs for %s: %v", svc.Name(), err)
 		}

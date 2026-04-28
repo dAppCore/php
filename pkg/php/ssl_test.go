@@ -3,29 +3,25 @@ package php
 import (
 	"os"
 	"path/filepath"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestGetSSLDir_Good(t *testing.T) {
-	t.Run("uses provided directory", func(t *testing.T) {
+func TestPHP_GetSSLDir_Good(t *T) {
+	t.Run("uses provided directory", func(t *T) {
 		dir := t.TempDir()
 		customDir := filepath.Join(dir, "custom-ssl")
 
 		result, err := GetSSLDir(SSLOptions{Dir: customDir})
 
-		assert.NoError(t, err)
-		assert.Equal(t, customDir, result)
+		AssertNoError(t, err)
+		AssertEqual(t, customDir, result)
 
 		// Verify directory was created
 		info, err := os.Stat(result)
-		assert.NoError(t, err)
-		assert.True(t, info.IsDir())
+		AssertNoError(t, err)
+		AssertTrue(t, info.IsDir())
 	})
 
-	t.Run("uses default directory when not specified", func(t *testing.T) {
+	t.Run("uses default directory when not specified", func(t *T) {
 		// Skip if we can't get home dir
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -34,35 +30,35 @@ func TestGetSSLDir_Good(t *testing.T) {
 
 		result, err := GetSSLDir(SSLOptions{})
 
-		assert.NoError(t, err)
-		assert.Equal(t, filepath.Join(home, DefaultSSLDir), result)
+		AssertNoError(t, err)
+		AssertEqual(t, filepath.Join(home, DefaultSSLDir), result)
 	})
 }
 
-func TestCertPaths_Good(t *testing.T) {
-	t.Run("returns correct paths for domain", func(t *testing.T) {
+func TestPHP_CertPaths_Good(t *T) {
+	t.Run("returns correct paths for domain", func(t *T) {
 		dir := t.TempDir()
 
 		certFile, keyFile, err := CertPaths("example.test", SSLOptions{Dir: dir})
 
-		assert.NoError(t, err)
-		assert.Equal(t, filepath.Join(dir, "example.test.pem"), certFile)
-		assert.Equal(t, filepath.Join(dir, "example.test-key.pem"), keyFile)
+		AssertNoError(t, err)
+		AssertEqual(t, filepath.Join(dir, "example.test.pem"), certFile)
+		AssertEqual(t, filepath.Join(dir, "example.test-key.pem"), keyFile)
 	})
 
-	t.Run("handles domain with subdomain", func(t *testing.T) {
+	t.Run("handles domain with subdomain", func(t *T) {
 		dir := t.TempDir()
 
 		certFile, keyFile, err := CertPaths("app.example.test", SSLOptions{Dir: dir})
 
-		assert.NoError(t, err)
-		assert.Equal(t, filepath.Join(dir, "app.example.test.pem"), certFile)
-		assert.Equal(t, filepath.Join(dir, "app.example.test-key.pem"), keyFile)
+		AssertNoError(t, err)
+		AssertEqual(t, filepath.Join(dir, "app.example.test.pem"), certFile)
+		AssertEqual(t, filepath.Join(dir, "app.example.test-key.pem"), keyFile)
 	})
 }
 
-func TestCertsExist_Good(t *testing.T) {
-	t.Run("returns true when both files exist", func(t *testing.T) {
+func TestPHP_CertsExist_Good(t *T) {
+	t.Run("returns true when both files exist", func(t *T) {
 		dir := t.TempDir()
 		domain := "myapp.test"
 
@@ -71,54 +67,54 @@ func TestCertsExist_Good(t *testing.T) {
 		keyFile := filepath.Join(dir, domain+"-key.pem")
 
 		err := os.WriteFile(certFile, []byte("cert content"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 		err = os.WriteFile(keyFile, []byte("key content"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.True(t, CertsExist(domain, SSLOptions{Dir: dir}))
+		AssertTrue(t, CertsExist(domain, SSLOptions{Dir: dir}))
 	})
 }
 
-func TestCertsExist_Bad(t *testing.T) {
-	t.Run("returns false when cert missing", func(t *testing.T) {
+func TestPHP_CertsExist_Bad(t *T) {
+	t.Run("returns false when cert missing", func(t *T) {
 		dir := t.TempDir()
 		domain := "myapp.test"
 
 		// Create only key file
 		keyFile := filepath.Join(dir, domain+"-key.pem")
 		err := os.WriteFile(keyFile, []byte("key content"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.False(t, CertsExist(domain, SSLOptions{Dir: dir}))
+		AssertFalse(t, CertsExist(domain, SSLOptions{Dir: dir}))
 	})
 
-	t.Run("returns false when key missing", func(t *testing.T) {
+	t.Run("returns false when key missing", func(t *T) {
 		dir := t.TempDir()
 		domain := "myapp.test"
 
 		// Create only cert file
 		certFile := filepath.Join(dir, domain+".pem")
 		err := os.WriteFile(certFile, []byte("cert content"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.False(t, CertsExist(domain, SSLOptions{Dir: dir}))
+		AssertFalse(t, CertsExist(domain, SSLOptions{Dir: dir}))
 	})
 
-	t.Run("returns false when neither exists", func(t *testing.T) {
+	t.Run("returns false when neither exists", func(t *T) {
 		dir := t.TempDir()
 		domain := "myapp.test"
 
-		assert.False(t, CertsExist(domain, SSLOptions{Dir: dir}))
+		AssertFalse(t, CertsExist(domain, SSLOptions{Dir: dir}))
 	})
 
-	t.Run("returns false for invalid directory", func(t *testing.T) {
+	t.Run("returns false for invalid directory", func(t *T) {
 		// Use invalid directory path
-		assert.False(t, CertsExist("domain.test", SSLOptions{Dir: "/nonexistent/path/that/does/not/exist"}))
+		AssertFalse(t, CertsExist("domain.test", SSLOptions{Dir: "/nonexistent/path/that/does/not/exist"}))
 	})
 }
 
-func TestSetupSSL_Bad(t *testing.T) {
-	t.Run("returns error when mkcert not installed", func(t *testing.T) {
+func TestPHP_SetupSSL_Bad(t *T) {
+	t.Run("returns error when mkcert not installed", func(t *T) {
 		// This test assumes mkcert might not be installed
 		// If it is installed, we skip this test
 		if IsMkcertInstalled() {
@@ -126,13 +122,13 @@ func TestSetupSSL_Bad(t *testing.T) {
 		}
 
 		err := SetupSSL("example.test", SSLOptions{})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "mkcert is not installed")
+		AssertError(t, err)
+		AssertContains(t, err.Error(), "mkcert is not installed")
 	})
 }
 
-func TestSetupSSLIfNeeded_Good(t *testing.T) {
-	t.Run("returns existing certs without regenerating", func(t *testing.T) {
+func TestPHP_SetupSSLIfNeeded_Good(t *T) {
+	t.Run("returns existing certs without regenerating", func(t *T) {
 		dir := t.TempDir()
 		domain := "existing.test"
 
@@ -141,32 +137,34 @@ func TestSetupSSLIfNeeded_Good(t *testing.T) {
 		keyFile := filepath.Join(dir, domain+"-key.pem")
 
 		err := os.WriteFile(certFile, []byte("existing cert"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 		err = os.WriteFile(keyFile, []byte("existing key"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		resultCert, resultKey, err := SetupSSLIfNeeded(domain, SSLOptions{Dir: dir})
 
-		assert.NoError(t, err)
-		assert.Equal(t, certFile, resultCert)
-		assert.Equal(t, keyFile, resultKey)
+		AssertNoError(t, err)
+		AssertEqual(t, certFile, resultCert)
+		AssertEqual(t, keyFile, resultKey)
 
 		// Verify files weren't modified
 		data, err := os.ReadFile(certFile)
-		require.NoError(t, err)
-		assert.Equal(t, "existing cert", string(data))
+		RequireNoError(t, err)
+		AssertEqual(t, "existing cert", string(data))
 	})
 }
 
-func TestIsMkcertInstalled_Good(t *testing.T) {
+func TestPHP_IsMkcertInstalled_Good(t *T) {
 	// This test just verifies the function runs without error
 	// The actual result depends on whether mkcert is installed
 	result := IsMkcertInstalled()
+	again := IsMkcertInstalled()
+	AssertEqual(t, result, again)
 	t.Logf("mkcert installed: %v", result)
 }
 
-func TestDefaultSSLDir_Good(t *testing.T) {
-	t.Run("constant has expected value", func(t *testing.T) {
-		assert.Equal(t, ".core/ssl", DefaultSSLDir)
+func TestPHP_DefaultSSLDir_Good(t *T) {
+	t.Run("constant has expected value", func(t *T) {
+		AssertEqual(t, ".core/ssl", DefaultSSLDir)
 	})
 }

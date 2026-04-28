@@ -1,4 +1,4 @@
-//go:build cgo
+//go:build frankenphp
 
 package php
 
@@ -120,6 +120,6 @@ type execResponseWriter struct {
 	out *os.File
 }
 
-func (w *execResponseWriter) Header() http.Header        { return http.Header{} }
+func (w *execResponseWriter) Header() http.Header         { return http.Header{} }
 func (w *execResponseWriter) WriteHeader(statusCode int)  {}
 func (w *execResponseWriter) Write(b []byte) (int, error) { return w.out.Write(b) }

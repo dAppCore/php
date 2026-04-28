@@ -1,23 +1,19 @@
 package php
 
-import (
-	"testing"
+import ()
 
-	"github.com/stretchr/testify/assert"
-)
-
-func TestNewFrankenPHPService_Good(t *testing.T) {
-	t.Run("default options", func(t *testing.T) {
+func TestPHP_NewFrankenPHPService_Good(t *T) {
+	t.Run("default options", func(t *T) {
 		dir := "/tmp/test"
 		service := NewFrankenPHPService(dir, FrankenPHPOptions{})
 
-		assert.Equal(t, "FrankenPHP", service.Name())
-		assert.Equal(t, 8000, service.port)
-		assert.Equal(t, 443, service.httpsPort)
-		assert.False(t, service.https)
+		AssertEqual(t, "FrankenPHP", service.Name())
+		AssertEqual(t, 8000, service.port)
+		AssertEqual(t, 443, service.httpsPort)
+		AssertFalse(t, service.https)
 	})
 
-	t.Run("custom options", func(t *testing.T) {
+	t.Run("custom options", func(t *T) {
 		dir := "/tmp/test"
 		opts := FrankenPHPOptions{
 			Port:      9000,
@@ -28,65 +24,65 @@ func TestNewFrankenPHPService_Good(t *testing.T) {
 		}
 		service := NewFrankenPHPService(dir, opts)
 
-		assert.Equal(t, 9000, service.port)
-		assert.Equal(t, 8443, service.httpsPort)
-		assert.True(t, service.https)
-		assert.Equal(t, "cert.pem", service.certFile)
-		assert.Equal(t, "key.pem", service.keyFile)
+		AssertEqual(t, 9000, service.port)
+		AssertEqual(t, 8443, service.httpsPort)
+		AssertTrue(t, service.https)
+		AssertEqual(t, "cert.pem", service.certFile)
+		AssertEqual(t, "key.pem", service.keyFile)
 	})
 }
 
-func TestNewViteService_Good(t *testing.T) {
-	t.Run("default options", func(t *testing.T) {
+func TestPHP_NewViteService_Good(t *T) {
+	t.Run("default options", func(t *T) {
 		dir := t.TempDir()
 		service := NewViteService(dir, ViteOptions{})
 
-		assert.Equal(t, "Vite", service.Name())
-		assert.Equal(t, 5173, service.port)
-		assert.Equal(t, "npm", service.packageManager) // default when no lock file
+		AssertEqual(t, "Vite", service.Name())
+		AssertEqual(t, 5173, service.port)
+		AssertEqual(t, "npm", service.packageManager) // default when no lock file
 	})
 
-	t.Run("custom package manager", func(t *testing.T) {
+	t.Run("custom package manager", func(t *T) {
 		dir := t.TempDir()
 		service := NewViteService(dir, ViteOptions{PackageManager: "pnpm"})
 
-		assert.Equal(t, "pnpm", service.packageManager)
+		AssertEqual(t, "pnpm", service.packageManager)
 	})
 }
 
-func TestNewHorizonService_Good(t *testing.T) {
+func TestPHP_NewHorizonService_Good(t *T) {
 	service := NewHorizonService("/tmp/test")
-	assert.Equal(t, "Horizon", service.Name())
-	assert.Equal(t, 0, service.port)
+	AssertEqual(t, "Horizon", service.Name())
+	AssertEqual(t, 0, service.port)
 }
 
-func TestNewReverbService_Good(t *testing.T) {
-	t.Run("default options", func(t *testing.T) {
+func TestPHP_NewReverbService_Good(t *T) {
+	t.Run("default options", func(t *T) {
 		service := NewReverbService("/tmp/test", ReverbOptions{})
-		assert.Equal(t, "Reverb", service.Name())
-		assert.Equal(t, 8080, service.port)
+		AssertEqual(t, "Reverb", service.Name())
+		AssertEqual(t, 8080, service.port)
 	})
 
-	t.Run("custom port", func(t *testing.T) {
+	t.Run("custom port", func(t *T) {
 		service := NewReverbService("/tmp/test", ReverbOptions{Port: 9090})
-		assert.Equal(t, 9090, service.port)
+		AssertEqual(t, 9090, service.port)
 	})
 }
 
-func TestNewRedisService_Good(t *testing.T) {
-	t.Run("default options", func(t *testing.T) {
+func TestPHP_NewRedisService_Good(t *T) {
+	t.Run("default options", func(t *T) {
 		service := NewRedisService("/tmp/test", RedisOptions{})
-		assert.Equal(t, "Redis", service.Name())
-		assert.Equal(t, 6379, service.port)
+		AssertEqual(t, "Redis", service.Name())
+		AssertEqual(t, 6379, service.port)
 	})
 
-	t.Run("custom config", func(t *testing.T) {
+	t.Run("custom config", func(t *T) {
 		service := NewRedisService("/tmp/test", RedisOptions{ConfigFile: "redis.conf"})
-		assert.Equal(t, "redis.conf", service.configFile)
+		AssertEqual(t, "redis.conf", service.configFile)
 	})
 }
 
-func TestBaseService_Status(t *testing.T) {
+func TestBaseService_Status(t *T) {
 	s := &baseService{
 		name:    "TestService",
 		port:    1234,
@@ -94,7 +90,7 @@ func TestBaseService_Status(t *testing.T) {
 	}
 
 	status := s.Status()
-	assert.Equal(t, "TestService", status.Name)
-	assert.Equal(t, 1234, status.Port)
-	assert.True(t, status.Running)
+	AssertEqual(t, "TestService", status.Name)
+	AssertEqual(t, 1234, status.Port)
+	AssertTrue(t, status.Running)
 }

@@ -308,10 +308,9 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error {
 	args = append(args, imageRef)
 
 	cmd := exec.CommandContext(ctx, "docker", args...)
-	cmd.Stdout = opts.Output
-	cmd.Stderr = opts.Output
 
 	if opts.Detach {
+		cmd.Stderr = opts.Output
 		output, err := cmd.Output()
 		if err != nil {
 			return cli.WrapVerb(err, "start", "container")
@@ -321,6 +320,8 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error {
 		return nil
 	}
 
+	cmd.Stdout = opts.Output
+	cmd.Stderr = opts.Output
 	return cmd.Run()
 }
 
