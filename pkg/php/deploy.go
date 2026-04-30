@@ -3,8 +3,6 @@ package php
 import (
 	"context"
 	"time"
-
-	"dappco.re/go/cli/pkg/cli"
 )
 
 // Environment represents a deployment environment.
@@ -121,13 +119,13 @@ func Deploy(ctx context.Context, opts DeployOptions) (*DeploymentStatus, error) 
 	// Load config
 	config, err := LoadCoolifyConfig(opts.Dir)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", coolifyConfigSubject)
+		return nil, phpWrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	// Get app ID for environment
 	appID := getAppIDForEnvironment(config, opts.Environment)
 	if appID == "" {
-		return nil, cli.Err(noAppIDEnvironmentFormat, opts.Environment)
+		return nil, phpErr(noAppIDEnvironmentFormat, opts.Environment)
 	}
 
 	// Create client
@@ -136,7 +134,7 @@ func Deploy(ctx context.Context, opts DeployOptions) (*DeploymentStatus, error) 
 	// Trigger deployment
 	deployment, err := client.TriggerDeploy(ctx, appID, opts.Force)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "trigger", "deployment")
+		return nil, phpWrapVerb(err, "trigger", "deployment")
 	}
 
 	status := convertDeployment(deployment)
@@ -170,13 +168,13 @@ func DeployStatus(ctx context.Context, opts StatusOptions) (*DeploymentStatus, e
 	// Load config
 	config, err := LoadCoolifyConfig(opts.Dir)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", coolifyConfigSubject)
+		return nil, phpWrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	// Get app ID for environment
 	appID := getAppIDForEnvironment(config, opts.Environment)
 	if appID == "" {
-		return nil, cli.Err(noAppIDEnvironmentFormat, opts.Environment)
+		return nil, phpErr(noAppIDEnvironmentFormat, opts.Environment)
 	}
 
 	// Create client
@@ -188,16 +186,16 @@ func DeployStatus(ctx context.Context, opts StatusOptions) (*DeploymentStatus, e
 		// Get specific deployment
 		deployment, err = client.GetDeployment(ctx, appID, opts.DeploymentID)
 		if err != nil {
-			return nil, cli.WrapVerb(err, "get", "deployment")
+			return nil, phpWrapVerb(err, "get", "deployment")
 		}
 	} else {
 		// Get latest deployment
 		deployments, err := client.ListDeployments(ctx, appID, 1)
 		if err != nil {
-			return nil, cli.WrapVerb(err, "list", "deployments")
+			return nil, phpWrapVerb(err, "list", "deployments")
 		}
 		if len(deployments) == 0 {
-			return nil, cli.Err("no deployments found")
+			return nil, phpErr("no deployments found")
 		}
 		deployment = &deployments[0]
 	}
@@ -230,7 +228,7 @@ func Rollback(ctx context.Context, opts RollbackOptions) (*DeploymentStatus, err
 	// Trigger rollback
 	deployment, err := client.Rollback(ctx, appID, deploymentID)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "trigger", "rollback")
+		return nil, phpWrapVerb(err, "trigger", "rollback")
 	}
 
 	status := convertDeployment(deployment)
@@ -262,12 +260,12 @@ func normalizeRollbackOptions(opts RollbackOptions) RollbackOptions {
 func coolifyClientForEnvironment(dir string, env Environment) (*CoolifyClient, string, error) {
 	config, err := LoadCoolifyConfig(dir)
 	if err != nil {
-		return nil, "", cli.WrapVerb(err, "load", coolifyConfigSubject)
+		return nil, "", phpWrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	appID := getAppIDForEnvironment(config, env)
 	if appID == "" {
-		return nil, "", cli.Err(noAppIDEnvironmentFormat, env)
+		return nil, "", phpErr(noAppIDEnvironmentFormat, env)
 	}
 
 	return NewCoolifyClient(config.URL, config.Token), appID, nil
@@ -280,7 +278,7 @@ func resolveRollbackDeploymentID(ctx context.Context, client *CoolifyClient, app
 
 	deployments, err := client.ListDeployments(ctx, appID, 10)
 	if err != nil {
-		return "", cli.WrapVerb(err, "list", "deployments")
+		return "", phpWrapVerb(err, "list", "deployments")
 	}
 
 	for i, d := range deployments {
@@ -289,7 +287,7 @@ func resolveRollbackDeploymentID(ctx context.Context, client *CoolifyClient, app
 		}
 	}
 
-	return "", cli.Err("no previous successful deployment found to rollback to")
+	return "", phpErr("no previous successful deployment found to rollback to")
 }
 
 func isSuccessfulDeploymentStatus(status string) bool {
@@ -311,13 +309,13 @@ func ListDeployments(ctx context.Context, dir string, env Environment, limit int
 	// Load config
 	config, err := LoadCoolifyConfig(dir)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", coolifyConfigSubject)
+		return nil, phpWrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	// Get app ID for environment
 	appID := getAppIDForEnvironment(config, env)
 	if appID == "" {
-		return nil, cli.Err(noAppIDEnvironmentFormat, env)
+		return nil, phpErr(noAppIDEnvironmentFormat, env)
 	}
 
 	// Create client
@@ -325,7 +323,7 @@ func ListDeployments(ctx context.Context, dir string, env Environment, limit int
 
 	deployments, err := client.ListDeployments(ctx, appID, limit)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "list", "deployments")
+		return nil, phpWrapVerb(err, "list", "deployments")
 	}
 
 	result := make([]DeploymentStatus, len(deployments))
@@ -377,7 +375,7 @@ func waitForDeployment(ctx context.Context, client *CoolifyClient, appID, deploy
 
 		deployment, err := client.GetDeployment(ctx, appID, deploymentID)
 		if err != nil {
-			return nil, cli.WrapVerb(err, "get", "deployment status")
+			return nil, phpWrapVerb(err, "get", "deployment status")
 		}
 
 		status := convertDeployment(deployment)
@@ -387,9 +385,9 @@ func waitForDeployment(ctx context.Context, client *CoolifyClient, appID, deploy
 		case "finished", "success":
 			return status, nil
 		case "failed", "error":
-			return status, cli.Err("deployment failed: %s", deployment.Status)
+			return status, phpErr("deployment failed: %s", deployment.Status)
 		case "cancelled":
-			return status, cli.Err("deployment was cancelled")
+			return status, phpErr("deployment was cancelled")
 		}
 
 		// Still in progress, wait and retry
@@ -400,7 +398,7 @@ func waitForDeployment(ctx context.Context, client *CoolifyClient, appID, deploy
 		}
 	}
 
-	return nil, cli.Err("deployment timed out after %v", timeout)
+	return nil, phpErr("deployment timed out after %v", timeout)
 }
 
 // IsDeploymentComplete returns true if the status indicates completion.

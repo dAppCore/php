@@ -3,143 +3,123 @@ package php
 import (
 	"os"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/i18n"
 )
 
-func addPHPPackagesCommands(parent *cli.Command) {
-	packagesCmd := &cli.Command{
-		Use:   "packages",
-		Short: i18n.T("cmd.php.packages.short"),
-		Long:  i18n.T("cmd.php.packages.long"),
-	}
-	parent.AddCommand(packagesCmd)
-
-	addPHPPackagesLinkCommand(packagesCmd)
-	addPHPPackagesUnlinkCommand(packagesCmd)
-	addPHPPackagesUpdateCommand(packagesCmd)
-	addPHPPackagesListCommand(packagesCmd)
+func addPHPPackagesCommands(c *core.Core, prefix string) {
+	phpHelpCommand(c, phpCommandPath(prefix, "packages"), i18n.T("cmd.php.packages.short"))
+	addPHPPackagesLinkCommand(c, prefix)
+	addPHPPackagesUnlinkCommand(c, prefix)
+	addPHPPackagesUpdateCommand(c, prefix)
+	addPHPPackagesListCommand(c, prefix)
 }
 
-func addPHPPackagesLinkCommand(parent *cli.Command) {
-	linkCmd := &cli.Command{
-		Use:   "link [paths...]",
-		Short: i18n.T("cmd.php.packages.link.short"),
-		Long:  i18n.T("cmd.php.packages.link.long"),
-		Args:  cli.MinimumNArgs(1),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+func addPHPPackagesLinkCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "packages/link")
+	phpErrorCommand(c, path, i18n.T("cmd.php.packages.link.short"), func(opts core.Options) error {
+		args := phpCommandLineFor(path, opts).Args()
+		if len(args) < 1 {
+			return phpErr("requires at least 1 arg(s), only received %d", len(args))
+		}
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.link.linking"))
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-			if err := LinkPackages(cwd, args); err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.link", "packages"), err)
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.link.linking"))
 
-			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.link.done"))
-			return nil
-		},
-	}
+		if err := LinkPackages(cwd, args); err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.link", "packages"), err)
+		}
 
-	parent.AddCommand(linkCmd)
+		cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.link.done"))
+		return nil
+	})
 }
 
-func addPHPPackagesUnlinkCommand(parent *cli.Command) {
-	unlinkCmd := &cli.Command{
-		Use:   "unlink [packages...]",
-		Short: i18n.T("cmd.php.packages.unlink.short"),
-		Long:  i18n.T("cmd.php.packages.unlink.long"),
-		Args:  cli.MinimumNArgs(1),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+func addPHPPackagesUnlinkCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "packages/unlink")
+	phpErrorCommand(c, path, i18n.T("cmd.php.packages.unlink.short"), func(opts core.Options) error {
+		args := phpCommandLineFor(path, opts).Args()
+		if len(args) < 1 {
+			return phpErr("requires at least 1 arg(s), only received %d", len(args))
+		}
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.unlink.unlinking"))
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-			if err := UnlinkPackages(cwd, args); err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.unlink", "packages"), err)
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.unlink.unlinking"))
 
-			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.unlink.done"))
-			return nil
-		},
-	}
+		if err := UnlinkPackages(cwd, args); err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.unlink", "packages"), err)
+		}
 
-	parent.AddCommand(unlinkCmd)
+		cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.unlink.done"))
+		return nil
+	})
 }
 
-func addPHPPackagesUpdateCommand(parent *cli.Command) {
-	updateCmd := &cli.Command{
-		Use:   "update [packages...]",
-		Short: i18n.T("cmd.php.packages.update.short"),
-		Long:  i18n.T("cmd.php.packages.update.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+func addPHPPackagesUpdateCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "packages/update")
+	phpErrorCommand(c, path, i18n.T("cmd.php.packages.update.short"), func(opts core.Options) error {
+		args := phpCommandLineFor(path, opts).Args()
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.update.updating"))
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.update.updating"))
 
-			if err := UpdatePackages(cwd, args); err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("cmd.php.error.update_packages"), err)
-			}
+		if err := UpdatePackages(cwd, args); err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("cmd.php.error.update_packages"), err)
+		}
 
-			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.update.done"))
-			return nil
-		},
-	}
-
-	parent.AddCommand(updateCmd)
+		cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.update.done"))
+		return nil
+	})
 }
 
-func addPHPPackagesListCommand(parent *cli.Command) {
-	listCmd := &cli.Command{
-		Use:   "list",
-		Short: i18n.T("cmd.php.packages.list.short"),
-		Long:  i18n.T("cmd.php.packages.list.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+func addPHPPackagesListCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "packages/list")
+	phpErrorCommand(c, path, i18n.T("cmd.php.packages.list.short"), func(opts core.Options) error {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-			packages, err := ListLinkedPackages(cwd)
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.list", "packages"), err)
-			}
+		packages, err := ListLinkedPackages(cwd)
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.list", "packages"), err)
+		}
 
-			if len(packages) == 0 {
-				cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.list.none_found"))
-				return nil
-			}
-
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.list.linked"))
-
-			for _, pkg := range packages {
-				name := pkg.Name
-				if name == "" {
-					name = i18n.T("cmd.php.packages.list.unknown")
-				}
-				version := pkg.Version
-				if version == "" {
-					version = "dev"
-				}
-
-				cli.Print("  %s %s\n", successStyle.Render("*"), name)
-				cli.Print("    %s %s\n", dimStyle.Render(i18n.Label("path")), pkg.Path)
-				cli.Print("    %s %s\n", dimStyle.Render(i18n.Label("version")), version)
-				cli.Blank()
-			}
-
+		if len(packages) == 0 {
+			cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.list.none_found"))
 			return nil
-		},
-	}
+		}
 
-	parent.AddCommand(listCmd)
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.list.linked"))
+
+		for _, pkg := range packages {
+			name := pkg.Name
+			if name == "" {
+				name = i18n.T("cmd.php.packages.list.unknown")
+			}
+			version := pkg.Version
+			if version == "" {
+				version = "dev"
+			}
+
+			cli.Print("  %s %s\n", successStyle.Render("*"), name)
+			cli.Print("    %s %s\n", dimStyle.Render(i18n.Label("path")), pkg.Path)
+			cli.Print("    %s %s\n", dimStyle.Render(i18n.Label("version")), version)
+			cli.Blank()
+		}
+
+		return nil
+	})
 }

@@ -6,65 +6,39 @@ import (
 	"os"
 	"strings"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/i18n"
 )
 
-var (
-	buildType       string
-	buildImageName  string
-	buildTag        string
-	buildPlatform   string
-	buildDockerfile string
-	buildOutputPath string
-	buildFormat     string
-	buildTemplate   string
-	buildNoCache    bool
-)
+func addPHPBuildCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "build")
+	phpErrorCommand(c, path, i18n.T("cmd.php.build.short"), func(opts core.Options) error {
+		line := phpCommandLineFor(path, opts)
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-func addPHPBuildCommand(parent *cli.Command) {
-	buildCmd := &cli.Command{
-		Use:   "build",
-		Short: i18n.T("cmd.php.build.short"),
-		Long:  i18n.T("cmd.php.build.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+		ctx := context.Background()
 
-			ctx := context.Background()
-
-			switch strings.ToLower(buildType) {
-			case "linuxkit":
-				return runPHPBuildLinuxKit(ctx, cwd, linuxKitBuildOptions{
-					OutputPath: buildOutputPath,
-					Format:     buildFormat,
-					Template:   buildTemplate,
-				})
-			default:
-				return runPHPBuildDocker(ctx, cwd, dockerBuildOptions{
-					ImageName:  buildImageName,
-					Tag:        buildTag,
-					Platform:   buildPlatform,
-					Dockerfile: buildDockerfile,
-					NoCache:    buildNoCache,
-				})
-			}
-		},
-	}
-
-	buildCmd.Flags().StringVar(&buildType, "type", "", i18n.T("cmd.php.build.flag.type"))
-	buildCmd.Flags().StringVar(&buildImageName, "name", "", i18n.T("cmd.php.build.flag.name"))
-	buildCmd.Flags().StringVar(&buildTag, "tag", "", i18n.T("common.flag.tag"))
-	buildCmd.Flags().StringVar(&buildPlatform, "platform", "", i18n.T("cmd.php.build.flag.platform"))
-	buildCmd.Flags().StringVar(&buildDockerfile, "dockerfile", "", i18n.T("cmd.php.build.flag.dockerfile"))
-	buildCmd.Flags().StringVar(&buildOutputPath, "output", "", i18n.T("cmd.php.build.flag.output"))
-	buildCmd.Flags().StringVar(&buildFormat, "format", "", i18n.T("cmd.php.build.flag.format"))
-	buildCmd.Flags().StringVar(&buildTemplate, "template", "", i18n.T("cmd.php.build.flag.template"))
-	buildCmd.Flags().BoolVar(&buildNoCache, "no-cache", false, i18n.T("cmd.php.build.flag.no_cache"))
-
-	parent.AddCommand(buildCmd)
+		switch strings.ToLower(line.String("type", "")) {
+		case "linuxkit":
+			return runPHPBuildLinuxKit(ctx, cwd, linuxKitBuildOptions{
+				OutputPath: line.String("output", ""),
+				Format:     line.String("format", ""),
+				Template:   line.String("template", ""),
+			})
+		default:
+			return runPHPBuildDocker(ctx, cwd, dockerBuildOptions{
+				ImageName:  line.String("name", ""),
+				Tag:        line.String("tag", ""),
+				Platform:   line.String("platform", ""),
+				Dockerfile: line.String("dockerfile", ""),
+				NoCache:    line.Bool("no-cache"),
+			})
+		}
+	})
 }
 
 type dockerBuildOptions struct {
@@ -91,7 +65,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 	// Show detected configuration
 	config, err := DetectDockerfileConfig(projectDir)
 	if err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.detect", "project configuration"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.detect", "project configuration"), err)
 	}
 
 	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.build.php_version")), config.PHPVersion)
@@ -134,7 +108,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 	cli.Blank()
 
 	if err := BuildDocker(ctx, buildOpts); err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.build"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.build"), err)
 	}
 
 	cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Docker image built"}))
@@ -172,81 +146,62 @@ func runPHPBuildLinuxKit(ctx context.Context, projectDir string, opts linuxKitBu
 	cli.Blank()
 
 	if err := BuildLinuxKit(ctx, buildOpts); err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.build"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.build"), err)
 	}
 
 	cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "LinuxKit image built"}))
 	return nil
 }
 
-var (
-	serveImageName     string
-	serveTag           string
-	serveContainerName string
-	servePort          int
-	serveHTTPSPort     int
-	serveDetach        bool
-	serveEnvFile       string
-)
+func addPHPServeCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "serve")
+	phpErrorCommand(c, path, i18n.T("cmd.php.serve.short"), func(opts core.Options) error {
+		line := phpCommandLineFor(path, opts)
+		imageName, err := resolveServeImageName(line.String("name", ""))
+		if err != nil {
+			return err
+		}
 
-func addPHPServeCommand(parent *cli.Command) {
-	serveCmd := &cli.Command{
-		Use:   "serve",
-		Short: i18n.T("cmd.php.serve.short"),
-		Long:  i18n.T("cmd.php.serve.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			imageName, err := resolveServeImageName()
-			if err != nil {
-				return err
-			}
+		ctx := context.Background()
+		serveTag := line.String("tag", "")
+		servePort := line.Int("port", 0)
+		serveHTTPSPort := line.Int("https-port", 0)
+		serveDetach := line.Bool("detach", "d")
 
-			ctx := context.Background()
+		serveOpts := ServeOptions{
+			ImageName:     imageName,
+			Tag:           serveTag,
+			ContainerName: line.String("container", ""),
+			Port:          servePort,
+			HTTPSPort:     serveHTTPSPort,
+			Detach:        serveDetach,
+			EnvFile:       line.String("env-file", ""),
+			Output:        os.Stdout,
+		}
 
-			opts := ServeOptions{
-				ImageName:     imageName,
-				Tag:           serveTag,
-				ContainerName: serveContainerName,
-				Port:          servePort,
-				HTTPSPort:     serveHTTPSPort,
-				Detach:        serveDetach,
-				EnvFile:       serveEnvFile,
-				Output:        os.Stdout,
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.ProgressSubject("run", "production container"))
+		cli.Print("%s %s:%s\n", dimStyle.Render(i18n.Label("image")), imageName, displayServeTag(serveTag))
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.ProgressSubject("run", "production container"))
-			cli.Print("%s %s:%s\n", dimStyle.Render(i18n.Label("image")), imageName, displayServeTag())
+		effectivePort, effectiveHTTPSPort := effectiveServePorts(servePort, serveHTTPSPort)
+		cli.Print("%s http://localhost:%d, https://localhost:%d\n",
+			dimStyle.Render("Ports:"), effectivePort, effectiveHTTPSPort)
+		cli.Blank()
 
-			effectivePort, effectiveHTTPSPort := effectiveServePorts()
-			cli.Print("%s http://localhost:%d, https://localhost:%d\n",
-				dimStyle.Render("Ports:"), effectivePort, effectiveHTTPSPort)
-			cli.Blank()
+		if err := ServeProduction(ctx, serveOpts); err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.start", "container"), err)
+		}
 
-			if err := ServeProduction(ctx, opts); err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.start", "container"), err)
-			}
+		if !serveDetach {
+			cli.Print(cliSectionLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.serve.stopped"))
+		}
 
-			if !serveDetach {
-				cli.Print(cliSectionLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.serve.stopped"))
-			}
-
-			return nil
-		},
-	}
-
-	serveCmd.Flags().StringVar(&serveImageName, "name", "", i18n.T("cmd.php.serve.flag.name"))
-	serveCmd.Flags().StringVar(&serveTag, "tag", "", i18n.T("common.flag.tag"))
-	serveCmd.Flags().StringVar(&serveContainerName, "container", "", i18n.T("cmd.php.serve.flag.container"))
-	serveCmd.Flags().IntVar(&servePort, "port", 0, i18n.T("cmd.php.serve.flag.port"))
-	serveCmd.Flags().IntVar(&serveHTTPSPort, "https-port", 0, i18n.T("cmd.php.serve.flag.https_port"))
-	serveCmd.Flags().BoolVarP(&serveDetach, "detach", "d", false, i18n.T("cmd.php.serve.flag.detach"))
-	serveCmd.Flags().StringVar(&serveEnvFile, "env-file", "", i18n.T("cmd.php.serve.flag.env_file"))
-
-	parent.AddCommand(serveCmd)
+		return nil
+	})
 }
 
-func resolveServeImageName() (string, error) {
-	if serveImageName != "" {
-		return serveImageName, nil
+func resolveServeImageName(imageName string) (string, error) {
+	if imageName != "" {
+		return imageName, nil
 	}
 
 	cwd, err := os.Getwd()
@@ -259,20 +214,20 @@ func resolveServeImageName() (string, error) {
 	return "", errors.New(i18n.T("cmd.php.serve.name_required"))
 }
 
-func displayServeTag() string {
-	if serveTag == "" {
+func displayServeTag(tag string) string {
+	if tag == "" {
 		return "latest"
 	}
-	return serveTag
+	return tag
 }
 
-func effectiveServePorts() (int, int) {
-	effectivePort := servePort
+func effectiveServePorts(port, httpsPort int) (int, int) {
+	effectivePort := port
 	if effectivePort == 0 {
 		effectivePort = 80
 	}
 
-	effectiveHTTPSPort := serveHTTPSPort
+	effectiveHTTPSPort := httpsPort
 	if effectiveHTTPSPort == 0 {
 		effectiveHTTPSPort = 443
 	}
@@ -280,24 +235,22 @@ func effectiveServePorts() (int, int) {
 	return effectivePort, effectiveHTTPSPort
 }
 
-func addPHPShellCommand(parent *cli.Command) {
-	shellCmd := &cli.Command{
-		Use:   "shell [container]",
-		Short: i18n.T("cmd.php.shell.short"),
-		Long:  i18n.T("cmd.php.shell.long"),
-		Args:  cli.ExactArgs(1),
-		RunE: func(cmd *cli.Command, args []string) error {
-			ctx := context.Background()
+func addPHPShellCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "shell")
+	phpErrorCommand(c, path, i18n.T("cmd.php.shell.short"), func(opts core.Options) error {
+		args := phpCommandLineFor(path, opts).Args()
+		if len(args) != 1 {
+			return phpErr("requires exactly 1 arg(s), received %d", len(args))
+		}
 
-			cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.shell.opening", map[string]interface{}{"Container": args[0]}))
+		ctx := context.Background()
 
-			if err := Shell(ctx, args[0]); err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.open", "shell"), err)
-			}
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.shell.opening", map[string]interface{}{"Container": args[0]}))
 
-			return nil
-		},
-	}
+		if err := Shell(ctx, args[0]); err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.open", "shell"), err)
+		}
 
-	parent.AddCommand(shellCmd)
+		return nil
+	})
 }

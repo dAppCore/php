@@ -111,7 +111,7 @@ func BuildDocker(ctx context.Context, opts DockerBuildOptions) error {
 	cmd.Stderr = opts.Output
 
 	if err := cmd.Run(); err != nil {
-		return cli.Wrap(err, "docker build failed")
+		return phpWrap(err, "docker build failed")
 	}
 
 	return nil
@@ -121,14 +121,14 @@ func normalizeDockerBuildOptions(opts DockerBuildOptions) (DockerBuildOptions, e
 	if opts.ProjectDir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return opts, cli.WrapVerb(err, "get", workingDirectorySubject)
+			return opts, phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.ProjectDir = cwd
 	}
 
 	// Validate project directory
 	if !IsPHPProject(opts.ProjectDir) {
-		return opts, cli.Err("not a PHP project: %s (missing composer.json)", opts.ProjectDir)
+		return opts, phpErr("not a PHP project: %s (missing composer.json)", opts.ProjectDir)
 	}
 
 	// Set defaults
@@ -152,13 +152,13 @@ func resolveDockerfilePath(opts DockerBuildOptions) (string, func(), error) {
 
 	content, err := GenerateDockerfile(opts.ProjectDir)
 	if err != nil {
-		return "", nil, cli.WrapVerb(err, "generate", "Dockerfile")
+		return "", nil, phpWrapVerb(err, "generate", "Dockerfile")
 	}
 
 	m := getMedium()
 	tempDockerfile := filepath.Join(opts.ProjectDir, "Dockerfile.core-generated")
 	if err := m.Write(tempDockerfile, content); err != nil {
-		return "", nil, cli.WrapVerb(err, "write", "Dockerfile")
+		return "", nil, phpWrapVerb(err, "write", "Dockerfile")
 	}
 
 	return tempDockerfile, func() { _ = m.Delete(tempDockerfile) }, nil
@@ -190,14 +190,14 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 	if opts.ProjectDir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.ProjectDir = cwd
 	}
 
 	// Validate project directory
 	if !IsPHPProject(opts.ProjectDir) {
-		return cli.Err("not a PHP project: %s (missing composer.json)", opts.ProjectDir)
+		return phpErr("not a PHP project: %s (missing composer.json)", opts.ProjectDir)
 	}
 
 	// Set defaults
@@ -218,7 +218,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 	m := getMedium()
 	outputDir := filepath.Dir(opts.OutputPath)
 	if err := m.EnsureDir(outputDir); err != nil {
-		return cli.WrapVerb(err, "create", "output directory")
+		return phpWrapVerb(err, "create", "output directory")
 	}
 
 	// Find linuxkit binary
@@ -230,7 +230,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 	// Get template content
 	templateContent, err := getLinuxKitTemplate(opts.Template)
 	if err != nil {
-		return cli.WrapVerb(err, "get", "template")
+		return phpWrapVerb(err, "get", "template")
 	}
 
 	// Apply variables
@@ -243,13 +243,13 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 
 	content, err := applyTemplateVariables(templateContent, opts.Variables)
 	if err != nil {
-		return cli.WrapVerb(err, "apply", "template variables")
+		return phpWrapVerb(err, "apply", "template variables")
 	}
 
 	// Write template to temp file
 	tempYAML := filepath.Join(opts.ProjectDir, ".core-linuxkit.yml")
 	if err := m.Write(tempYAML, content); err != nil {
-		return cli.WrapVerb(err, "write", "template")
+		return phpWrapVerb(err, "write", "template")
 	}
 	defer func() { _ = m.Delete(tempYAML) }()
 
@@ -267,7 +267,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 	cmd.Stderr = opts.Output
 
 	if err := cmd.Run(); err != nil {
-		return cli.Wrap(err, "linuxkit build failed")
+		return phpWrap(err, "linuxkit build failed")
 	}
 
 	return nil
@@ -276,7 +276,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 // ServeProduction runs a production PHP container.
 func ServeProduction(ctx context.Context, opts ServeOptions) error {
 	if opts.ImageName == "" {
-		return cli.Err("image name is required")
+		return phpErr("image name is required")
 	}
 
 	// Set defaults
@@ -329,7 +329,7 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error {
 		cmd.Stderr = opts.Output
 		output, err := cmd.Output()
 		if err != nil {
-			return cli.WrapVerb(err, "start", "container")
+			return phpWrapVerb(err, "start", "container")
 		}
 		containerID := strings.TrimSpace(string(output))
 		cli.Print("Container started: %s\n", containerID[:12])
@@ -344,7 +344,7 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error {
 // Shell opens a shell in a running container.
 func Shell(ctx context.Context, containerID string) error {
 	if containerID == "" {
-		return cli.Err("container ID is required")
+		return phpErr("container ID is required")
 	}
 
 	// Resolve partial container ID
@@ -387,7 +387,7 @@ func lookupLinuxKit() (string, error) {
 		}
 	}
 
-	return "", cli.Err("linuxkit not found. Install with: brew install linuxkit (macOS) or see https://github.com/linuxkit/linuxkit")
+	return "", phpErr("linuxkit not found. Install with: brew install linuxkit (macOS) or see https://github.com/linuxkit/linuxkit")
 }
 
 // getLinuxKitTemplate retrieves a LinuxKit template by name.
@@ -399,7 +399,7 @@ func getLinuxKitTemplate(name string) (string, error) {
 
 	// Try to load from container package templates
 	// This would integrate with forge.lthn.ai/core/go/pkg/container
-	return "", cli.Err("template not found: %s", name)
+	return "", phpErr("template not found: %s", name)
 }
 
 // applyTemplateVariables applies variable substitution to template content.
@@ -417,7 +417,7 @@ func resolveDockerContainerID(ctx context.Context, partialID string) (string, er
 	cmd := exec.CommandContext(ctx, "docker", "ps", "-a", "--no-trunc", "--format", "{{.ID}}")
 	output, err := cmd.Output()
 	if err != nil {
-		return "", cli.WrapVerb(err, "list", "containers")
+		return "", phpWrapVerb(err, "list", "containers")
 	}
 
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -431,11 +431,11 @@ func resolveDockerContainerID(ctx context.Context, partialID string) (string, er
 
 	switch len(matches) {
 	case 0:
-		return "", cli.Err("no container found matching: %s", partialID)
+		return "", phpErr("no container found matching: %s", partialID)
 	case 1:
 		return matches[0], nil
 	default:
-		return "", cli.Err("multiple containers match '%s', be more specific", partialID)
+		return "", phpErr("multiple containers match '%s', be more specific", partialID)
 	}
 }
 
