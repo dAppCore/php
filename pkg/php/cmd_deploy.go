@@ -44,7 +44,7 @@ func addPHPDeployCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
 			env := EnvProduction
@@ -52,7 +52,7 @@ func addPHPDeployCommand(parent *cli.Command) {
 				env = EnvStaging
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.deploy")), i18n.T("cmd.php.deploy.deploying", map[string]interface{}{"Environment": env}))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy.deploying", map[string]interface{}{"Environment": env}))
 
 			ctx := context.Background()
 
@@ -65,19 +65,19 @@ func addPHPDeployCommand(parent *cli.Command) {
 
 			status, err := Deploy(ctx, opts)
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("cmd.php.error.deploy_failed"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("cmd.php.error.deploy_failed"), err)
 			}
 
 			printDeploymentStatus(status)
 
 			if deployWait {
 				if IsDeploymentSuccessful(status.Status) {
-					cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Deployment completed"}))
+					cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Deployment completed"}))
 				} else {
-					cli.Print("\n%s %s\n", errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy.warning_status", map[string]interface{}{"Status": status.Status}))
+					cli.Print(cliSectionLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy.warning_status", map[string]interface{}{"Status": status.Status}))
 				}
 			} else {
-				cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy.triggered"))
+				cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy.triggered"))
 			}
 
 			return nil
@@ -104,7 +104,7 @@ func addPHPDeployStatusCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
 			env := EnvProduction
@@ -112,7 +112,7 @@ func addPHPDeployStatusCommand(parent *cli.Command) {
 				env = EnvStaging
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.deploy")), i18n.ProgressSubject("check", "deployment status"))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.ProgressSubject("check", "deployment status"))
 
 			ctx := context.Background()
 
@@ -124,7 +124,7 @@ func addPHPDeployStatusCommand(parent *cli.Command) {
 
 			status, err := DeployStatus(ctx, opts)
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "status"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, "status"), err)
 			}
 
 			printDeploymentStatus(status)
@@ -153,7 +153,7 @@ func addPHPDeployRollbackCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
 			env := EnvProduction
@@ -161,7 +161,7 @@ func addPHPDeployRollbackCommand(parent *cli.Command) {
 				env = EnvStaging
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.deploy")), i18n.T("cmd.php.deploy_rollback.rolling_back", map[string]interface{}{"Environment": env}))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy_rollback.rolling_back", map[string]interface{}{"Environment": env}))
 
 			ctx := context.Background()
 
@@ -174,19 +174,19 @@ func addPHPDeployRollbackCommand(parent *cli.Command) {
 
 			status, err := Rollback(ctx, opts)
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("cmd.php.error.rollback_failed"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("cmd.php.error.rollback_failed"), err)
 			}
 
 			printDeploymentStatus(status)
 
 			if rollbackWait {
 				if IsDeploymentSuccessful(status.Status) {
-					cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Rollback completed"}))
+					cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Rollback completed"}))
 				} else {
-					cli.Print("\n%s %s\n", errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy_rollback.warning_status", map[string]interface{}{"Status": status.Status}))
+					cli.Print(cliSectionLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy_rollback.warning_status", map[string]interface{}{"Status": status.Status}))
 				}
 			} else {
-				cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy_rollback.triggered"))
+				cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy_rollback.triggered"))
 			}
 
 			return nil
@@ -213,7 +213,7 @@ func addPHPDeployListCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
 			env := EnvProduction
@@ -226,17 +226,17 @@ func addPHPDeployListCommand(parent *cli.Command) {
 				limit = 10
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.deploy")), i18n.T("cmd.php.deploy_list.recent", map[string]interface{}{"Environment": env}))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy_list.recent", map[string]interface{}{"Environment": env}))
 
 			ctx := context.Background()
 
 			deployments, err := ListDeployments(ctx, cwd, env, limit)
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.list", "deployments"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.list", "deployments"), err)
 			}
 
 			if len(deployments) == 0 {
-				cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.info")), i18n.T("cmd.php.deploy_list.none_found"))
+				cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.info")), i18n.T("cmd.php.deploy_list.none_found"))
 				return nil
 			}
 
@@ -255,55 +255,27 @@ func addPHPDeployListCommand(parent *cli.Command) {
 }
 
 func printDeploymentStatus(status *DeploymentStatus) {
-	// Status with color
-	statusStyle := phpDeployStyle
-	switch status.Status {
-	case "queued", "building", "deploying", "pending", "rolling_back":
-		statusStyle = phpDeployPendingStyle
-	case "failed", "error", "cancelled":
-		statusStyle = phpDeployFailedStyle
-	}
-
-	cli.Print("%s %s\n", dimStyle.Render(i18n.Label("status")), statusStyle.Render(status.Status))
-
-	if status.ID != "" {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.id")), status.ID)
-	}
-
+	statusStyle := deploymentStatusStyle(status.Status)
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.Label("status")), statusStyle.Render(status.Status))
+	printDeploymentField(i18n.T("cmd.php.label.id"), status.ID)
 	if status.URL != "" {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.Label("url")), linkStyle.Render(status.URL))
+		printDeploymentField(i18n.Label("url"), linkStyle.Render(status.URL))
 	}
-
-	if status.Branch != "" {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.branch")), status.Branch)
-	}
+	printDeploymentField(i18n.T("cmd.php.label.branch"), status.Branch)
 
 	if status.Commit != "" {
-		commit := status.Commit
-		if len(commit) > 7 {
-			commit = commit[:7]
-		}
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.commit")), commit)
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.commit")), truncateString(status.Commit, 7))
 		if status.CommitMessage != "" {
-			// Truncate long messages
-			msg := status.CommitMessage
-			if len(msg) > 60 {
-				msg = msg[:57] + "..."
-			}
-			cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.message")), msg)
+			cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.message")), ellipsizeString(status.CommitMessage, 60))
 		}
 	}
 
 	if !status.StartedAt.IsZero() {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.Label("started")), status.StartedAt.Format(time.RFC3339))
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.Label("started")), status.StartedAt.Format(time.RFC3339))
 	}
 
 	if !status.CompletedAt.IsZero() {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.completed")), status.CompletedAt.Format(time.RFC3339))
-		if !status.StartedAt.IsZero() {
-			duration := status.CompletedAt.Sub(status.StartedAt)
-			cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.duration")), duration.Round(time.Second))
-		}
+		printDeploymentCompletion(status)
 	}
 }
 
@@ -357,4 +329,43 @@ func printDeploymentSummary(index int, status *DeploymentStatus) {
 	}
 
 	cli.Blank()
+}
+
+func deploymentStatusStyle(status string) *cli.AnsiStyle {
+	switch status {
+	case "queued", "building", "deploying", "pending", "rolling_back":
+		return phpDeployPendingStyle
+	case "failed", "error", "cancelled":
+		return phpDeployFailedStyle
+	default:
+		return phpDeployStyle
+	}
+}
+
+func printDeploymentField(label, value string) {
+	if value != "" {
+		cli.Print(cliLabelValueFormat, dimStyle.Render(label), value)
+	}
+}
+
+func printDeploymentCompletion(status *DeploymentStatus) {
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.completed")), status.CompletedAt.Format(time.RFC3339))
+	if !status.StartedAt.IsZero() {
+		duration := status.CompletedAt.Sub(status.StartedAt)
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.duration")), duration.Round(time.Second))
+	}
+}
+
+func truncateString(value string, maxLen int) string {
+	if len(value) <= maxLen {
+		return value
+	}
+	return value[:maxLen]
+}
+
+func ellipsizeString(value string, maxLen int) string {
+	if len(value) <= maxLen {
+		return value
+	}
+	return value[:maxLen-3] + "..."
 }

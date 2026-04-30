@@ -6,100 +6,96 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestNewDevServer_Good(t *testing.T) {
-	t.Run("creates dev server with default options", func(t *testing.T) {
+func TestPHP_NewDevServer_Good(t *T) {
+	t.Run("creates dev server with default options", func(t *T) {
 		opts := Options{}
 		server := NewDevServer(opts)
 
-		assert.NotNil(t, server)
-		assert.Empty(t, server.services)
-		assert.False(t, server.running)
+		AssertNotNil(t, server)
+		AssertEmpty(t, server.services)
+		AssertFalse(t, server.running)
 	})
 
-	t.Run("creates dev server with custom options", func(t *testing.T) {
+	t.Run("creates dev server with custom options", func(t *T) {
 		opts := Options{
-			Dir:            "/tmp/test",
+			Dir:            testTmpDir,
 			NoVite:         true,
 			NoHorizon:      true,
 			FrankenPHPPort: 9000,
 		}
 		server := NewDevServer(opts)
 
-		assert.NotNil(t, server)
-		assert.Equal(t, "/tmp/test", server.opts.Dir)
-		assert.True(t, server.opts.NoVite)
+		AssertNotNil(t, server)
+		AssertEqual(t, testTmpDir, server.opts.Dir)
+		AssertTrue(t, server.opts.NoVite)
 	})
 }
 
-func TestDevServer_IsRunning_Good(t *testing.T) {
-	t.Run("returns false when not running", func(t *testing.T) {
+func TestPHP_DevServer_IsRunning_Good(t *T) {
+	t.Run("returns false when not running", func(t *T) {
 		server := NewDevServer(Options{})
-		assert.False(t, server.IsRunning())
+		AssertFalse(t, server.IsRunning())
 	})
 }
 
-func TestDevServer_Status_Good(t *testing.T) {
-	t.Run("returns empty status when no services", func(t *testing.T) {
+func TestPHP_DevServer_Status_Good(t *T) {
+	t.Run("returns empty status when no services", func(t *T) {
 		server := NewDevServer(Options{})
 		statuses := server.Status()
-		assert.Empty(t, statuses)
+		AssertEmpty(t, statuses)
 	})
 }
 
-func TestDevServer_Services_Good(t *testing.T) {
-	t.Run("returns empty services list initially", func(t *testing.T) {
+func TestPHP_DevServer_Services_Good(t *T) {
+	t.Run("returns empty services list initially", func(t *T) {
 		server := NewDevServer(Options{})
 		services := server.Services()
-		assert.Empty(t, services)
+		AssertEmpty(t, services)
 	})
 }
 
-func TestDevServer_Stop_Good(t *testing.T) {
-	t.Run("returns nil when not running", func(t *testing.T) {
+func TestPHP_DevServer_Stop_Good(t *T) {
+	t.Run("returns nil when not running", func(t *T) {
 		server := NewDevServer(Options{})
 		err := server.Stop()
-		assert.NoError(t, err)
+		AssertNoError(t, err)
 	})
 }
 
-func TestDevServer_Start_Bad(t *testing.T) {
-	t.Run("fails when already running", func(t *testing.T) {
+func TestPHP_DevServer_Start_Bad(t *T) {
+	t.Run("fails when already running", func(t *T) {
 		server := NewDevServer(Options{})
 		server.running = true
 
 		err := server.Start(context.Background(), Options{})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "already running")
+		AssertError(t, err)
+		AssertContains(t, err.Error(), "already running")
 	})
 
-	t.Run("fails for non-Laravel project", func(t *testing.T) {
+	t.Run("fails for non-Laravel project", func(t *T) {
 		dir := t.TempDir()
 		server := NewDevServer(Options{Dir: dir})
 
 		err := server.Start(context.Background(), Options{Dir: dir})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "not a Laravel project")
+		AssertError(t, err)
+		AssertContains(t, err.Error(), "not a Laravel project")
 	})
 }
 
-func TestDevServer_Logs_Bad(t *testing.T) {
-	t.Run("fails for non-existent service", func(t *testing.T) {
+func TestPHP_DevServer_Logs_Bad(t *T) {
+	t.Run("fails for non-existent service", func(t *T) {
 		server := NewDevServer(Options{})
 
 		_, err := server.Logs("nonexistent", false)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "service not found")
+		AssertError(t, err)
+		AssertContains(t, err.Error(), "service not found")
 	})
 }
 
-func TestDevServer_filterServices_Good(t *testing.T) {
+func TestPHP_DevServer_filterServices_Good(t *T) {
 	tests := []struct {
 		name     string
 		services []DetectedService
@@ -151,25 +147,25 @@ func TestDevServer_filterServices_Good(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(t *T) {
 			server := NewDevServer(Options{})
 			result := server.filterServices(tt.services, tt.opts)
-			assert.Equal(t, tt.expected, result)
+			AssertEqual(t, tt.expected, result)
 		})
 	}
 }
 
-func TestMultiServiceReader_Good(t *testing.T) {
-	t.Run("closes all readers on Close", func(t *testing.T) {
+func TestPHP_MultiServiceReader_Good(t *T) {
+	t.Run("closes all readers on Close", func(t *T) {
 		// Create mock readers using files
 		dir := t.TempDir()
 		file1, err := os.CreateTemp(dir, "log1-*.log")
-		require.NoError(t, err)
+		RequireNoError(t, err)
 		_, _ = file1.WriteString("test1")
 		_, _ = file1.Seek(0, 0)
 
 		file2, err := os.CreateTemp(dir, "log2-*.log")
-		require.NoError(t, err)
+		RequireNoError(t, err)
 		_, _ = file2.WriteString("test2")
 		_, _ = file2.Seek(0, 0)
 
@@ -181,27 +177,27 @@ func TestMultiServiceReader_Good(t *testing.T) {
 		readers := []io.ReadCloser{file1, file2}
 
 		reader := newMultiServiceReader(services, readers, false)
-		assert.NotNil(t, reader)
+		AssertNotNil(t, reader)
 
 		err = reader.Close()
-		assert.NoError(t, err)
-		assert.True(t, reader.closed)
+		AssertNoError(t, err)
+		AssertTrue(t, reader.closed)
 	})
 
-	t.Run("returns EOF when closed", func(t *testing.T) {
+	t.Run("returns EOF when closed", func(t *T) {
 		reader := &multiServiceReader{closed: true}
 		buf := make([]byte, 10)
 		n, err := reader.Read(buf)
-		assert.Equal(t, 0, n)
-		assert.Equal(t, io.EOF, err)
+		AssertEqual(t, 0, n)
+		AssertEqual(t, io.EOF, err)
 	})
 }
 
-func TestMultiServiceReader_Read_Good(t *testing.T) {
-	t.Run("reads from readers with service prefix", func(t *testing.T) {
+func TestPHP_MultiServiceReader_Read_Good(t *T) {
+	t.Run("reads from readers with service prefix", func(t *T) {
 		dir := t.TempDir()
-		file1, err := os.CreateTemp(dir, "log-*.log")
-		require.NoError(t, err)
+		file1, err := os.CreateTemp(dir, testLogGlob)
+		RequireNoError(t, err)
 		_, _ = file1.WriteString("log content")
 		_, _ = file1.Seek(0, 0)
 
@@ -214,20 +210,20 @@ func TestMultiServiceReader_Read_Good(t *testing.T) {
 		buf := make([]byte, 100)
 		n, err := reader.Read(buf)
 
-		assert.NoError(t, err)
-		assert.Greater(t, n, 0)
+		AssertNoError(t, err)
+		AssertGreater(t, n, 0)
 		result := string(buf[:n])
-		assert.Contains(t, result, "[TestService]")
+		AssertContains(t, result, "[TestService]")
 	})
 
-	t.Run("returns EOF when all readers are exhausted in non-follow mode", func(t *testing.T) {
+	t.Run("returns EOF when all readers are exhausted in non-follow mode", func(t *T) {
 		dir := t.TempDir()
-		file1, err := os.CreateTemp(dir, "log-*.log")
-		require.NoError(t, err)
+		file1, err := os.CreateTemp(dir, testLogGlob)
+		RequireNoError(t, err)
 		_ = file1.Close() // Empty file
 
 		file1, err = os.Open(file1.Name())
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		services := []Service{
 			&FrankenPHPService{baseService: baseService{name: "TestService"}},
@@ -238,13 +234,13 @@ func TestMultiServiceReader_Read_Good(t *testing.T) {
 		buf := make([]byte, 100)
 		n, err := reader.Read(buf)
 
-		assert.Equal(t, 0, n)
-		assert.Equal(t, io.EOF, err)
+		AssertEqual(t, 0, n)
+		AssertEqual(t, io.EOF, err)
 	})
 }
 
-func TestOptions_Good(t *testing.T) {
-	t.Run("all fields are accessible", func(t *testing.T) {
+func TestPHP_Options_Good(t *T) {
+	t.Run("all fields are accessible", func(t *T) {
 		opts := Options{
 			Dir:            "/test",
 			Services:       []DetectedService{ServiceFrankenPHP},
@@ -253,7 +249,7 @@ func TestOptions_Good(t *testing.T) {
 			NoReverb:       true,
 			NoRedis:        true,
 			HTTPS:          true,
-			Domain:         "test.local",
+			Domain:         testLocalDomain,
 			FrankenPHPPort: 8000,
 			HTTPSPort:      443,
 			VitePort:       5173,
@@ -261,23 +257,23 @@ func TestOptions_Good(t *testing.T) {
 			RedisPort:      6379,
 		}
 
-		assert.Equal(t, "/test", opts.Dir)
-		assert.Equal(t, []DetectedService{ServiceFrankenPHP}, opts.Services)
-		assert.True(t, opts.NoVite)
-		assert.True(t, opts.NoHorizon)
-		assert.True(t, opts.NoReverb)
-		assert.True(t, opts.NoRedis)
-		assert.True(t, opts.HTTPS)
-		assert.Equal(t, "test.local", opts.Domain)
-		assert.Equal(t, 8000, opts.FrankenPHPPort)
-		assert.Equal(t, 443, opts.HTTPSPort)
-		assert.Equal(t, 5173, opts.VitePort)
-		assert.Equal(t, 8080, opts.ReverbPort)
-		assert.Equal(t, 6379, opts.RedisPort)
+		AssertEqual(t, "/test", opts.Dir)
+		AssertEqual(t, []DetectedService{ServiceFrankenPHP}, opts.Services)
+		AssertTrue(t, opts.NoVite)
+		AssertTrue(t, opts.NoHorizon)
+		AssertTrue(t, opts.NoReverb)
+		AssertTrue(t, opts.NoRedis)
+		AssertTrue(t, opts.HTTPS)
+		AssertEqual(t, testLocalDomain, opts.Domain)
+		AssertEqual(t, 8000, opts.FrankenPHPPort)
+		AssertEqual(t, 443, opts.HTTPSPort)
+		AssertEqual(t, 5173, opts.VitePort)
+		AssertEqual(t, 8080, opts.ReverbPort)
+		AssertEqual(t, 6379, opts.RedisPort)
 	})
 }
 
-func TestDevServer_StartStop_Integration(t *testing.T) {
+func TestDevServer_StartStop_Integration(t *T) {
 	t.Skip("requires PHP/FrankenPHP installed")
 
 	dir := t.TempDir()
@@ -288,21 +284,21 @@ func TestDevServer_StartStop_Integration(t *testing.T) {
 	defer cancel()
 
 	err := server.Start(ctx, Options{Dir: dir})
-	require.NoError(t, err)
-	assert.True(t, server.IsRunning())
+	RequireNoError(t, err)
+	AssertTrue(t, server.IsRunning())
 
 	err = server.Stop()
-	require.NoError(t, err)
-	assert.False(t, server.IsRunning())
+	RequireNoError(t, err)
+	AssertFalse(t, server.IsRunning())
 }
 
 // setupLaravelProject creates a minimal Laravel project structure for testing.
-func setupLaravelProject(t *testing.T, dir string) {
+func setupLaravelProject(t *T, dir string) {
 	t.Helper()
 
 	// Create artisan file
-	err := os.WriteFile(filepath.Join(dir, "artisan"), []byte("#!/usr/bin/env php\n"), 0755)
-	require.NoError(t, err)
+	err := os.WriteFile(filepath.Join(dir, "artisan"), []byte(testPHPShebang), 0755)
+	RequireNoError(t, err)
 
 	// Create composer.json with Laravel
 	composerJSON := `{
@@ -313,12 +309,12 @@ func setupLaravelProject(t *testing.T, dir string) {
 			"laravel/octane": "^2.0"
 		}
 	}`
-	err = os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-	require.NoError(t, err)
+	err = os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+	RequireNoError(t, err)
 }
 
-func TestDevServer_UnifiedLogs_Bad(t *testing.T) {
-	t.Run("returns error when service logs fail", func(t *testing.T) {
+func TestPHP_DevServer_UnifiedLogs_Bad(t *T) {
+	t.Run("returns error when service logs fail", func(t *T) {
 		server := NewDevServer(Options{})
 
 		// Create a mock service that will fail to provide logs
@@ -331,17 +327,17 @@ func TestDevServer_UnifiedLogs_Bad(t *testing.T) {
 		server.services = []Service{mockService}
 
 		_, err := server.Logs("", false)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to get logs")
+		AssertError(t, err)
+		AssertContains(t, err.Error(), "failed to get logs")
 	})
 }
 
-func TestDevServer_Logs_Good(t *testing.T) {
-	t.Run("finds specific service logs", func(t *testing.T) {
+func TestPHP_DevServer_Logs_Good(t *T) {
+	t.Run("finds specific service logs", func(t *T) {
 		dir := t.TempDir()
-		logFile := filepath.Join(dir, "test.log")
+		logFile := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logFile, []byte("test log content"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		server := NewDevServer(Options{})
 		mockService := &FrankenPHPService{
@@ -353,43 +349,43 @@ func TestDevServer_Logs_Good(t *testing.T) {
 		server.services = []Service{mockService}
 
 		reader, err := server.Logs("TestService", false)
-		assert.NoError(t, err)
-		assert.NotNil(t, reader)
+		AssertNoError(t, err)
+		AssertNotNil(t, reader)
 		_ = reader.Close()
 	})
 }
 
-func TestDevServer_MergeOptions_Good(t *testing.T) {
-	t.Run("start merges options correctly", func(t *testing.T) {
+func TestPHP_DevServer_MergeOptions_Good(t *T) {
+	t.Run("start merges options correctly", func(t *T) {
 		dir := t.TempDir()
 		server := NewDevServer(Options{Dir: "/original"})
 
 		// Setup a minimal non-Laravel project to trigger an error
 		// but still test the options merge happens first
 		err := server.Start(context.Background(), Options{Dir: dir})
-		assert.Error(t, err) // Will fail because not Laravel project
+		AssertError(t, err) // Will fail because not Laravel project
 		// But the directory should have been merged
-		assert.Equal(t, dir, server.opts.Dir)
+		AssertEqual(t, dir, server.opts.Dir)
 	})
 }
 
-func TestDetectedService_Constants(t *testing.T) {
-	t.Run("all service constants are defined", func(t *testing.T) {
-		assert.Equal(t, DetectedService("frankenphp"), ServiceFrankenPHP)
-		assert.Equal(t, DetectedService("vite"), ServiceVite)
-		assert.Equal(t, DetectedService("horizon"), ServiceHorizon)
-		assert.Equal(t, DetectedService("reverb"), ServiceReverb)
-		assert.Equal(t, DetectedService("redis"), ServiceRedis)
+func TestDetectedService_Constants(t *T) {
+	t.Run("all service constants are defined", func(t *T) {
+		AssertEqual(t, DetectedService("frankenphp"), ServiceFrankenPHP)
+		AssertEqual(t, DetectedService("vite"), ServiceVite)
+		AssertEqual(t, DetectedService("horizon"), ServiceHorizon)
+		AssertEqual(t, DetectedService("reverb"), ServiceReverb)
+		AssertEqual(t, DetectedService("redis"), ServiceRedis)
 	})
 }
 
-func TestDevServer_HTTPSSetup(t *testing.T) {
-	t.Run("extracts domain from APP_URL when HTTPS enabled", func(t *testing.T) {
+func TestDevServer_HTTPSSetup(t *T) {
+	t.Run("extracts domain from APP_URL when HTTPS enabled", func(t *T) {
 		dir := t.TempDir()
 
 		// Create Laravel project
-		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte("#!/usr/bin/env php\n"), 0755)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte(testPHPShebang), 0755)
+		RequireNoError(t, err)
 
 		composerJSON := `{
 			"require": {
@@ -397,46 +393,46 @@ func TestDevServer_HTTPSSetup(t *testing.T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
 
 		// Create .env with APP_URL
 		envContent := "APP_URL=https://myapp.test"
 		err = os.WriteFile(filepath.Join(dir, ".env"), []byte(envContent), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		// Verify we can extract the domain
 		url := GetLaravelAppURL(dir)
 		domain := ExtractDomainFromURL(url)
-		assert.Equal(t, "myapp.test", domain)
+		AssertEqual(t, testMyAppDomain, domain)
 	})
 }
 
-func TestDevServer_PortDefaults(t *testing.T) {
-	t.Run("uses default ports when not specified", func(t *testing.T) {
+func TestDevServer_PortDefaults(t *T) {
+	t.Run("uses default ports when not specified", func(t *T) {
 		// This tests the logic in Start() for default port assignment
 		// We verify the constants/defaults by checking what would be created
 
 		// FrankenPHP default port is 8000
 		svc := NewFrankenPHPService("/tmp", FrankenPHPOptions{})
-		assert.Equal(t, 8000, svc.port)
+		AssertEqual(t, 8000, svc.port)
 
 		// Vite default port is 5173
 		vite := NewViteService("/tmp", ViteOptions{})
-		assert.Equal(t, 5173, vite.port)
+		AssertEqual(t, 5173, vite.port)
 
 		// Reverb default port is 8080
 		reverb := NewReverbService("/tmp", ReverbOptions{})
-		assert.Equal(t, 8080, reverb.port)
+		AssertEqual(t, 8080, reverb.port)
 
 		// Redis default port is 6379
 		redis := NewRedisService("/tmp", RedisOptions{})
-		assert.Equal(t, 6379, redis.port)
+		AssertEqual(t, 6379, redis.port)
 	})
 }
 
-func TestDevServer_ServiceCreation(t *testing.T) {
-	t.Run("creates correct services based on detected services", func(t *testing.T) {
+func TestDevServer_ServiceCreation(t *T) {
+	t.Run("creates correct services based on detected services", func(t *T) {
 		// Test that the switch statement in Start() creates the right service types
 		services := []DetectedService{
 			ServiceFrankenPHP,
@@ -449,24 +445,24 @@ func TestDevServer_ServiceCreation(t *testing.T) {
 		// Verify each service type string
 		expected := []string{"frankenphp", "vite", "horizon", "reverb", "redis"}
 		for i, svc := range services {
-			assert.Equal(t, expected[i], string(svc))
+			AssertEqual(t, expected[i], string(svc))
 		}
 	})
 }
 
-func TestMultiServiceReader_CloseError(t *testing.T) {
-	t.Run("returns first close error", func(t *testing.T) {
+func TestMultiServiceReader_CloseError(t *T) {
+	t.Run("returns first close error", func(t *T) {
 		dir := t.TempDir()
 
 		// Create a real file that we can close
-		file1, err := os.CreateTemp(dir, "log-*.log")
-		require.NoError(t, err)
+		file1, err := os.CreateTemp(dir, testLogGlob)
+		RequireNoError(t, err)
 		file1Name := file1.Name()
 		_ = file1.Close()
 
 		// Reopen for reading
 		file1, err = os.Open(file1Name)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		services := []Service{
 			&FrankenPHPService{baseService: baseService{name: "svc1"}},
@@ -475,25 +471,25 @@ func TestMultiServiceReader_CloseError(t *testing.T) {
 
 		reader := newMultiServiceReader(services, readers, false)
 		err = reader.Close()
-		assert.NoError(t, err)
+		AssertNoError(t, err)
 
 		// Second close should still work (files already closed)
 		// The closed flag prevents double-processing
-		assert.True(t, reader.closed)
+		AssertTrue(t, reader.closed)
 	})
 }
 
-func TestMultiServiceReader_FollowMode(t *testing.T) {
-	t.Run("returns 0 bytes without error in follow mode when no data", func(t *testing.T) {
+func TestMultiServiceReader_FollowMode(t *T) {
+	t.Run("returns 0 bytes without error in follow mode when no data", func(t *T) {
 		dir := t.TempDir()
-		file1, err := os.CreateTemp(dir, "log-*.log")
-		require.NoError(t, err)
+		file1, err := os.CreateTemp(dir, testLogGlob)
+		RequireNoError(t, err)
 		file1Name := file1.Name()
 		_ = file1.Close()
 
 		// Reopen for reading (empty file)
 		file1, err = os.Open(file1Name)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		services := []Service{
 			&FrankenPHPService{baseService: baseService{name: "svc1"}},
@@ -508,8 +504,8 @@ func TestMultiServiceReader_FollowMode(t *testing.T) {
 			buf := make([]byte, 100)
 			n, err := reader.Read(buf)
 			// In follow mode, should return 0 bytes and nil error (waiting for more data)
-			assert.Equal(t, 0, n)
-			assert.NoError(t, err)
+			AssertEqual(t, 0, n)
+			AssertNoError(t, err)
 			done <- true
 		}()
 
@@ -524,49 +520,49 @@ func TestMultiServiceReader_FollowMode(t *testing.T) {
 	})
 }
 
-func TestGetLaravelAppURL_Bad(t *testing.T) {
-	t.Run("no .env file", func(t *testing.T) {
+func TestPHP_GetLaravelAppURL_Bad(t *T) {
+	t.Run("no .env file", func(t *T) {
 		dir := t.TempDir()
-		assert.Equal(t, "", GetLaravelAppURL(dir))
+		AssertEqual(t, "", GetLaravelAppURL(dir))
 	})
 
-	t.Run("no APP_URL in .env", func(t *testing.T) {
+	t.Run("no APP_URL in .env", func(t *T) {
 		dir := t.TempDir()
 		envContent := "APP_NAME=Test\nAPP_ENV=local"
 		err := os.WriteFile(filepath.Join(dir, ".env"), []byte(envContent), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.Equal(t, "", GetLaravelAppURL(dir))
+		AssertEqual(t, "", GetLaravelAppURL(dir))
 	})
 }
 
-func TestExtractDomainFromURL_Edge(t *testing.T) {
+func TestPHP_ExtractDomainFromURL_Ugly(t *T) {
 	tests := []struct {
 		name     string
 		url      string
 		expected string
 	}{
 		{"empty string", "", ""},
-		{"just domain", "example.com", "example.com"},
+		{"just domain", testExampleDomain, testExampleDomain},
 		{"http only", "http://", ""},
 		{"https only", "https://", ""},
-		{"domain with trailing slash", "https://example.com/", "example.com"},
-		{"complex path", "https://example.com:8080/path/to/page?query=1", "example.com"},
+		{"domain with trailing slash", "https://example.com/", testExampleDomain},
+		{"complex path", "https://example.com:8080/path/to/page?query=1", testExampleDomain},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(t *T) {
 			// Strip protocol
 			result := ExtractDomainFromURL(tt.url)
 			if tt.url != "" && !strings.HasPrefix(tt.url, "http://") && !strings.HasPrefix(tt.url, "https://") && !strings.Contains(tt.url, ":") && !strings.Contains(tt.url, "/") {
-				assert.Equal(t, tt.expected, result)
+				AssertEqual(t, tt.expected, result)
 			}
 		})
 	}
 }
 
-func TestDevServer_StatusWithServices(t *testing.T) {
-	t.Run("returns statuses for all services", func(t *testing.T) {
+func TestDevServer_StatusWithServices(t *T) {
+	t.Run("returns statuses for all services", func(t *T) {
 		server := NewDevServer(Options{})
 
 		// Add mock services
@@ -576,16 +572,16 @@ func TestDevServer_StatusWithServices(t *testing.T) {
 		}
 
 		statuses := server.Status()
-		assert.Len(t, statuses, 2)
-		assert.Equal(t, "svc1", statuses[0].Name)
-		assert.True(t, statuses[0].Running)
-		assert.Equal(t, "svc2", statuses[1].Name)
-		assert.False(t, statuses[1].Running)
+		AssertLen(t, statuses, 2)
+		AssertEqual(t, "svc1", statuses[0].Name)
+		AssertTrue(t, statuses[0].Running)
+		AssertEqual(t, "svc2", statuses[1].Name)
+		AssertFalse(t, statuses[1].Running)
 	})
 }
 
-func TestDevServer_ServicesReturnsAll(t *testing.T) {
-	t.Run("returns all services", func(t *testing.T) {
+func TestDevServer_ServicesReturnsAll(t *T) {
+	t.Run("returns all services", func(t *T) {
 		server := NewDevServer(Options{})
 
 		// Add mock services
@@ -596,12 +592,12 @@ func TestDevServer_ServicesReturnsAll(t *testing.T) {
 		}
 
 		services := server.Services()
-		assert.Len(t, services, 3)
+		AssertLen(t, services, 3)
 	})
 }
 
-func TestDevServer_StopWithCancel(t *testing.T) {
-	t.Run("calls cancel when running", func(t *testing.T) {
+func TestDevServer_StopWithCancel(t *T) {
+	t.Run("calls cancel when running", func(t *T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		server := NewDevServer(Options{})
 		server.running = true
@@ -614,20 +610,20 @@ func TestDevServer_StopWithCancel(t *testing.T) {
 		}
 
 		err := server.Stop()
-		assert.NoError(t, err)
-		assert.False(t, server.running)
+		AssertNoError(t, err)
+		AssertFalse(t, server.running)
 	})
 }
 
-func TestMultiServiceReader_CloseWithErrors(t *testing.T) {
-	t.Run("handles multiple close errors", func(t *testing.T) {
+func TestMultiServiceReader_CloseWithErrors(t *T) {
+	t.Run("handles multiple close errors", func(t *T) {
 		dir := t.TempDir()
 
 		// Create files
 		file1, err := os.CreateTemp(dir, "log1-*.log")
-		require.NoError(t, err)
+		RequireNoError(t, err)
 		file2, err := os.CreateTemp(dir, "log2-*.log")
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		services := []Service{
 			&FrankenPHPService{baseService: baseService{name: "svc1"}},
@@ -639,6 +635,6 @@ func TestMultiServiceReader_CloseWithErrors(t *testing.T) {
 
 		// Close successfully
 		err = reader.Close()
-		assert.NoError(t, err)
+		AssertNoError(t, err)
 	})
 }

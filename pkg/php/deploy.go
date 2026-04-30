@@ -121,13 +121,13 @@ func Deploy(ctx context.Context, opts DeployOptions) (*DeploymentStatus, error) 
 	// Load config
 	config, err := LoadCoolifyConfig(opts.Dir)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", "Coolify config")
+		return nil, cli.WrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	// Get app ID for environment
 	appID := getAppIDForEnvironment(config, opts.Environment)
 	if appID == "" {
-		return nil, cli.Err("no app ID configured for %s environment", opts.Environment)
+		return nil, cli.Err(noAppIDEnvironmentFormat, opts.Environment)
 	}
 
 	// Create client
@@ -170,13 +170,13 @@ func DeployStatus(ctx context.Context, opts StatusOptions) (*DeploymentStatus, e
 	// Load config
 	config, err := LoadCoolifyConfig(opts.Dir)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", "Coolify config")
+		return nil, cli.WrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	// Get app ID for environment
 	appID := getAppIDForEnvironment(config, opts.Environment)
 	if appID == "" {
-		return nil, cli.Err("no app ID configured for %s environment", opts.Environment)
+		return nil, cli.Err(noAppIDEnvironmentFormat, opts.Environment)
 	}
 
 	// Create client
@@ -215,54 +215,16 @@ func DeployStatus(ctx context.Context, opts StatusOptions) (*DeploymentStatus, e
 
 // Rollback triggers a rollback to a previous deployment.
 func Rollback(ctx context.Context, opts RollbackOptions) (*DeploymentStatus, error) {
-	if opts.Dir == "" {
-		opts.Dir = "."
-	}
-	if opts.Environment == "" {
-		opts.Environment = EnvProduction
-	}
-	if opts.WaitTimeout == 0 {
-		opts.WaitTimeout = 10 * time.Minute
-	}
-
-	// Load config
-	config, err := LoadCoolifyConfig(opts.Dir)
+	opts = normalizeRollbackOptions(opts)
+	client, appID, err := coolifyClientForEnvironment(opts.Dir, opts.Environment)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", "Coolify config")
+		return nil, err
 	}
-
-	// Get app ID for environment
-	appID := getAppIDForEnvironment(config, opts.Environment)
-	if appID == "" {
-		return nil, cli.Err("no app ID configured for %s environment", opts.Environment)
-	}
-
-	// Create client
-	client := NewCoolifyClient(config.URL, config.Token)
 
 	// Find deployment to rollback to
-	deploymentID := opts.DeploymentID
-	if deploymentID == "" {
-		// Find previous successful deployment
-		deployments, err := client.ListDeployments(ctx, appID, 10)
-		if err != nil {
-			return nil, cli.WrapVerb(err, "list", "deployments")
-		}
-
-		// Skip the first (current) deployment, find the last successful one
-		for i, d := range deployments {
-			if i == 0 {
-				continue // Skip current deployment
-			}
-			if d.Status == "finished" || d.Status == "success" {
-				deploymentID = d.ID
-				break
-			}
-		}
-
-		if deploymentID == "" {
-			return nil, cli.Err("no previous successful deployment found to rollback to")
-		}
+	deploymentID, err := resolveRollbackDeploymentID(ctx, client, appID, opts.DeploymentID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Trigger rollback
@@ -284,6 +246,56 @@ func Rollback(ctx context.Context, opts RollbackOptions) (*DeploymentStatus, err
 	return status, nil
 }
 
+func normalizeRollbackOptions(opts RollbackOptions) RollbackOptions {
+	if opts.Dir == "" {
+		opts.Dir = "."
+	}
+	if opts.Environment == "" {
+		opts.Environment = EnvProduction
+	}
+	if opts.WaitTimeout == 0 {
+		opts.WaitTimeout = 10 * time.Minute
+	}
+	return opts
+}
+
+func coolifyClientForEnvironment(dir string, env Environment) (*CoolifyClient, string, error) {
+	config, err := LoadCoolifyConfig(dir)
+	if err != nil {
+		return nil, "", cli.WrapVerb(err, "load", coolifyConfigSubject)
+	}
+
+	appID := getAppIDForEnvironment(config, env)
+	if appID == "" {
+		return nil, "", cli.Err(noAppIDEnvironmentFormat, env)
+	}
+
+	return NewCoolifyClient(config.URL, config.Token), appID, nil
+}
+
+func resolveRollbackDeploymentID(ctx context.Context, client *CoolifyClient, appID, requestedID string) (string, error) {
+	if requestedID != "" {
+		return requestedID, nil
+	}
+
+	deployments, err := client.ListDeployments(ctx, appID, 10)
+	if err != nil {
+		return "", cli.WrapVerb(err, "list", "deployments")
+	}
+
+	for i, d := range deployments {
+		if i > 0 && isSuccessfulDeploymentStatus(d.Status) {
+			return d.ID, nil
+		}
+	}
+
+	return "", cli.Err("no previous successful deployment found to rollback to")
+}
+
+func isSuccessfulDeploymentStatus(status string) bool {
+	return status == "finished" || status == "success"
+}
+
 // ListDeployments retrieves recent deployments.
 func ListDeployments(ctx context.Context, dir string, env Environment, limit int) ([]DeploymentStatus, error) {
 	if dir == "" {
@@ -299,13 +311,13 @@ func ListDeployments(ctx context.Context, dir string, env Environment, limit int
 	// Load config
 	config, err := LoadCoolifyConfig(dir)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "load", "Coolify config")
+		return nil, cli.WrapVerb(err, "load", coolifyConfigSubject)
 	}
 
 	// Get app ID for environment
 	appID := getAppIDForEnvironment(config, env)
 	if appID == "" {
-		return nil, cli.Err("no app ID configured for %s environment", env)
+		return nil, cli.Err(noAppIDEnvironmentFormat, env)
 	}
 
 	// Create client

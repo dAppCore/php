@@ -1,78 +1,75 @@
 package php
 
 import (
-	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func TestConvertDeployment_Good(t *testing.T) {
-	t.Run("converts all fields", func(t *testing.T) {
+func TestPHP_ConvertDeployment_Good(t *T) {
+	t.Run("converts all fields", func(t *T) {
 		now := time.Now()
 		coolify := &CoolifyDeployment{
-			ID:          "dep-123",
+			ID:          testDeploymentID123,
 			Status:      "finished",
 			CommitSHA:   "abc123",
-			CommitMsg:   "Test commit",
+			CommitMsg:   testCommitMessage,
 			Branch:      "main",
 			CreatedAt:   now,
 			FinishedAt:  now.Add(5 * time.Minute),
 			Log:         "Build successful",
-			DeployedURL: "https://app.example.com",
+			DeployedURL: testAppURL,
 		}
 
 		status := convertDeployment(coolify)
 
-		assert.Equal(t, "dep-123", status.ID)
-		assert.Equal(t, "finished", status.Status)
-		assert.Equal(t, "https://app.example.com", status.URL)
-		assert.Equal(t, "abc123", status.Commit)
-		assert.Equal(t, "Test commit", status.CommitMessage)
-		assert.Equal(t, "main", status.Branch)
-		assert.Equal(t, now, status.StartedAt)
-		assert.Equal(t, now.Add(5*time.Minute), status.CompletedAt)
-		assert.Equal(t, "Build successful", status.Log)
+		AssertEqual(t, testDeploymentID123, status.ID)
+		AssertEqual(t, "finished", status.Status)
+		AssertEqual(t, testAppURL, status.URL)
+		AssertEqual(t, "abc123", status.Commit)
+		AssertEqual(t, testCommitMessage, status.CommitMessage)
+		AssertEqual(t, "main", status.Branch)
+		AssertEqual(t, now, status.StartedAt)
+		AssertEqual(t, now.Add(5*time.Minute), status.CompletedAt)
+		AssertEqual(t, "Build successful", status.Log)
 	})
 
-	t.Run("handles empty deployment", func(t *testing.T) {
+	t.Run("handles empty deployment", func(t *T) {
 		coolify := &CoolifyDeployment{}
 		status := convertDeployment(coolify)
 
-		assert.Empty(t, status.ID)
-		assert.Empty(t, status.Status)
+		AssertEmpty(t, status.ID)
+		AssertEmpty(t, status.Status)
 	})
 }
 
-func TestDeploymentStatus_Struct_Good(t *testing.T) {
-	t.Run("all fields accessible", func(t *testing.T) {
+func TestPHP_DeploymentStatus_Struct_Good(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		now := time.Now()
 		status := DeploymentStatus{
-			ID:            "dep-123",
+			ID:            testDeploymentID123,
 			Status:        "finished",
-			URL:           "https://app.example.com",
+			URL:           testAppURL,
 			Commit:        "abc123",
-			CommitMessage: "Test commit",
+			CommitMessage: testCommitMessage,
 			Branch:        "main",
 			StartedAt:     now,
 			CompletedAt:   now.Add(5 * time.Minute),
 			Log:           "Build log",
 		}
 
-		assert.Equal(t, "dep-123", status.ID)
-		assert.Equal(t, "finished", status.Status)
-		assert.Equal(t, "https://app.example.com", status.URL)
-		assert.Equal(t, "abc123", status.Commit)
-		assert.Equal(t, "Test commit", status.CommitMessage)
-		assert.Equal(t, "main", status.Branch)
-		assert.Equal(t, "Build log", status.Log)
+		AssertEqual(t, testDeploymentID123, status.ID)
+		AssertEqual(t, "finished", status.Status)
+		AssertEqual(t, testAppURL, status.URL)
+		AssertEqual(t, "abc123", status.Commit)
+		AssertEqual(t, testCommitMessage, status.CommitMessage)
+		AssertEqual(t, "main", status.Branch)
+		AssertEqual(t, "Build log", status.Log)
 	})
 }
 
-func TestDeployOptions_Struct_Good(t *testing.T) {
-	t.Run("all fields accessible", func(t *testing.T) {
+func TestPHP_DeployOptions_Struct_Good(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := DeployOptions{
-			Dir:          "/project",
+			Dir:          testProjectDir,
 			Environment:  EnvProduction,
 			Force:        true,
 			Wait:         true,
@@ -80,96 +77,96 @@ func TestDeployOptions_Struct_Good(t *testing.T) {
 			PollInterval: 5 * time.Second,
 		}
 
-		assert.Equal(t, "/project", opts.Dir)
-		assert.Equal(t, EnvProduction, opts.Environment)
-		assert.True(t, opts.Force)
-		assert.True(t, opts.Wait)
-		assert.Equal(t, 10*time.Minute, opts.WaitTimeout)
-		assert.Equal(t, 5*time.Second, opts.PollInterval)
+		AssertEqual(t, testProjectDir, opts.Dir)
+		AssertEqual(t, EnvProduction, opts.Environment)
+		AssertTrue(t, opts.Force)
+		AssertTrue(t, opts.Wait)
+		AssertEqual(t, 10*time.Minute, opts.WaitTimeout)
+		AssertEqual(t, 5*time.Second, opts.PollInterval)
 	})
 }
 
-func TestStatusOptions_Struct_Good(t *testing.T) {
-	t.Run("all fields accessible", func(t *testing.T) {
+func TestPHP_StatusOptions_Struct_Good(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := StatusOptions{
-			Dir:          "/project",
+			Dir:          testProjectDir,
 			Environment:  EnvStaging,
-			DeploymentID: "dep-123",
+			DeploymentID: testDeploymentID123,
 		}
 
-		assert.Equal(t, "/project", opts.Dir)
-		assert.Equal(t, EnvStaging, opts.Environment)
-		assert.Equal(t, "dep-123", opts.DeploymentID)
+		AssertEqual(t, testProjectDir, opts.Dir)
+		AssertEqual(t, EnvStaging, opts.Environment)
+		AssertEqual(t, testDeploymentID123, opts.DeploymentID)
 	})
 }
 
-func TestRollbackOptions_Struct_Good(t *testing.T) {
-	t.Run("all fields accessible", func(t *testing.T) {
+func TestPHP_RollbackOptions_Struct_Good(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := RollbackOptions{
-			Dir:          "/project",
+			Dir:          testProjectDir,
 			Environment:  EnvProduction,
 			DeploymentID: "dep-old",
 			Wait:         true,
 			WaitTimeout:  5 * time.Minute,
 		}
 
-		assert.Equal(t, "/project", opts.Dir)
-		assert.Equal(t, EnvProduction, opts.Environment)
-		assert.Equal(t, "dep-old", opts.DeploymentID)
-		assert.True(t, opts.Wait)
-		assert.Equal(t, 5*time.Minute, opts.WaitTimeout)
+		AssertEqual(t, testProjectDir, opts.Dir)
+		AssertEqual(t, EnvProduction, opts.Environment)
+		AssertEqual(t, "dep-old", opts.DeploymentID)
+		AssertTrue(t, opts.Wait)
+		AssertEqual(t, 5*time.Minute, opts.WaitTimeout)
 	})
 }
 
-func TestEnvironment_Constants(t *testing.T) {
-	t.Run("constants are defined", func(t *testing.T) {
-		assert.Equal(t, Environment("production"), EnvProduction)
-		assert.Equal(t, Environment("staging"), EnvStaging)
+func TestEnvironment_Constants(t *T) {
+	t.Run("constants are defined", func(t *T) {
+		AssertEqual(t, Environment("production"), EnvProduction)
+		AssertEqual(t, Environment("staging"), EnvStaging)
 	})
 }
 
-func TestGetAppIDForEnvironment_Edge(t *testing.T) {
-	t.Run("staging without staging ID falls back to production", func(t *testing.T) {
+func TestPHP_GetAppIDForEnvironment_Ugly(t *T) {
+	t.Run("staging without staging ID falls back to production", func(t *T) {
 		config := &CoolifyConfig{
-			AppID: "prod-123",
+			AppID: testProdAppID,
 			// No StagingAppID set
 		}
 
 		id := getAppIDForEnvironment(config, EnvStaging)
-		assert.Equal(t, "prod-123", id)
+		AssertEqual(t, testProdAppID, id)
 	})
 
-	t.Run("staging with staging ID uses staging", func(t *testing.T) {
+	t.Run("staging with staging ID uses staging", func(t *T) {
 		config := &CoolifyConfig{
-			AppID:        "prod-123",
-			StagingAppID: "staging-456",
+			AppID:        testProdAppID,
+			StagingAppID: testCoolifyStagingAppID,
 		}
 
 		id := getAppIDForEnvironment(config, EnvStaging)
-		assert.Equal(t, "staging-456", id)
+		AssertEqual(t, testCoolifyStagingAppID, id)
 	})
 
-	t.Run("production uses production ID", func(t *testing.T) {
+	t.Run("production uses production ID", func(t *T) {
 		config := &CoolifyConfig{
-			AppID:        "prod-123",
-			StagingAppID: "staging-456",
+			AppID:        testProdAppID,
+			StagingAppID: testCoolifyStagingAppID,
 		}
 
 		id := getAppIDForEnvironment(config, EnvProduction)
-		assert.Equal(t, "prod-123", id)
+		AssertEqual(t, testProdAppID, id)
 	})
 
-	t.Run("unknown environment uses production", func(t *testing.T) {
+	t.Run("unknown environment uses production", func(t *T) {
 		config := &CoolifyConfig{
-			AppID: "prod-123",
+			AppID: testProdAppID,
 		}
 
 		id := getAppIDForEnvironment(config, "unknown")
-		assert.Equal(t, "prod-123", id)
+		AssertEqual(t, testProdAppID, id)
 	})
 }
 
-func TestIsDeploymentComplete_Edge(t *testing.T) {
+func TestPHP_IsDeploymentComplete_Ugly(t *T) {
 	tests := []struct {
 		status   string
 		expected bool
@@ -189,14 +186,14 @@ func TestIsDeploymentComplete_Edge(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.status, func(t *testing.T) {
+		t.Run(tt.status, func(t *T) {
 			result := IsDeploymentComplete(tt.status)
-			assert.Equal(t, tt.expected, result)
+			AssertEqual(t, tt.expected, result)
 		})
 	}
 }
 
-func TestIsDeploymentSuccessful_Edge(t *testing.T) {
+func TestPHP_IsDeploymentSuccessful_Ugly(t *T) {
 	tests := []struct {
 		status   string
 		expected bool
@@ -213,9 +210,9 @@ func TestIsDeploymentSuccessful_Edge(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.status, func(t *testing.T) {
+		t.Run(tt.status, func(t *T) {
 			result := IsDeploymentSuccessful(tt.status)
-			assert.Equal(t, tt.expected, result)
+			AssertEqual(t, tt.expected, result)
 		})
 	}
 }

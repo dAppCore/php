@@ -30,16 +30,16 @@ func addPHPPackagesLinkCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.packages.link.linking"))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.link.linking"))
 
 			if err := LinkPackages(cwd, args); err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.link", "packages"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.link", "packages"), err)
 			}
 
-			cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.link.done"))
+			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.link.done"))
 			return nil
 		},
 	}
@@ -56,16 +56,16 @@ func addPHPPackagesUnlinkCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.packages.unlink.unlinking"))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.unlink.unlinking"))
 
 			if err := UnlinkPackages(cwd, args); err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.unlink", "packages"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.unlink", "packages"), err)
 			}
 
-			cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.unlink.done"))
+			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.unlink.done"))
 			return nil
 		},
 	}
@@ -81,16 +81,16 @@ func addPHPPackagesUpdateCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.packages.update.updating"))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.update.updating"))
 
 			if err := UpdatePackages(cwd, args); err != nil {
-				return cli.Err("%s: %w", i18n.T("cmd.php.error.update_packages"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("cmd.php.error.update_packages"), err)
 			}
 
-			cli.Print("\n%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.update.done"))
+			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.packages.update.done"))
 			return nil
 		},
 	}
@@ -106,20 +106,20 @@ func addPHPPackagesListCommand(parent *cli.Command) {
 		RunE: func(cmd *cli.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 			}
 
 			packages, err := ListLinkedPackages(cwd)
 			if err != nil {
-				return cli.Err("%s: %w", i18n.T("i18n.fail.list", "packages"), err)
+				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.list", "packages"), err)
 			}
 
 			if len(packages) == 0 {
-				cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.packages.list.none_found"))
+				cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.list.none_found"))
 				return nil
 			}
 
-			cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.packages.list.linked"))
+			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.packages.list.linked"))
 
 			for _, pkg := range packages {
 				name := pkg.Name

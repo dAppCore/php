@@ -57,15 +57,15 @@ func DetectDockerfileConfig(dir string) (*DockerfileConfig, error) {
 	}
 
 	// Read composer.json
-	composerPath := filepath.Join(dir, "composer.json")
+	composerPath := filepath.Join(dir, composerJSONFile)
 	composerContent, err := m.Read(composerPath)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "read", "composer.json")
+		return nil, cli.WrapVerb(err, "read", composerJSONFile)
 	}
 
 	var composer ComposerJSON
 	if err := json.Unmarshal([]byte(composerContent), &composer); err != nil {
-		return nil, cli.WrapVerb(err, "parse", "composer.json")
+		return nil, cli.WrapVerb(err, "parse", composerJSONFile)
 	}
 
 	// Detect PHP version from composer.json
@@ -319,7 +319,7 @@ func extractPHPVersion(constraint string) string {
 // hasNodeAssets checks if the project has frontend assets.
 func hasNodeAssets(dir string) bool {
 	m := getMedium()
-	packageJSON := filepath.Join(dir, "package.json")
+	packageJSON := filepath.Join(dir, packageJSONFile)
 	if !m.IsFile(packageJSON) {
 		return false
 	}

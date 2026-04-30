@@ -35,7 +35,7 @@ func IsLaravelProject(dir string) bool {
 	}
 
 	// Check composer.json for laravel/framework
-	composerPath := filepath.Join(dir, "composer.json")
+	composerPath := filepath.Join(dir, composerJSONFile)
 	data, err := m.Read(composerPath)
 	if err != nil {
 		return false
@@ -69,7 +69,7 @@ func IsFrankenPHPProject(dir string) bool {
 	m := getMedium()
 
 	// Check composer.json for laravel/octane
-	composerPath := filepath.Join(dir, "composer.json")
+	composerPath := filepath.Join(dir, composerJSONFile)
 	data, err := m.Read(composerPath)
 	if err != nil {
 		return false

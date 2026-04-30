@@ -1,5 +1,3 @@
-//go:build cgo
-
 package php
 
 import (
@@ -62,7 +60,7 @@ func PrepareRuntimeEnvironment(laravelRoot, appName string) (*RuntimeEnvironment
 
 	// Replace the extracted storage/ with a symlink to the persistent one
 	extractedStorage := filepath.Join(laravelRoot, "storage")
-	os.RemoveAll(extractedStorage)
+	_ = os.RemoveAll(extractedStorage)
 	persistentStorage := filepath.Join(dataDir, "storage")
 	if err := os.Symlink(persistentStorage, extractedStorage); err != nil {
 		return nil, fmt.Errorf("symlink storage: %w", err)
@@ -83,7 +81,7 @@ func AppendEnv(laravelRoot, key, value string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	_, err = fmt.Fprintf(f, "%s=\"%s\"\n", key, value)
 	return err
 }

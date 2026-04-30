@@ -92,7 +92,7 @@ func (s *baseService) Logs(follow bool) (io.ReadCloser, error) {
 	// Type assert to get the underlying *os.File for tailing
 	osFile, ok := file.(*os.File)
 	if !ok {
-		file.Close()
+		_ = file.Close()
 		return nil, cli.Err("log file is not a regular file")
 	}
 	return newTailReader(osFile), nil
@@ -121,7 +121,7 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 	// Type assert to get the underlying *os.File for use with exec.Cmd
 	logFile, ok := logWriter.(*os.File)
 	if !ok {
-		logWriter.Close()
+		_ = logWriter.Close()
 		return cli.Err("log file is not a regular file")
 	}
 	s.logFile = logFile
@@ -137,7 +137,9 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 	setSysProcAttr(s.cmd)
 
 	if err := s.cmd.Start(); err != nil {
-		_ = logFile.Close()
+		if closeErr := logFile.Close(); closeErr != nil {
+			err = cli.Err("%v; close log file: %v", err, closeErr)
+		}
 		s.lastError = err
 		return cli.WrapVerb(err, "start", s.name)
 	}
@@ -154,7 +156,9 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 			s.lastError = err
 		}
 		if s.logFile != nil {
-			_ = s.logFile.Close()
+			if closeErr := s.logFile.Close(); closeErr != nil && s.lastError == nil {
+				s.lastError = closeErr
+			}
 		}
 		s.mu.Unlock()
 	}()
@@ -171,21 +175,26 @@ func (s *baseService) stopProcess() error {
 	}
 
 	// Send termination signal to process (group on Unix)
-	_ = signalProcessGroup(s.cmd, termSignal())
+	if err := signalProcessGroup(s.cmd, termSignal()); err != nil {
+		s.lastError = err
+	}
 
 	// Wait for graceful shutdown with timeout
-	done := make(chan struct{})
+	done := make(chan error, 1)
 	go func() {
-		_ = s.cmd.Wait()
-		close(done)
+		done <- s.cmd.Wait()
 	}()
 
 	select {
-	case <-done:
-		// Process exited gracefully
+	case err := <-done:
+		if err != nil && s.lastError == nil {
+			s.lastError = err
+		}
 	case <-time.After(5 * time.Second):
 		// Force kill
-		_ = signalProcessGroup(s.cmd, killSignal())
+		if err := signalProcessGroup(s.cmd, killSignal()); err != nil {
+			s.lastError = err
+		}
 	}
 
 	s.running = false
@@ -347,7 +356,9 @@ func (s *HorizonService) Stop() error {
 	// Horizon has its own terminate command
 	cmd := exec.Command("php", "artisan", "horizon:terminate")
 	cmd.Dir = s.dir
-	_ = cmd.Run() // Ignore errors, will also kill via signal
+	if err := cmd.Run(); err != nil {
+		s.lastError = err
+	}
 
 	return s.stopProcess()
 }
@@ -441,7 +452,9 @@ func (s *RedisService) Start(ctx context.Context) error {
 func (s *RedisService) Stop() error {
 	// Try graceful shutdown via redis-cli
 	cmd := exec.Command("redis-cli", "-p", cli.Sprintf("%d", s.port), "shutdown", "nosave")
-	_ = cmd.Run() // Ignore errors
+	if err := cmd.Run(); err != nil {
+		s.lastError = err
+	}
 
 	return s.stopProcess()
 }

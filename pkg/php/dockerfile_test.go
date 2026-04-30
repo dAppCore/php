@@ -4,14 +4,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestGenerateDockerfile_Good(t *testing.T) {
-	t.Run("basic Laravel project", func(t *testing.T) {
+func TestPHP_GenerateDockerfile_Good(t *T) {
+	t.Run("basic Laravel project", func(t *T) {
 		dir := t.TempDir()
 
 		// Create composer.json
@@ -22,25 +18,25 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
 
 		// Create composer.lock
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		// Check content
-		assert.Contains(t, content, "FROM dunglas/frankenphp")
-		assert.Contains(t, content, "php8.2")
-		assert.Contains(t, content, "COPY composer.json composer.lock")
-		assert.Contains(t, content, "composer install")
-		assert.Contains(t, content, "EXPOSE 80 443")
+		AssertContains(t, content, "FROM dunglas/frankenphp")
+		AssertContains(t, content, "php8.2")
+		AssertContains(t, content, "COPY composer.json composer.lock")
+		AssertContains(t, content, "composer install")
+		AssertContains(t, content, "EXPOSE 80 443")
 	})
 
-	t.Run("Laravel project with Octane", func(t *testing.T) {
+	t.Run("Laravel project with Octane", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -51,19 +47,19 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.Contains(t, content, "php8.3")
-		assert.Contains(t, content, "octane:start")
+		AssertContains(t, content, "php8.3")
+		AssertContains(t, content, "octane:start")
 	})
 
-	t.Run("project with frontend assets", func(t *testing.T) {
+	t.Run("project with frontend assets", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -73,10 +69,10 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		packageJSON := `{
 			"name": "test-app",
@@ -85,22 +81,22 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"build": "vite build"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
-		require.NoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
+		RequireNoError(t, err)
 		err = os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		// Should have multi-stage build
-		assert.Contains(t, content, "FROM node:20-alpine AS frontend")
-		assert.Contains(t, content, "npm ci")
-		assert.Contains(t, content, "npm run build")
-		assert.Contains(t, content, "COPY --from=frontend")
+		AssertContains(t, content, "FROM node:20-alpine AS frontend")
+		AssertContains(t, content, "npm ci")
+		AssertContains(t, content, "npm run build")
+		AssertContains(t, content, "COPY --from=frontend")
 	})
 
-	t.Run("project with pnpm", func(t *testing.T) {
+	t.Run("project with pnpm", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -110,10 +106,10 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		packageJSON := `{
 			"name": "test-app",
@@ -121,21 +117,21 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"build": "vite build"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
-		require.NoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
+		RequireNoError(t, err)
 
 		// Create pnpm-lock.yaml
 		err = os.WriteFile(filepath.Join(dir, "pnpm-lock.yaml"), []byte("lockfileVersion: 6.0"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.Contains(t, content, "pnpm install")
-		assert.Contains(t, content, "pnpm run build")
+		AssertContains(t, content, "pnpm install")
+		AssertContains(t, content, "pnpm run build")
 	})
 
-	t.Run("project with Redis dependency", func(t *testing.T) {
+	t.Run("project with Redis dependency", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -146,19 +142,19 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"predis/predis": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.Contains(t, content, "install-php-extensions")
-		assert.Contains(t, content, "redis")
+		AssertContains(t, content, "install-php-extensions")
+		AssertContains(t, content, "redis")
 	})
 
-	t.Run("project with explicit ext- requirements", func(t *testing.T) {
+	t.Run("project with explicit ext- requirements", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -170,43 +166,43 @@ func TestGenerateDockerfile_Good(t *testing.T) {
 				"ext-intl": "*"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.Contains(t, content, "install-php-extensions")
-		assert.Contains(t, content, "gd")
-		assert.Contains(t, content, "imagick")
-		assert.Contains(t, content, "intl")
+		AssertContains(t, content, "install-php-extensions")
+		AssertContains(t, content, "gd")
+		AssertContains(t, content, "imagick")
+		AssertContains(t, content, "intl")
 	})
 }
 
-func TestGenerateDockerfile_Bad(t *testing.T) {
-	t.Run("missing composer.json", func(t *testing.T) {
+func TestPHP_GenerateDockerfile_Bad(t *T) {
+	t.Run("missing composer.json", func(t *T) {
 		dir := t.TempDir()
 
 		_, err := GenerateDockerfile(dir)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "composer.json")
+		AssertError(t, err)
+		AssertContains(t, err.Error(), composerJSONFile)
 	})
 
-	t.Run("invalid composer.json", func(t *testing.T) {
+	t.Run("invalid composer.json", func(t *T) {
 		dir := t.TempDir()
 
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte("not json{"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte("not json{"), 0644)
+		RequireNoError(t, err)
 
 		_, err = GenerateDockerfile(dir)
-		assert.Error(t, err)
+		AssertError(t, err)
 	})
 }
 
-func TestDetectDockerfileConfig_Good(t *testing.T) {
-	t.Run("full Laravel project", func(t *testing.T) {
+func TestPHP_DetectDockerfileConfig_Good(t *T) {
+	t.Run("full Laravel project", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -219,36 +215,36 @@ func TestDetectDockerfileConfig_Good(t *testing.T) {
 				"intervention/image": "^3.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
 
 		packageJSON := `{"scripts": {"build": "vite build"}}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
-		require.NoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
+		RequireNoError(t, err)
 		err = os.WriteFile(filepath.Join(dir, "yarn.lock"), []byte(""), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		config, err := DetectDockerfileConfig(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
-		assert.Equal(t, "8.3", config.PHPVersion)
-		assert.True(t, config.IsLaravel)
-		assert.True(t, config.HasOctane)
-		assert.True(t, config.HasAssets)
-		assert.Equal(t, "yarn", config.PackageManager)
-		assert.Contains(t, config.PHPExtensions, "redis")
-		assert.Contains(t, config.PHPExtensions, "gd")
+		AssertEqual(t, "8.3", config.PHPVersion)
+		AssertTrue(t, config.IsLaravel)
+		AssertTrue(t, config.HasOctane)
+		AssertTrue(t, config.HasAssets)
+		AssertEqual(t, "yarn", config.PackageManager)
+		AssertContains(t, config.PHPExtensions, "redis")
+		AssertContains(t, config.PHPExtensions, "gd")
 	})
 }
 
-func TestDetectDockerfileConfig_Bad(t *testing.T) {
-	t.Run("non-existent directory", func(t *testing.T) {
+func TestPHP_DetectDockerfileConfig_Bad(t *T) {
+	t.Run("non-existent directory", func(t *T) {
 		_, err := DetectDockerfileConfig("/non/existent/path")
-		assert.Error(t, err)
+		AssertError(t, err)
 	})
 }
 
-func TestExtractPHPVersion_Good(t *testing.T) {
+func TestPHP_ExtractPHPVersion_Good(t *T) {
 	tests := []struct {
 		constraint string
 		expected   string
@@ -263,15 +259,15 @@ func TestExtractPHPVersion_Good(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.constraint, func(t *testing.T) {
+		t.Run(tt.constraint, func(t *T) {
 			result := extractPHPVersion(tt.constraint)
-			assert.Equal(t, tt.expected, result)
+			AssertEqual(t, tt.expected, result)
 		})
 	}
 }
 
-func TestDetectPHPExtensions_Good(t *testing.T) {
-	t.Run("detects Redis from predis", func(t *testing.T) {
+func TestPHP_DetectPHPExtensions_Good(t *T) {
+	t.Run("detects Redis from predis", func(t *T) {
 		composer := ComposerJSON{
 			Require: map[string]string{
 				"predis/predis": "^2.0",
@@ -279,10 +275,10 @@ func TestDetectPHPExtensions_Good(t *testing.T) {
 		}
 
 		extensions := detectPHPExtensions(composer)
-		assert.Contains(t, extensions, "redis")
+		AssertContains(t, extensions, "redis")
 	})
 
-	t.Run("detects GD from intervention/image", func(t *testing.T) {
+	t.Run("detects GD from intervention/image", func(t *T) {
 		composer := ComposerJSON{
 			Require: map[string]string{
 				"intervention/image": "^3.0",
@@ -290,10 +286,10 @@ func TestDetectPHPExtensions_Good(t *testing.T) {
 		}
 
 		extensions := detectPHPExtensions(composer)
-		assert.Contains(t, extensions, "gd")
+		AssertContains(t, extensions, "gd")
 	})
 
-	t.Run("detects multiple extensions from Laravel", func(t *testing.T) {
+	t.Run("detects multiple extensions from Laravel", func(t *T) {
 		composer := ComposerJSON{
 			Require: map[string]string{
 				"laravel/framework": "^11.0",
@@ -301,11 +297,11 @@ func TestDetectPHPExtensions_Good(t *testing.T) {
 		}
 
 		extensions := detectPHPExtensions(composer)
-		assert.Contains(t, extensions, "pdo_mysql")
-		assert.Contains(t, extensions, "bcmath")
+		AssertContains(t, extensions, "pdo_mysql")
+		AssertContains(t, extensions, "bcmath")
 	})
 
-	t.Run("detects explicit ext- requirements", func(t *testing.T) {
+	t.Run("detects explicit ext- requirements", func(t *T) {
 		composer := ComposerJSON{
 			Require: map[string]string{
 				"ext-gd":      "*",
@@ -314,11 +310,11 @@ func TestDetectPHPExtensions_Good(t *testing.T) {
 		}
 
 		extensions := detectPHPExtensions(composer)
-		assert.Contains(t, extensions, "gd")
-		assert.Contains(t, extensions, "imagick")
+		AssertContains(t, extensions, "gd")
+		AssertContains(t, extensions, "imagick")
 	})
 
-	t.Run("skips built-in extensions", func(t *testing.T) {
+	t.Run("skips built-in extensions", func(t *T) {
 		composer := ComposerJSON{
 			Require: map[string]string{
 				"ext-json":    "*",
@@ -328,12 +324,12 @@ func TestDetectPHPExtensions_Good(t *testing.T) {
 		}
 
 		extensions := detectPHPExtensions(composer)
-		assert.NotContains(t, extensions, "json")
-		assert.NotContains(t, extensions, "session")
-		assert.NotContains(t, extensions, "pdo")
+		AssertNotContains(t, extensions, "json")
+		AssertNotContains(t, extensions, "session")
+		AssertNotContains(t, extensions, "pdo")
 	})
 
-	t.Run("sorts extensions alphabetically", func(t *testing.T) {
+	t.Run("sorts extensions alphabetically", func(t *T) {
 		composer := ComposerJSON{
 			Require: map[string]string{
 				"ext-zip":  "*",
@@ -346,14 +342,13 @@ func TestDetectPHPExtensions_Good(t *testing.T) {
 
 		// Check they are sorted
 		for i := 1; i < len(extensions); i++ {
-			assert.True(t, extensions[i-1] < extensions[i],
-				"extensions should be sorted: %v", extensions)
+			AssertTrue(t, extensions[i-1] < extensions[i], "extensions should be sorted")
 		}
 	})
 }
 
-func TestHasNodeAssets_Good(t *testing.T) {
-	t.Run("with build script", func(t *testing.T) {
+func TestPHP_HasNodeAssets_Good(t *T) {
+	t.Run("with build script", func(t *T) {
 		dir := t.TempDir()
 
 		packageJSON := `{
@@ -363,20 +358,20 @@ func TestHasNodeAssets_Good(t *testing.T) {
 				"build": "vite build"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
+		RequireNoError(t, err)
 
-		assert.True(t, hasNodeAssets(dir))
+		AssertTrue(t, hasNodeAssets(dir))
 	})
 }
 
-func TestHasNodeAssets_Bad(t *testing.T) {
-	t.Run("no package.json", func(t *testing.T) {
+func TestPHP_HasNodeAssets_Bad(t *T) {
+	t.Run("no package.json", func(t *T) {
 		dir := t.TempDir()
-		assert.False(t, hasNodeAssets(dir))
+		AssertFalse(t, hasNodeAssets(dir))
 	})
 
-	t.Run("no build script", func(t *testing.T) {
+	t.Run("no build script", func(t *T) {
 		dir := t.TempDir()
 
 		packageJSON := `{
@@ -385,71 +380,71 @@ func TestHasNodeAssets_Bad(t *testing.T) {
 				"dev": "vite"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
+		RequireNoError(t, err)
 
-		assert.False(t, hasNodeAssets(dir))
+		AssertFalse(t, hasNodeAssets(dir))
 	})
 
-	t.Run("invalid package.json", func(t *testing.T) {
+	t.Run("invalid package.json", func(t *T) {
 		dir := t.TempDir()
 
-		err := os.WriteFile(filepath.Join(dir, "package.json"), []byte("invalid{"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, packageJSONFile), []byte("invalid{"), 0644)
+		RequireNoError(t, err)
 
-		assert.False(t, hasNodeAssets(dir))
+		AssertFalse(t, hasNodeAssets(dir))
 	})
 }
 
-func TestGenerateDockerignore_Good(t *testing.T) {
-	t.Run("generates complete dockerignore", func(t *testing.T) {
+func TestPHP_GenerateDockerignore_Good(t *T) {
+	t.Run("generates complete dockerignore", func(t *T) {
 		dir := t.TempDir()
 		content := GenerateDockerignore(dir)
 
 		// Check key entries
-		assert.Contains(t, content, ".git")
-		assert.Contains(t, content, "node_modules")
-		assert.Contains(t, content, ".env")
-		assert.Contains(t, content, "vendor")
-		assert.Contains(t, content, "storage/logs/*")
-		assert.Contains(t, content, ".idea")
-		assert.Contains(t, content, ".vscode")
+		AssertContains(t, content, ".git")
+		AssertContains(t, content, "node_modules")
+		AssertContains(t, content, ".env")
+		AssertContains(t, content, "vendor")
+		AssertContains(t, content, "storage/logs/*")
+		AssertContains(t, content, ".idea")
+		AssertContains(t, content, ".vscode")
 	})
 }
 
-func TestGenerateDockerfileFromConfig_Good(t *testing.T) {
-	t.Run("minimal config", func(t *testing.T) {
+func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
+	t.Run("minimal config", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion: "8.3",
-			BaseImage:  "dunglas/frankenphp",
+			BaseImage:  testFrankenPHPImage,
 			UseAlpine:  true,
 		}
 
 		content := GenerateDockerfileFromConfig(config)
 
-		assert.Contains(t, content, "FROM dunglas/frankenphp:latest-php8.3-alpine")
-		assert.Contains(t, content, "WORKDIR /app")
-		assert.Contains(t, content, "COPY composer.json composer.lock")
-		assert.Contains(t, content, "EXPOSE 80 443")
+		AssertContains(t, content, "FROM dunglas/frankenphp:latest-php8.3-alpine")
+		AssertContains(t, content, "WORKDIR /app")
+		AssertContains(t, content, "COPY composer.json composer.lock")
+		AssertContains(t, content, "EXPOSE 80 443")
 	})
 
-	t.Run("with extensions", func(t *testing.T) {
+	t.Run("with extensions", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:    "8.3",
-			BaseImage:     "dunglas/frankenphp",
+			BaseImage:     testFrankenPHPImage,
 			UseAlpine:     true,
 			PHPExtensions: []string{"redis", "gd", "intl"},
 		}
 
 		content := GenerateDockerfileFromConfig(config)
 
-		assert.Contains(t, content, "install-php-extensions redis gd intl")
+		AssertContains(t, content, "install-php-extensions redis gd intl")
 	})
 
-	t.Run("Laravel with Octane", func(t *testing.T) {
+	t.Run("Laravel with Octane", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion: "8.3",
-			BaseImage:  "dunglas/frankenphp",
+			BaseImage:  testFrankenPHPImage,
 			UseAlpine:  true,
 			IsLaravel:  true,
 			HasOctane:  true,
@@ -457,17 +452,17 @@ func TestGenerateDockerfileFromConfig_Good(t *testing.T) {
 
 		content := GenerateDockerfileFromConfig(config)
 
-		assert.Contains(t, content, "php artisan config:cache")
-		assert.Contains(t, content, "php artisan route:cache")
-		assert.Contains(t, content, "php artisan view:cache")
-		assert.Contains(t, content, "chown -R www-data:www-data storage")
-		assert.Contains(t, content, "octane:start")
+		AssertContains(t, content, "php artisan config:cache")
+		AssertContains(t, content, "php artisan route:cache")
+		AssertContains(t, content, "php artisan view:cache")
+		AssertContains(t, content, "chown -R www-data:www-data storage")
+		AssertContains(t, content, "octane:start")
 	})
 
-	t.Run("with frontend assets", func(t *testing.T) {
+	t.Run("with frontend assets", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:     "8.3",
-			BaseImage:      "dunglas/frankenphp",
+			BaseImage:      testFrankenPHPImage,
 			UseAlpine:      true,
 			HasAssets:      true,
 			PackageManager: "npm",
@@ -476,17 +471,17 @@ func TestGenerateDockerfileFromConfig_Good(t *testing.T) {
 		content := GenerateDockerfileFromConfig(config)
 
 		// Multi-stage build
-		assert.Contains(t, content, "FROM node:20-alpine AS frontend")
-		assert.Contains(t, content, "COPY package.json package-lock.json")
-		assert.Contains(t, content, "RUN npm ci")
-		assert.Contains(t, content, "RUN npm run build")
-		assert.Contains(t, content, "COPY --from=frontend /app/public/build public/build")
+		AssertContains(t, content, "FROM node:20-alpine AS frontend")
+		AssertContains(t, content, "COPY package.json package-lock.json")
+		AssertContains(t, content, "RUN npm ci")
+		AssertContains(t, content, "RUN npm run build")
+		AssertContains(t, content, "COPY --from=frontend /app/public/build public/build")
 	})
 
-	t.Run("with yarn", func(t *testing.T) {
+	t.Run("with yarn", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:     "8.3",
-			BaseImage:      "dunglas/frankenphp",
+			BaseImage:      testFrankenPHPImage,
 			UseAlpine:      true,
 			HasAssets:      true,
 			PackageManager: "yarn",
@@ -494,15 +489,15 @@ func TestGenerateDockerfileFromConfig_Good(t *testing.T) {
 
 		content := GenerateDockerfileFromConfig(config)
 
-		assert.Contains(t, content, "COPY package.json yarn.lock")
-		assert.Contains(t, content, "yarn install --frozen-lockfile")
-		assert.Contains(t, content, "yarn build")
+		AssertContains(t, content, "COPY package.json yarn.lock")
+		AssertContains(t, content, "yarn install --frozen-lockfile")
+		AssertContains(t, content, "yarn build")
 	})
 
-	t.Run("with bun", func(t *testing.T) {
+	t.Run("with bun", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:     "8.3",
-			BaseImage:      "dunglas/frankenphp",
+			BaseImage:      testFrankenPHPImage,
 			UseAlpine:      true,
 			HasAssets:      true,
 			PackageManager: "bun",
@@ -510,57 +505,57 @@ func TestGenerateDockerfileFromConfig_Good(t *testing.T) {
 
 		content := GenerateDockerfileFromConfig(config)
 
-		assert.Contains(t, content, "npm install -g bun")
-		assert.Contains(t, content, "COPY package.json bun.lockb")
-		assert.Contains(t, content, "bun install --frozen-lockfile")
-		assert.Contains(t, content, "bun run build")
+		AssertContains(t, content, "npm install -g bun")
+		AssertContains(t, content, "COPY package.json bun.lockb")
+		AssertContains(t, content, "bun install --frozen-lockfile")
+		AssertContains(t, content, "bun run build")
 	})
 
-	t.Run("non-alpine image", func(t *testing.T) {
+	t.Run("non-alpine image", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion: "8.3",
-			BaseImage:  "dunglas/frankenphp",
+			BaseImage:  testFrankenPHPImage,
 			UseAlpine:  false,
 		}
 
 		content := GenerateDockerfileFromConfig(config)
 
-		assert.Contains(t, content, "FROM dunglas/frankenphp:latest-php8.3 AS app")
-		assert.NotContains(t, content, "alpine")
+		AssertContains(t, content, "FROM dunglas/frankenphp:latest-php8.3 AS app")
+		AssertNotContains(t, content, "alpine")
 	})
 }
 
-func TestIsPHPProject_Good(t *testing.T) {
-	t.Run("project with composer.json", func(t *testing.T) {
+func TestPHP_IsPHPProject_Good(t *T) {
+	t.Run("project with composer.json", func(t *T) {
 		dir := t.TempDir()
 
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
-		assert.True(t, IsPHPProject(dir))
+		AssertTrue(t, IsPHPProject(dir))
 	})
 }
 
-func TestIsPHPProject_Bad(t *testing.T) {
-	t.Run("project without composer.json", func(t *testing.T) {
+func TestPHP_IsPHPProject_Bad(t *T) {
+	t.Run("project without composer.json", func(t *T) {
 		dir := t.TempDir()
-		assert.False(t, IsPHPProject(dir))
+		AssertFalse(t, IsPHPProject(dir))
 	})
 
-	t.Run("non-existent directory", func(t *testing.T) {
-		assert.False(t, IsPHPProject("/non/existent/path"))
+	t.Run("non-existent directory", func(t *T) {
+		AssertFalse(t, IsPHPProject("/non/existent/path"))
 	})
 }
 
-func TestExtractPHPVersion_Edge(t *testing.T) {
-	t.Run("handles single major version", func(t *testing.T) {
+func TestPHP_ExtractPHPVersion_Ugly(t *T) {
+	t.Run("handles single major version", func(t *T) {
 		result := extractPHPVersion("8")
-		assert.Equal(t, "8.0", result)
+		AssertEqual(t, "8.0", result)
 	})
 }
 
-func TestDetectPHPExtensions_RequireDev(t *testing.T) {
-	t.Run("detects extensions from require-dev", func(t *testing.T) {
+func TestDetectPHPExtensions_RequireDev(t *T) {
+	t.Run("detects extensions from require-dev", func(t *T) {
 		composer := ComposerJSON{
 			RequireDev: map[string]string{
 				"predis/predis": "^2.0",
@@ -568,12 +563,12 @@ func TestDetectPHPExtensions_RequireDev(t *testing.T) {
 		}
 
 		extensions := detectPHPExtensions(composer)
-		assert.Contains(t, extensions, "redis")
+		AssertContains(t, extensions, "redis")
 	})
 }
 
-func TestDockerfileStructure_Good(t *testing.T) {
-	t.Run("Dockerfile has proper structure", func(t *testing.T) {
+func TestPHP_DockerfileStructure_Good(t *T) {
+	t.Run("Dockerfile has proper structure", func(t *T) {
 		dir := t.TempDir()
 
 		composerJSON := `{
@@ -585,19 +580,19 @@ func TestDockerfileStructure_Good(t *testing.T) {
 				"predis/predis": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
-		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
+		RequireNoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
+		RequireNoError(t, err)
 
 		packageJSON := `{"scripts": {"build": "vite build"}}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
-		require.NoError(t, err)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
+		RequireNoError(t, err)
 		err = os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte("{}"), 0644)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
-		require.NoError(t, err)
+		RequireNoError(t, err)
 
 		lines := strings.Split(content, "\n")
 		var fromCount, workdirCount, copyCount, runCount, exposeCount, cmdCount int
@@ -622,13 +617,13 @@ func TestDockerfileStructure_Good(t *testing.T) {
 		}
 
 		// Multi-stage build should have 2 FROM statements
-		assert.Equal(t, 2, fromCount, "should have 2 FROM statements for multi-stage build")
+		AssertEqual(t, 2, fromCount, "should have 2 FROM statements for multi-stage build")
 
 		// Should have proper structure
-		assert.GreaterOrEqual(t, workdirCount, 1, "should have WORKDIR")
-		assert.GreaterOrEqual(t, copyCount, 3, "should have multiple COPY statements")
-		assert.GreaterOrEqual(t, runCount, 2, "should have multiple RUN statements")
-		assert.Equal(t, 1, exposeCount, "should have exactly one EXPOSE")
-		assert.Equal(t, 1, cmdCount, "should have exactly one CMD")
+		AssertGreaterOrEqual(t, workdirCount, 1, "should have WORKDIR")
+		AssertGreaterOrEqual(t, copyCount, 3, "should have multiple COPY statements")
+		AssertGreaterOrEqual(t, runCount, 2, "should have multiple RUN statements")
+		AssertEqual(t, 1, exposeCount, "should have exactly one EXPOSE")
+		AssertEqual(t, 1, cmdCount, "should have exactly one CMD")
 	})
 }

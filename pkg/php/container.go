@@ -50,7 +50,7 @@ type LinuxKitBuildOptions struct {
 	// Format is the output format: "iso", "qcow2", "raw", "vmdk".
 	Format string
 
-	// Template is the LinuxKit template name (default: "server-php").
+	// Template is the LinuxKit template name (default: server-php).
 	Template string
 
 	// Variables are template variables to apply.
@@ -92,17 +92,43 @@ type ServeOptions struct {
 
 // BuildDocker builds a Docker image for the PHP project.
 func BuildDocker(ctx context.Context, opts DockerBuildOptions) error {
+	opts, err := normalizeDockerBuildOptions(opts)
+	if err != nil {
+		return err
+	}
+
+	dockerfilePath, cleanup, err := resolveDockerfilePath(opts)
+	if err != nil {
+		return err
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+
+	cmd := exec.CommandContext(ctx, "docker", dockerBuildArgs(opts, dockerfilePath)...)
+	cmd.Dir = opts.ProjectDir
+	cmd.Stdout = opts.Output
+	cmd.Stderr = opts.Output
+
+	if err := cmd.Run(); err != nil {
+		return cli.Wrap(err, "docker build failed")
+	}
+
+	return nil
+}
+
+func normalizeDockerBuildOptions(opts DockerBuildOptions) (DockerBuildOptions, error) {
 	if opts.ProjectDir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return opts, cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.ProjectDir = cwd
 	}
 
 	// Validate project directory
 	if !IsPHPProject(opts.ProjectDir) {
-		return cli.Err("not a PHP project: %s (missing composer.json)", opts.ProjectDir)
+		return opts, cli.Err("not a PHP project: %s (missing composer.json)", opts.ProjectDir)
 	}
 
 	// Set defaults
@@ -116,29 +142,29 @@ func BuildDocker(ctx context.Context, opts DockerBuildOptions) error {
 		opts.Output = os.Stdout
 	}
 
-	// Determine Dockerfile path
-	dockerfilePath := opts.Dockerfile
-	var tempDockerfile string
+	return opts, nil
+}
 
-	if dockerfilePath == "" {
-		// Generate Dockerfile
-		content, err := GenerateDockerfile(opts.ProjectDir)
-		if err != nil {
-			return cli.WrapVerb(err, "generate", "Dockerfile")
-		}
-
-		// Write to temporary file
-		m := getMedium()
-		tempDockerfile = filepath.Join(opts.ProjectDir, "Dockerfile.core-generated")
-		if err := m.Write(tempDockerfile, content); err != nil {
-			return cli.WrapVerb(err, "write", "Dockerfile")
-		}
-		defer func() { _ = m.Delete(tempDockerfile) }()
-
-		dockerfilePath = tempDockerfile
+func resolveDockerfilePath(opts DockerBuildOptions) (string, func(), error) {
+	if opts.Dockerfile != "" {
+		return opts.Dockerfile, nil, nil
 	}
 
-	// Build Docker image
+	content, err := GenerateDockerfile(opts.ProjectDir)
+	if err != nil {
+		return "", nil, cli.WrapVerb(err, "generate", "Dockerfile")
+	}
+
+	m := getMedium()
+	tempDockerfile := filepath.Join(opts.ProjectDir, "Dockerfile.core-generated")
+	if err := m.Write(tempDockerfile, content); err != nil {
+		return "", nil, cli.WrapVerb(err, "write", "Dockerfile")
+	}
+
+	return tempDockerfile, func() { _ = m.Delete(tempDockerfile) }, nil
+}
+
+func dockerBuildArgs(opts DockerBuildOptions, dockerfilePath string) []string {
 	imageRef := cli.Sprintf("%s:%s", opts.ImageName, opts.Tag)
 
 	args := []string{"build", "-t", imageRef, "-f", dockerfilePath}
@@ -156,17 +182,7 @@ func BuildDocker(ctx context.Context, opts DockerBuildOptions) error {
 	}
 
 	args = append(args, opts.ProjectDir)
-
-	cmd := exec.CommandContext(ctx, "docker", args...)
-	cmd.Dir = opts.ProjectDir
-	cmd.Stdout = opts.Output
-	cmd.Stderr = opts.Output
-
-	if err := cmd.Run(); err != nil {
-		return cli.Wrap(err, "docker build failed")
-	}
-
-	return nil
+	return args
 }
 
 // BuildLinuxKit builds a LinuxKit image for the PHP project.
@@ -174,7 +190,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 	if opts.ProjectDir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.ProjectDir = cwd
 	}
@@ -186,7 +202,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error {
 
 	// Set defaults
 	if opts.Template == "" {
-		opts.Template = "server-php"
+		opts.Template = defaultLinuxKitTemplateName
 	}
 	if opts.Format == "" {
 		opts.Format = "qcow2"
@@ -308,10 +324,9 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error {
 	args = append(args, imageRef)
 
 	cmd := exec.CommandContext(ctx, "docker", args...)
-	cmd.Stdout = opts.Output
-	cmd.Stderr = opts.Output
 
 	if opts.Detach {
+		cmd.Stderr = opts.Output
 		output, err := cmd.Output()
 		if err != nil {
 			return cli.WrapVerb(err, "start", "container")
@@ -321,6 +336,8 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error {
 		return nil
 	}
 
+	cmd.Stdout = opts.Output
+	cmd.Stderr = opts.Output
 	return cmd.Run()
 }
 
@@ -346,7 +363,7 @@ func Shell(ctx context.Context, containerID string) error {
 
 // IsPHPProject checks if the given directory is a PHP project.
 func IsPHPProject(dir string) bool {
-	composerPath := filepath.Join(dir, "composer.json")
+	composerPath := filepath.Join(dir, composerJSONFile)
 	return getMedium().IsFile(composerPath)
 }
 
@@ -376,7 +393,7 @@ func lookupLinuxKit() (string, error) {
 // getLinuxKitTemplate retrieves a LinuxKit template by name.
 func getLinuxKitTemplate(name string) (string, error) {
 	// Default server-php template for PHP projects
-	if name == "server-php" {
+	if name == defaultLinuxKitTemplateName {
 		return defaultServerPHPTemplate, nil
 	}
 

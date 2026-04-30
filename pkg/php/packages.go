@@ -26,15 +26,15 @@ type composerRepository struct {
 // readComposerJSON reads and parses composer.json from the given directory.
 func readComposerJSON(dir string) (map[string]json.RawMessage, error) {
 	m := getMedium()
-	composerPath := filepath.Join(dir, "composer.json")
+	composerPath := filepath.Join(dir, composerJSONFile)
 	content, err := m.Read(composerPath)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "read", "composer.json")
+		return nil, cli.WrapVerb(err, "read", composerJSONFile)
 	}
 
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal([]byte(content), &raw); err != nil {
-		return nil, cli.WrapVerb(err, "parse", "composer.json")
+		return nil, cli.WrapVerb(err, "parse", composerJSONFile)
 	}
 
 	return raw, nil
@@ -43,18 +43,18 @@ func readComposerJSON(dir string) (map[string]json.RawMessage, error) {
 // writeComposerJSON writes the composer.json to the given directory.
 func writeComposerJSON(dir string, raw map[string]json.RawMessage) error {
 	m := getMedium()
-	composerPath := filepath.Join(dir, "composer.json")
+	composerPath := filepath.Join(dir, composerJSONFile)
 
 	data, err := json.MarshalIndent(raw, "", "    ")
 	if err != nil {
-		return cli.WrapVerb(err, "marshal", "composer.json")
+		return cli.WrapVerb(err, "marshal", composerJSONFile)
 	}
 
 	// Add trailing newline
 	content := string(data) + "\n"
 
 	if err := m.Write(composerPath, content); err != nil {
-		return cli.WrapVerb(err, "write", "composer.json")
+		return cli.WrapVerb(err, "write", composerJSONFile)
 	}
 
 	return nil
@@ -94,7 +94,7 @@ func setRepositories(raw map[string]json.RawMessage, repos []composerRepository)
 // getPackageInfo reads package name and version from a composer.json in the given path.
 func getPackageInfo(packagePath string) (name, version string, err error) {
 	m := getMedium()
-	composerPath := filepath.Join(packagePath, "composer.json")
+	composerPath := filepath.Join(packagePath, composerJSONFile)
 	content, err := m.Read(composerPath)
 	if err != nil {
 		return "", "", cli.WrapVerb(err, "read", "package composer.json")
@@ -119,7 +119,7 @@ func getPackageInfo(packagePath string) (name, version string, err error) {
 // LinkPackages adds path repositories to composer.json for local package development.
 func LinkPackages(dir string, packages []string) error {
 	if !IsPHPProject(dir) {
-		return cli.Err("not a PHP project (missing composer.json)")
+		return cli.Err(notPHPProjectComposerMessage)
 	}
 
 	raw, err := readComposerJSON(dir)
@@ -133,45 +133,16 @@ func LinkPackages(dir string, packages []string) error {
 	}
 
 	for _, packagePath := range packages {
-		// Resolve absolute path
-		absPath, err := filepath.Abs(packagePath)
+		absPath, pkgName, err := validateLinkPackage(packagePath)
 		if err != nil {
-			return cli.Err("failed to resolve path %s: %w", packagePath, err)
+			return err
 		}
 
-		// Verify the path exists and has a composer.json
-		if !IsPHPProject(absPath) {
-			return cli.Err("not a PHP package (missing composer.json): %s", absPath)
-		}
-
-		// Get package name for validation
-		pkgName, _, err := getPackageInfo(absPath)
-		if err != nil {
-			return cli.Err("failed to get package info from %s: %w", absPath, err)
-		}
-
-		// Check if already linked
-		alreadyLinked := false
-		for _, repo := range repos {
-			if repo.Type == "path" && repo.URL == absPath {
-				alreadyLinked = true
-				break
-			}
-		}
-
-		if alreadyLinked {
+		if isPackageLinked(repos, absPath) {
 			continue
 		}
 
-		// Add path repository
-		repos = append(repos, composerRepository{
-			Type: "path",
-			URL:  absPath,
-			Options: map[string]any{
-				"symlink": true,
-			},
-		})
-
+		repos = append(repos, pathComposerRepository(absPath))
 		cli.Print("Linked: %s -> %s\n", pkgName, absPath)
 	}
 
@@ -182,10 +153,47 @@ func LinkPackages(dir string, packages []string) error {
 	return writeComposerJSON(dir, raw)
 }
 
+func validateLinkPackage(packagePath string) (string, string, error) {
+	absPath, err := filepath.Abs(packagePath)
+	if err != nil {
+		return "", "", cli.Err("failed to resolve path %s: %w", packagePath, err)
+	}
+
+	if !IsPHPProject(absPath) {
+		return "", "", cli.Err("not a PHP package (missing composer.json): %s", absPath)
+	}
+
+	pkgName, _, err := getPackageInfo(absPath)
+	if err != nil {
+		return "", "", cli.Err("failed to get package info from %s: %w", absPath, err)
+	}
+
+	return absPath, pkgName, nil
+}
+
+func isPackageLinked(repos []composerRepository, absPath string) bool {
+	for _, repo := range repos {
+		if repo.Type == "path" && repo.URL == absPath {
+			return true
+		}
+	}
+	return false
+}
+
+func pathComposerRepository(absPath string) composerRepository {
+	return composerRepository{
+		Type: "path",
+		URL:  absPath,
+		Options: map[string]any{
+			"symlink": true,
+		},
+	}
+}
+
 // UnlinkPackages removes path repositories from composer.json.
 func UnlinkPackages(dir string, packages []string) error {
 	if !IsPHPProject(dir) {
-		return cli.Err("not a PHP project (missing composer.json)")
+		return cli.Err(notPHPProjectComposerMessage)
 	}
 
 	raw, err := readComposerJSON(dir)
@@ -207,33 +215,7 @@ func UnlinkPackages(dir string, packages []string) error {
 	// Filter out unlinked packages
 	filtered := make([]composerRepository, 0, len(repos))
 	for _, repo := range repos {
-		if repo.Type != "path" {
-			filtered = append(filtered, repo)
-			continue
-		}
-
-		// Check if this repo should be unlinked
-		shouldUnlink := false
-
-		// Try to get package name from the path
-		if IsPHPProject(repo.URL) {
-			pkgName, _, err := getPackageInfo(repo.URL)
-			if err == nil && toUnlink[pkgName] {
-				shouldUnlink = true
-				cli.Print("Unlinked: %s\n", pkgName)
-			}
-		}
-
-		// Also check if path matches any of the provided names
-		for pkg := range toUnlink {
-			if repo.URL == pkg || filepath.Base(repo.URL) == pkg {
-				shouldUnlink = true
-				cli.Print("Unlinked: %s\n", repo.URL)
-				break
-			}
-		}
-
-		if !shouldUnlink {
+		if !shouldUnlinkRepository(repo, toUnlink) {
 			filtered = append(filtered, repo)
 		}
 	}
@@ -245,10 +227,35 @@ func UnlinkPackages(dir string, packages []string) error {
 	return writeComposerJSON(dir, raw)
 }
 
+func shouldUnlinkRepository(repo composerRepository, toUnlink map[string]bool) bool {
+	if repo.Type != "path" {
+		return false
+	}
+
+	shouldUnlink := false
+	if IsPHPProject(repo.URL) {
+		pkgName, _, err := getPackageInfo(repo.URL)
+		if err == nil && toUnlink[pkgName] {
+			shouldUnlink = true
+			cli.Print("Unlinked: %s\n", pkgName)
+		}
+	}
+
+	for pkg := range toUnlink {
+		if repo.URL == pkg || filepath.Base(repo.URL) == pkg {
+			shouldUnlink = true
+			cli.Print("Unlinked: %s\n", repo.URL)
+			break
+		}
+	}
+
+	return shouldUnlink
+}
+
 // UpdatePackages runs composer update for specific packages.
 func UpdatePackages(dir string, packages []string) error {
 	if !IsPHPProject(dir) {
-		return cli.Err("not a PHP project (missing composer.json)")
+		return cli.Err(notPHPProjectComposerMessage)
 	}
 
 	args := []string{"update"}
@@ -265,7 +272,7 @@ func UpdatePackages(dir string, packages []string) error {
 // ListLinkedPackages returns all path repositories from composer.json.
 func ListLinkedPackages(dir string) ([]LinkedPackage, error) {
 	if !IsPHPProject(dir) {
-		return nil, cli.Err("not a PHP project (missing composer.json)")
+		return nil, cli.Err(notPHPProjectComposerMessage)
 	}
 
 	raw, err := readComposerJSON(dir)

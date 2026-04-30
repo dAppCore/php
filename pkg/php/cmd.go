@@ -61,46 +61,7 @@ func AddPHPCommands(root *cli.Command) {
 		Short: i18n.T("cmd.php.short"),
 		Long:  i18n.T("cmd.php.long"),
 		PersistentPreRunE: func(cmd *cli.Command, args []string) error {
-			// Check if we are in a workspace root
-			wsRoot, err := findWorkspaceRoot()
-			if err != nil {
-				return nil // Not in a workspace, regular behavior
-			}
-
-			// Load workspace config
-			config, err := loadWorkspaceConfig(wsRoot)
-			if err != nil || config == nil {
-				return nil // Failed to load or no config, ignore
-			}
-
-			if config.Active == "" {
-				return nil // No active package
-			}
-
-			// Calculate package path
-			pkgDir := config.PackagesDir
-			if pkgDir == "" {
-				pkgDir = "./packages"
-			}
-			if !filepath.IsAbs(pkgDir) {
-				pkgDir = filepath.Join(wsRoot, pkgDir)
-			}
-
-			targetDir := filepath.Join(pkgDir, config.Active)
-
-			// Check if target directory exists
-			if !getMedium().IsDir(targetDir) {
-				cli.Warnf("Active package directory not found: %s", targetDir)
-				return nil
-			}
-
-			// Change working directory
-			if err := os.Chdir(targetDir); err != nil {
-				return cli.Err("failed to change directory to active package: %w", err)
-			}
-
-			cli.Print("%s %s\n", dimStyle.Render("Workspace:"), config.Active)
-			return nil
+			return activateWorkspacePackage()
 		},
 	}
 	root.AddCommand(phpCmd)
@@ -138,34 +99,7 @@ var registerFrankenPHP func(phpCmd *cli.Command)
 // AddPHPRootCommands adds PHP commands directly to root (for standalone core-php binary).
 func AddPHPRootCommands(root *cli.Command) {
 	root.PersistentPreRunE = func(cmd *cli.Command, args []string) error {
-		wsRoot, err := findWorkspaceRoot()
-		if err != nil {
-			return nil
-		}
-		config, err := loadWorkspaceConfig(wsRoot)
-		if err != nil || config == nil {
-			return nil
-		}
-		if config.Active == "" {
-			return nil
-		}
-		pkgDir := config.PackagesDir
-		if pkgDir == "" {
-			pkgDir = "./packages"
-		}
-		if !filepath.IsAbs(pkgDir) {
-			pkgDir = filepath.Join(wsRoot, pkgDir)
-		}
-		targetDir := filepath.Join(pkgDir, config.Active)
-		if !getMedium().IsDir(targetDir) {
-			cli.Warnf("Active package directory not found: %s", targetDir)
-			return nil
-		}
-		if err := os.Chdir(targetDir); err != nil {
-			return cli.Err("failed to change directory to active package: %w", err)
-		}
-		cli.Print("%s %s\n", dimStyle.Render("Workspace:"), config.Active)
-		return nil
+		return activateWorkspacePackage()
 	}
 
 	// Development
@@ -193,4 +127,50 @@ func AddPHPRootCommands(root *cli.Command) {
 	if registerFrankenPHP != nil {
 		registerFrankenPHP(root)
 	}
+}
+
+func activateWorkspacePackage() error {
+	wsRoot, config, ok := loadActiveWorkspaceConfig()
+	if !ok {
+		return nil
+	}
+
+	targetDir := activeWorkspacePackageDir(wsRoot, config)
+	if !getMedium().IsDir(targetDir) {
+		cli.Warnf("Active package directory not found: %s", targetDir)
+		return nil
+	}
+
+	if err := os.Chdir(targetDir); err != nil {
+		return cli.Err("failed to change directory to active package: %w", err)
+	}
+
+	cli.Print(cliLabelValueFormat, dimStyle.Render("Workspace:"), config.Active)
+	return nil
+}
+
+func loadActiveWorkspaceConfig() (string, *workspaceConfig, bool) {
+	wsRoot, err := findWorkspaceRoot()
+	if err != nil {
+		return "", nil, false
+	}
+
+	config, err := loadWorkspaceConfig(wsRoot)
+	if err != nil || config == nil || config.Active == "" {
+		return "", nil, false
+	}
+
+	return wsRoot, config, true
+}
+
+func activeWorkspacePackageDir(wsRoot string, config *workspaceConfig) string {
+	pkgDir := config.PackagesDir
+	if pkgDir == "" {
+		pkgDir = "./packages"
+	}
+	if !filepath.IsAbs(pkgDir) {
+		pkgDir = filepath.Join(wsRoot, pkgDir)
+	}
+
+	return filepath.Join(pkgDir, config.Active)
 }

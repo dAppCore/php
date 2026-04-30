@@ -41,7 +41,7 @@ func Extract(fsys fs.FS, prefix string) (string, error) {
 	})
 
 	if err != nil {
-		os.RemoveAll(tmpDir)
+		_ = os.RemoveAll(tmpDir)
 		return "", fmt.Errorf("extract Laravel: %w", err)
 	}
 

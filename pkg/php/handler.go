@@ -1,4 +1,4 @@
-//go:build cgo
+//go:build frankenphp
 
 // Package php provides FrankenPHP embedding for Go applications.
 // Serves a Laravel application via the FrankenPHP runtime, with support
