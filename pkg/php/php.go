@@ -73,16 +73,8 @@ func (d *DevServer) Start(ctx context.Context, opts Options) error {
 		return cli.Err("dev server is already running")
 	}
 
-	// Merge options
-	if opts.Dir != "" {
-		d.opts.Dir = opts.Dir
-	}
-	if d.opts.Dir == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
-		}
-		d.opts.Dir = cwd
+	if err := d.applyStartOptions(opts); err != nil {
+		return err
 	}
 
 	// Verify this is a Laravel project
@@ -93,98 +85,111 @@ func (d *DevServer) Start(ctx context.Context, opts Options) error {
 	// Create cancellable context
 	d.ctx, d.cancel = context.WithCancel(ctx)
 
-	// Detect or use provided services
+	// Setup SSL if HTTPS is enabled
+	certFile, keyFile, err := setupDevSSL(d.opts.Dir, opts)
+	if err != nil {
+		return err
+	}
+
+	// Create services
+	d.services = d.createServices(opts, certFile, keyFile)
+
+	// Start all services
+	if err := d.startServices(); err != nil {
+		return err
+	}
+
+	d.running = true
+	return nil
+}
+
+func (d *DevServer) applyStartOptions(opts Options) error {
+	if opts.Dir != "" {
+		d.opts.Dir = opts.Dir
+	}
+	if d.opts.Dir != "" {
+		return nil
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return cli.WrapVerb(err, "get", workingDirectorySubject)
+	}
+	d.opts.Dir = cwd
+	return nil
+}
+
+func setupDevSSL(dir string, opts Options) (string, string, error) {
+	if !opts.HTTPS {
+		return "", "", nil
+	}
+
+	certFile, keyFile, err := SetupSSLIfNeeded(devSSLDomain(dir, opts.Domain), SSLOptions{})
+	if err != nil {
+		return "", "", cli.WrapVerb(err, "setup", "SSL")
+	}
+
+	return certFile, keyFile, nil
+}
+
+func devSSLDomain(dir, configuredDomain string) string {
+	if configuredDomain != "" {
+		return configuredDomain
+	}
+	if appURL := GetLaravelAppURL(dir); appURL != "" {
+		return ExtractDomainFromURL(appURL)
+	}
+	return "localhost"
+}
+
+func (d *DevServer) createServices(opts Options, certFile, keyFile string) []Service {
 	services := opts.Services
 	if len(services) == 0 {
 		services = DetectServices(d.opts.Dir)
 	}
-
-	// Filter out disabled services
 	services = d.filterServices(services, opts)
 
-	// Setup SSL if HTTPS is enabled
-	var certFile, keyFile string
-	if opts.HTTPS {
-		domain := opts.Domain
-		if domain == "" {
-			// Try to get domain from APP_URL
-			appURL := GetLaravelAppURL(d.opts.Dir)
-			if appURL != "" {
-				domain = ExtractDomainFromURL(appURL)
-			}
-		}
-		if domain == "" {
-			domain = "localhost"
-		}
-
-		var err error
-		certFile, keyFile, err = SetupSSLIfNeeded(domain, SSLOptions{})
-		if err != nil {
-			return cli.WrapVerb(err, "setup", "SSL")
-		}
-	}
-
-	// Create services
-	d.services = make([]Service, 0)
-
+	result := make([]Service, 0, len(services))
 	for _, svc := range services {
-		var service Service
-
-		switch svc {
-		case ServiceFrankenPHP:
-			port := opts.FrankenPHPPort
-			if port == 0 {
-				port = 8000
-			}
-			httpsPort := opts.HTTPSPort
-			if httpsPort == 0 {
-				httpsPort = 443
-			}
-			service = NewFrankenPHPService(d.opts.Dir, FrankenPHPOptions{
-				Port:      port,
-				HTTPSPort: httpsPort,
-				HTTPS:     opts.HTTPS,
-				CertFile:  certFile,
-				KeyFile:   keyFile,
-			})
-
-		case ServiceVite:
-			port := opts.VitePort
-			if port == 0 {
-				port = 5173
-			}
-			service = NewViteService(d.opts.Dir, ViteOptions{
-				Port: port,
-			})
-
-		case ServiceHorizon:
-			service = NewHorizonService(d.opts.Dir)
-
-		case ServiceReverb:
-			port := opts.ReverbPort
-			if port == 0 {
-				port = 8080
-			}
-			service = NewReverbService(d.opts.Dir, ReverbOptions{
-				Port: port,
-			})
-
-		case ServiceRedis:
-			port := opts.RedisPort
-			if port == 0 {
-				port = 6379
-			}
-			service = NewRedisService(d.opts.Dir, RedisOptions{
-				Port: port,
-			})
-		}
-
-		if service != nil {
-			d.services = append(d.services, service)
+		if service := d.createService(svc, opts, certFile, keyFile); service != nil {
+			result = append(result, service)
 		}
 	}
 
-	// Start all services
+	return result
+}
+
+func (d *DevServer) createService(svc DetectedService, opts Options, certFile, keyFile string) Service {
+	switch svc {
+	case ServiceFrankenPHP:
+		return NewFrankenPHPService(d.opts.Dir, FrankenPHPOptions{
+			Port:      defaultPort(opts.FrankenPHPPort, 8000),
+			HTTPSPort: defaultPort(opts.HTTPSPort, 443),
+			HTTPS:     opts.HTTPS,
+			CertFile:  certFile,
+			KeyFile:   keyFile,
+		})
+	case ServiceVite:
+		return NewViteService(d.opts.Dir, ViteOptions{Port: defaultPort(opts.VitePort, 5173)})
+	case ServiceHorizon:
+		return NewHorizonService(d.opts.Dir)
+	case ServiceReverb:
+		return NewReverbService(d.opts.Dir, ReverbOptions{Port: defaultPort(opts.ReverbPort, 8080)})
+	case ServiceRedis:
+		return NewRedisService(d.opts.Dir, RedisOptions{Port: defaultPort(opts.RedisPort, 6379)})
+	default:
+		return nil
+	}
+}
+
+func defaultPort(value, fallback int) int {
+	if value == 0 {
+		return fallback
+	}
+	return value
+}
+
+func (d *DevServer) startServices() error {
 	var startErrors []error
 	for _, svc := range d.services {
 		if err := svc.Start(d.ctx); err != nil {
@@ -192,18 +197,16 @@ func (d *DevServer) Start(ctx context.Context, opts Options) error {
 		}
 	}
 
-	if len(startErrors) > 0 {
-		// Stop any services that did start
-		for _, svc := range d.services {
-			if err := svc.Stop(); err != nil {
-				startErrors = append(startErrors, cli.Err("cleanup %s: %v", svc.Name(), err))
-			}
-		}
-		return cli.Err("failed to start services: %v", startErrors)
+	if len(startErrors) == 0 {
+		return nil
 	}
 
-	d.running = true
-	return nil
+	for _, svc := range d.services {
+		if err := svc.Stop(); err != nil {
+			startErrors = append(startErrors, cli.Err("cleanup %s: %v", svc.Name(), err))
+		}
+	}
+	return cli.Err("failed to start services: %v", startErrors)
 }
 
 // filterServices removes disabled services from the list.

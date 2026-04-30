@@ -133,7 +133,7 @@ func Format(ctx context.Context, opts FormatOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -169,7 +169,7 @@ func Analyse(ctx context.Context, opts AnalyseOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -318,7 +318,7 @@ func RunPsalm(ctx context.Context, opts PsalmOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -403,7 +403,7 @@ func RunAudit(ctx context.Context, opts AuditOptions) ([]AuditResult, error) {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return nil, cli.WrapVerb(err, "get", "working directory")
+			return nil, cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -419,7 +419,7 @@ func RunAudit(ctx context.Context, opts AuditOptions) ([]AuditResult, error) {
 	results = append(results, composerResult)
 
 	// Run npm audit if package.json exists
-	if getMedium().Exists(filepath.Join(opts.Dir, "package.json")) {
+	if getMedium().Exists(filepath.Join(opts.Dir, packageJSONFile)) {
 		npmResult := runNpmAudit(ctx, opts)
 		results = append(results, npmResult)
 	}
@@ -545,11 +545,7 @@ func DetectRector(dir string) bool {
 
 	// Check for vendor binary
 	rectorBin := filepath.Join(dir, "vendor", "bin", "rector")
-	if m.Exists(rectorBin) {
-		return true
-	}
-
-	return false
+	return m.Exists(rectorBin)
 }
 
 // RunRector runs Rector for automated code refactoring.
@@ -557,7 +553,7 @@ func RunRector(ctx context.Context, opts RectorOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -626,11 +622,7 @@ func DetectInfection(dir string) bool {
 
 	// Check for vendor binary
 	infectionBin := filepath.Join(dir, "vendor", "bin", "infection")
-	if m.Exists(infectionBin) {
-		return true
-	}
-
-	return false
+	return m.Exists(infectionBin)
 }
 
 // RunInfection runs Infection mutation testing.
@@ -638,7 +630,7 @@ func RunInfection(ctx context.Context, opts InfectionOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", "working directory")
+			return cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -821,7 +813,7 @@ func RunSecurityChecks(ctx context.Context, opts SecurityOptions) (*SecurityResu
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return nil, cli.WrapVerb(err, "get", "working directory")
+			return nil, cli.WrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -876,13 +868,24 @@ func RunSecurityChecks(ctx context.Context, opts SecurityOptions) (*SecurityResu
 }
 
 func runEnvSecurityChecks(dir string) []SecurityCheck {
-	var checks []SecurityCheck
+	envMap, ok := readEnvFileMap(dir)
+	if !ok {
+		return nil
+	}
 
+	var checks []SecurityCheck
+	checks = appendEnvCheck(checks, envMap, "APP_DEBUG", debugModeCheck)
+	checks = appendEnvCheck(checks, envMap, "APP_KEY", appKeyCheck)
+	checks = appendEnvCheck(checks, envMap, "APP_URL", httpsEnforcedCheck)
+	return checks
+}
+
+func readEnvFileMap(dir string) (map[string]string, bool) {
 	m := getMedium()
 	envPath := filepath.Join(dir, ".env")
 	envContent, err := m.Read(envPath)
 	if err != nil {
-		return checks
+		return nil, false
 	}
 
 	envLines := strings.Split(envContent, "\n")
@@ -898,58 +901,62 @@ func runEnvSecurityChecks(dir string) []SecurityCheck {
 		}
 	}
 
-	// Check APP_DEBUG
-	if debug, ok := envMap["APP_DEBUG"]; ok {
-		check := SecurityCheck{
-			ID:          "debug_mode",
-			Name:        "Debug Mode Disabled",
-			Description: "APP_DEBUG should be false in production",
-			Severity:    "critical",
-			Passed:      strings.ToLower(debug) != "true",
-			CWE:         "CWE-215",
-		}
-		if !check.Passed {
-			check.Message = "Debug mode exposes sensitive information"
-			check.Fix = "Set APP_DEBUG=false in .env"
-		}
-		checks = append(checks, check)
-	}
+	return envMap, true
+}
 
-	// Check APP_KEY
-	if key, ok := envMap["APP_KEY"]; ok {
-		check := SecurityCheck{
-			ID:          "app_key_set",
-			Name:        "Application Key Set",
-			Description: "APP_KEY must be set and valid",
-			Severity:    "critical",
-			Passed:      len(key) >= 32,
-			CWE:         "CWE-321",
-		}
-		if !check.Passed {
-			check.Message = "Missing or weak encryption key"
-			check.Fix = "Run: php artisan key:generate"
-		}
-		checks = append(checks, check)
+func appendEnvCheck(checks []SecurityCheck, envMap map[string]string, key string, build func(string) SecurityCheck) []SecurityCheck {
+	if value, ok := envMap[key]; ok {
+		return append(checks, build(value))
 	}
-
-	// Check APP_URL for HTTPS
-	if url, ok := envMap["APP_URL"]; ok {
-		check := SecurityCheck{
-			ID:          "https_enforced",
-			Name:        "HTTPS Enforced",
-			Description: "APP_URL should use HTTPS in production",
-			Severity:    "high",
-			Passed:      strings.HasPrefix(url, "https://"),
-			CWE:         "CWE-319",
-		}
-		if !check.Passed {
-			check.Message = "Application not using HTTPS"
-			check.Fix = "Update APP_URL to use https://"
-		}
-		checks = append(checks, check)
-	}
-
 	return checks
+}
+
+func debugModeCheck(debug string) SecurityCheck {
+	check := SecurityCheck{
+		ID:          "debug_mode",
+		Name:        "Debug Mode Disabled",
+		Description: "APP_DEBUG should be false in production",
+		Severity:    "critical",
+		Passed:      strings.ToLower(debug) != "true",
+		CWE:         "CWE-215",
+	}
+	if !check.Passed {
+		check.Message = "Debug mode exposes sensitive information"
+		check.Fix = "Set APP_DEBUG=false in .env"
+	}
+	return check
+}
+
+func appKeyCheck(key string) SecurityCheck {
+	check := SecurityCheck{
+		ID:          "app_key_set",
+		Name:        "Application Key Set",
+		Description: "APP_KEY must be set and valid",
+		Severity:    "critical",
+		Passed:      len(key) >= 32,
+		CWE:         "CWE-321",
+	}
+	if !check.Passed {
+		check.Message = "Missing or weak encryption key"
+		check.Fix = "Run: php artisan key:generate"
+	}
+	return check
+}
+
+func httpsEnforcedCheck(url string) SecurityCheck {
+	check := SecurityCheck{
+		ID:          "https_enforced",
+		Name:        "HTTPS Enforced",
+		Description: "APP_URL should use HTTPS in production",
+		Severity:    "high",
+		Passed:      strings.HasPrefix(url, "https://"),
+		CWE:         "CWE-319",
+	}
+	if !check.Passed {
+		check.Message = "Application not using HTTPS"
+		check.Fix = "Update APP_URL to use https://"
+	}
+	return check
 }
 
 func runFilesystemSecurityChecks(dir string) []SecurityCheck {

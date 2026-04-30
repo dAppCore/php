@@ -21,7 +21,7 @@ func TestPHP_NewDevServer_Good(t *T) {
 
 	t.Run("creates dev server with custom options", func(t *T) {
 		opts := Options{
-			Dir:            "/tmp/test",
+			Dir:            testTmpDir,
 			NoVite:         true,
 			NoHorizon:      true,
 			FrankenPHPPort: 9000,
@@ -29,7 +29,7 @@ func TestPHP_NewDevServer_Good(t *T) {
 		server := NewDevServer(opts)
 
 		AssertNotNil(t, server)
-		AssertEqual(t, "/tmp/test", server.opts.Dir)
+		AssertEqual(t, testTmpDir, server.opts.Dir)
 		AssertTrue(t, server.opts.NoVite)
 	})
 }
@@ -196,7 +196,7 @@ func TestPHP_MultiServiceReader_Good(t *T) {
 func TestPHP_MultiServiceReader_Read_Good(t *T) {
 	t.Run("reads from readers with service prefix", func(t *T) {
 		dir := t.TempDir()
-		file1, err := os.CreateTemp(dir, "log-*.log")
+		file1, err := os.CreateTemp(dir, testLogGlob)
 		RequireNoError(t, err)
 		_, _ = file1.WriteString("log content")
 		_, _ = file1.Seek(0, 0)
@@ -218,7 +218,7 @@ func TestPHP_MultiServiceReader_Read_Good(t *T) {
 
 	t.Run("returns EOF when all readers are exhausted in non-follow mode", func(t *T) {
 		dir := t.TempDir()
-		file1, err := os.CreateTemp(dir, "log-*.log")
+		file1, err := os.CreateTemp(dir, testLogGlob)
 		RequireNoError(t, err)
 		_ = file1.Close() // Empty file
 
@@ -249,7 +249,7 @@ func TestPHP_Options_Good(t *T) {
 			NoReverb:       true,
 			NoRedis:        true,
 			HTTPS:          true,
-			Domain:         "test.local",
+			Domain:         testLocalDomain,
 			FrankenPHPPort: 8000,
 			HTTPSPort:      443,
 			VitePort:       5173,
@@ -264,7 +264,7 @@ func TestPHP_Options_Good(t *T) {
 		AssertTrue(t, opts.NoReverb)
 		AssertTrue(t, opts.NoRedis)
 		AssertTrue(t, opts.HTTPS)
-		AssertEqual(t, "test.local", opts.Domain)
+		AssertEqual(t, testLocalDomain, opts.Domain)
 		AssertEqual(t, 8000, opts.FrankenPHPPort)
 		AssertEqual(t, 443, opts.HTTPSPort)
 		AssertEqual(t, 5173, opts.VitePort)
@@ -297,7 +297,7 @@ func setupLaravelProject(t *T, dir string) {
 	t.Helper()
 
 	// Create artisan file
-	err := os.WriteFile(filepath.Join(dir, "artisan"), []byte("#!/usr/bin/env php\n"), 0755)
+	err := os.WriteFile(filepath.Join(dir, "artisan"), []byte(testPHPShebang), 0755)
 	RequireNoError(t, err)
 
 	// Create composer.json with Laravel
@@ -309,7 +309,7 @@ func setupLaravelProject(t *T, dir string) {
 			"laravel/octane": "^2.0"
 		}
 	}`
-	err = os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+	err = os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 	RequireNoError(t, err)
 }
 
@@ -335,7 +335,7 @@ func TestPHP_DevServer_UnifiedLogs_Bad(t *T) {
 func TestPHP_DevServer_Logs_Good(t *T) {
 	t.Run("finds specific service logs", func(t *T) {
 		dir := t.TempDir()
-		logFile := filepath.Join(dir, "test.log")
+		logFile := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logFile, []byte("test log content"), 0644)
 		RequireNoError(t, err)
 
@@ -384,7 +384,7 @@ func TestDevServer_HTTPSSetup(t *T) {
 		dir := t.TempDir()
 
 		// Create Laravel project
-		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		composerJSON := `{
@@ -393,7 +393,7 @@ func TestDevServer_HTTPSSetup(t *T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// Create .env with APP_URL
@@ -404,7 +404,7 @@ func TestDevServer_HTTPSSetup(t *T) {
 		// Verify we can extract the domain
 		url := GetLaravelAppURL(dir)
 		domain := ExtractDomainFromURL(url)
-		AssertEqual(t, "myapp.test", domain)
+		AssertEqual(t, testMyAppDomain, domain)
 	})
 }
 
@@ -455,7 +455,7 @@ func TestMultiServiceReader_CloseError(t *T) {
 		dir := t.TempDir()
 
 		// Create a real file that we can close
-		file1, err := os.CreateTemp(dir, "log-*.log")
+		file1, err := os.CreateTemp(dir, testLogGlob)
 		RequireNoError(t, err)
 		file1Name := file1.Name()
 		_ = file1.Close()
@@ -482,7 +482,7 @@ func TestMultiServiceReader_CloseError(t *T) {
 func TestMultiServiceReader_FollowMode(t *T) {
 	t.Run("returns 0 bytes without error in follow mode when no data", func(t *T) {
 		dir := t.TempDir()
-		file1, err := os.CreateTemp(dir, "log-*.log")
+		file1, err := os.CreateTemp(dir, testLogGlob)
 		RequireNoError(t, err)
 		file1Name := file1.Name()
 		_ = file1.Close()
@@ -543,11 +543,11 @@ func TestPHP_ExtractDomainFromURL_Ugly(t *T) {
 		expected string
 	}{
 		{"empty string", "", ""},
-		{"just domain", "example.com", "example.com"},
+		{"just domain", testExampleDomain, testExampleDomain},
 		{"http only", "http://", ""},
 		{"https only", "https://", ""},
-		{"domain with trailing slash", "https://example.com/", "example.com"},
-		{"complex path", "https://example.com:8080/path/to/page?query=1", "example.com"},
+		{"domain with trailing slash", "https://example.com/", testExampleDomain},
+		{"complex path", "https://example.com:8080/path/to/page?query=1", testExampleDomain},
 	}
 
 	for _, tt := range tests {

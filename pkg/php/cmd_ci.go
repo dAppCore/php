@@ -65,6 +65,12 @@ type CISummary struct {
 	Skipped  int `json:"skipped"`
 }
 
+type ciCheckDefinition struct {
+	name  string
+	run   func(context.Context, string) (CICheckResult, error)
+	sarif bool
+}
+
 func addPHPCICommand(parent *cli.Command) {
 	ciCmd := &cli.Command{
 		Use:   "ci",
@@ -87,7 +93,7 @@ func addPHPCICommand(parent *cli.Command) {
 func runPHPCI() error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return cli.Err("%s: %w", i18n.T("i18n.fail.get", "working directory"), err)
+		return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 	}
 
 	if !IsPHPProject(cwd) {
@@ -97,19 +103,7 @@ func runPHPCI() error {
 	startTime := time.Now()
 	ctx := context.Background()
 
-	// Define checks to run in order
-	checks := []struct {
-		name  string
-		run   func(context.Context, string) (CICheckResult, error)
-		sarif bool // Whether this check can generate SARIF
-	}{
-		{"test", runCITest, false},
-		{"stan", runCIStan, true},
-		{"psalm", runCIPsalm, true},
-		{"fmt", runCIFmt, false},
-		{"audit", runCIAudit, false},
-		{"security", runCISecurity, false},
-	}
+	checks := defaultCIChecks()
 
 	result := CIResult{
 		StartedAt: startTime,
@@ -117,124 +111,186 @@ func runPHPCI() error {
 		Checks:    make([]CICheckResult, 0, len(checks)),
 	}
 
-	var artifacts []string
-
-	// Print header unless JSON output
-	if !ciJSON {
-		cli.Print("\n%s\n", cli.BoldStyle.Render("core php ci - QA Pipeline"))
-		cli.Print("%s\n\n", strings.Repeat("─", 40))
-	}
-
-	// Run each check
-	for _, check := range checks {
-		if !ciJSON {
-			cli.Print("  %s %s...", dimStyle.Render("→"), check.name)
-		}
-
-		checkResult, err := check.run(ctx, cwd)
-		if err != nil {
-			checkResult = CICheckResult{
-				Name:    check.name,
-				Status:  "failed",
-				Details: err.Error(),
-			}
-		}
-
-		result.Checks = append(result.Checks, checkResult)
-
-		// Update summary
-		result.Summary.Total++
-		switch checkResult.Status {
-		case "passed":
-			result.Summary.Passed++
-		case "failed":
-			result.Summary.Failed++
-			if shouldFailOn(checkResult, ciFailOn) {
-				result.Passed = false
-			}
-		case "warning":
-			result.Summary.Warnings++
-		case "skipped":
-			result.Summary.Skipped++
-		}
-
-		// Print result
-		if !ciJSON {
-			cli.Print("\r  %s %s %s\n", getStatusIcon(checkResult.Status), check.name, dimStyle.Render(checkResult.Details))
-		}
-
-		// Generate SARIF if requested
-		if (ciSARIF || ciUploadSARIF) && check.sarif {
-			sarifFile := filepath.Join(cwd, check.name+".sarif")
-			if generateSARIF(ctx, cwd, check.name, sarifFile) == nil {
-				artifacts = append(artifacts, sarifFile)
-			}
-		}
-	}
+	printCIHeader()
+	artifacts := runCIChecks(ctx, cwd, checks, &result)
 
 	result.Duration = time.Since(startTime).Round(time.Millisecond).String()
 	result.Artifacts = artifacts
+	result.ExitCode = ciExitCode(result.Passed)
 
-	// Set exit code
-	if result.Passed {
-		result.ExitCode = 0
-	} else {
-		result.ExitCode = 1
+	return outputCIResult(ctx, cwd, result, artifacts)
+}
+
+func defaultCIChecks() []ciCheckDefinition {
+	return []ciCheckDefinition{
+		{"test", runCITest, false},
+		{"stan", runCIStan, true},
+		{"psalm", runCIPsalm, true},
+		{"fmt", runCIFmt, false},
+		{"audit", runCIAudit, false},
+		{"security", runCISecurity, false},
 	}
+}
 
-	// Output based on flags
+func printCIHeader() {
 	if ciJSON {
-		if err := outputCIJSON(result); err != nil {
-			return err
-		}
-		if !result.Passed {
-			return cli.Exit(result.ExitCode, cli.Err("CI pipeline failed"))
-		}
-		return nil
+		return
 	}
 
+	cli.Print(cliSingleLineFormat, cli.BoldStyle.Render("core php ci - QA Pipeline"))
+	cli.Print("%s\n\n", strings.Repeat("─", 40))
+}
+
+func runCIChecks(ctx context.Context, cwd string, checks []ciCheckDefinition, result *CIResult) []string {
+	var artifacts []string
+
+	for _, check := range checks {
+		printCICheckProgress(check.name)
+		checkResult := executeCICheck(ctx, cwd, check)
+		recordCICheckResult(result, checkResult)
+		printCICheckResult(check.name, checkResult)
+		artifacts = appendCIArtifact(ctx, cwd, check, artifacts)
+	}
+
+	return artifacts
+}
+
+func printCICheckProgress(name string) {
+	if !ciJSON {
+		cli.Print("  %s %s...", dimStyle.Render("→"), name)
+	}
+}
+
+func executeCICheck(ctx context.Context, cwd string, check ciCheckDefinition) CICheckResult {
+	checkResult, err := check.run(ctx, cwd)
+	if err == nil {
+		return checkResult
+	}
+
+	return CICheckResult{
+		Name:    check.name,
+		Status:  "failed",
+		Details: err.Error(),
+	}
+}
+
+func recordCICheckResult(result *CIResult, checkResult CICheckResult) {
+	result.Checks = append(result.Checks, checkResult)
+	result.Summary.Total++
+
+	switch checkResult.Status {
+	case "passed":
+		result.Summary.Passed++
+	case "failed":
+		result.Summary.Failed++
+		if shouldFailOn(checkResult, ciFailOn) {
+			result.Passed = false
+		}
+	case "warning":
+		result.Summary.Warnings++
+	case "skipped":
+		result.Summary.Skipped++
+	}
+}
+
+func printCICheckResult(name string, checkResult CICheckResult) {
+	if !ciJSON {
+		cli.Print("\r  %s %s %s\n", getStatusIcon(checkResult.Status), name, dimStyle.Render(checkResult.Details))
+	}
+}
+
+func appendCIArtifact(ctx context.Context, cwd string, check ciCheckDefinition, artifacts []string) []string {
+	if !shouldGenerateSARIF(check) {
+		return artifacts
+	}
+
+	sarifFile := filepath.Join(cwd, check.name+".sarif")
+	if generateSARIF(ctx, cwd, check.name, sarifFile) == nil {
+		return append(artifacts, sarifFile)
+	}
+
+	return artifacts
+}
+
+func shouldGenerateSARIF(check ciCheckDefinition) bool {
+	return (ciSARIF || ciUploadSARIF) && check.sarif
+}
+
+func ciExitCode(passed bool) int {
+	if passed {
+		return 0
+	}
+	return 1
+}
+
+func outputCIResult(ctx context.Context, cwd string, result CIResult, artifacts []string) error {
+	if ciJSON {
+		return outputCIJSONResult(result)
+	}
 	if ciSummary {
-		if err := outputCISummary(result); err != nil {
-			return err
-		}
-		if !result.Passed {
-			return cli.Err("CI pipeline failed")
-		}
-		return nil
+		return outputCISummaryResult(result)
 	}
+	return outputCIDefault(ctx, cwd, result, artifacts)
+}
 
-	// Default table output
-	cli.Print("\n%s\n", strings.Repeat("─", 40))
+func outputCIJSONResult(result CIResult) error {
+	if err := outputCIJSON(result); err != nil {
+		return err
+	}
+	if !result.Passed {
+		return cli.Exit(result.ExitCode, cli.Err(ciPipelineFailedMessage))
+	}
+	return nil
+}
+
+func outputCISummaryResult(result CIResult) error {
+	if err := outputCISummary(result); err != nil {
+		return err
+	}
+	if !result.Passed {
+		return cli.Err(ciPipelineFailedMessage)
+	}
+	return nil
+}
+
+func outputCIDefault(ctx context.Context, cwd string, result CIResult, artifacts []string) error {
+	cli.Print(cliSingleLineFormat, strings.Repeat("─", 40))
 
 	if result.Passed {
-		cli.Print("%s %s\n", successStyle.Render("✓ CI PASSED"), dimStyle.Render(result.Duration))
+		cli.Print(cliLabelValueFormat, successStyle.Render("✓ CI PASSED"), dimStyle.Render(result.Duration))
 	} else {
-		cli.Print("%s %s\n", errorStyle.Render("✗ CI FAILED"), dimStyle.Render(result.Duration))
+		cli.Print(cliLabelValueFormat, errorStyle.Render("✗ CI FAILED"), dimStyle.Render(result.Duration))
 	}
 
 	if len(artifacts) > 0 {
-		cli.Print("\n%s\n", dimStyle.Render("Artifacts:"))
+		cli.Print(cliSingleLineFormat, dimStyle.Render("Artifacts:"))
 		for _, a := range artifacts {
 			cli.Print("  → %s\n", filepath.Base(a))
 		}
 	}
 
 	// Upload SARIF if requested
-	if ciUploadSARIF && len(artifacts) > 0 {
-		cli.Blank()
-		for _, sarifFile := range artifacts {
-			if err := uploadSARIFToGitHub(ctx, sarifFile); err != nil {
-				cli.Print("  %s %s: %s\n", errorStyle.Render("✗"), filepath.Base(sarifFile), err)
-			} else {
-				cli.Print("  %s %s uploaded\n", successStyle.Render("✓"), filepath.Base(sarifFile))
-			}
-		}
-	}
+	uploadCIArtifacts(ctx, artifacts)
 
 	if !result.Passed {
-		return cli.Err("CI pipeline failed")
+		return cli.Err(ciPipelineFailedMessage)
 	}
 	return nil
+}
+
+func uploadCIArtifacts(ctx context.Context, artifacts []string) {
+	if !ciUploadSARIF || len(artifacts) == 0 {
+		return
+	}
+
+	cli.Blank()
+	for _, sarifFile := range artifacts {
+		if err := uploadSARIFToGitHub(ctx, sarifFile); err != nil {
+			cli.Print("  %s %s: %s\n", errorStyle.Render("✗"), filepath.Base(sarifFile), err)
+		} else {
+			cli.Print("  %s %s uploaded\n", successStyle.Render("✓"), filepath.Base(sarifFile))
+		}
+	}
 }
 
 // runCITest runs Pest/PHPUnit tests
@@ -473,10 +529,10 @@ func outputCISummary(result CIResult) error {
 		case "skipped":
 			icon = "⏭️"
 		}
-		sb.WriteString(fmt.Sprintf("| %s | %s | %s |\n", check.Name, icon, check.Details))
+		fmt.Fprintf(&sb, "| %s | %s | %s |\n", check.Name, icon, check.Details)
 	}
 
-	sb.WriteString(fmt.Sprintf("\n**Duration:** %s\n", result.Duration))
+	fmt.Fprintf(&sb, "\n**Duration:** %s\n", result.Duration)
 
 	fmt.Print(sb.String())
 	return nil

@@ -12,78 +12,78 @@ import (
 
 func TestPHP_CoolifyClient_Good(t *T) {
 	t.Run("creates client with correct base URL", func(t *T) {
-		client := NewCoolifyClient("https://coolify.example.com", "token")
+		client := NewCoolifyClient(testCoolifyURL, "token")
 
-		AssertEqual(t, "https://coolify.example.com", client.BaseURL)
+		AssertEqual(t, testCoolifyURL, client.BaseURL)
 		AssertEqual(t, "token", client.Token)
 		AssertNotNil(t, client.HTTPClient)
 	})
 
 	t.Run("strips trailing slash from base URL", func(t *T) {
 		client := NewCoolifyClient("https://coolify.example.com/", "token")
-		AssertEqual(t, "https://coolify.example.com", client.BaseURL)
+		AssertEqual(t, testCoolifyURL, client.BaseURL)
 	})
 
 	t.Run("http client has timeout", func(t *T) {
-		client := NewCoolifyClient("https://coolify.example.com", "token")
+		client := NewCoolifyClient(testCoolifyURL, "token")
 		AssertEqual(t, 30*time.Second, client.HTTPClient.Timeout)
 	})
 }
 
 func TestPHP_CoolifyConfig_Good(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		config := CoolifyConfig{
-			URL:          "https://coolify.example.com",
-			Token:        "secret-token",
-			AppID:        "app-123",
-			StagingAppID: "staging-456",
+			URL:          testCoolifyURL,
+			Token:        testCoolifyToken,
+			AppID:        testCoolifyAppID,
+			StagingAppID: testCoolifyStagingAppID,
 		}
 
-		AssertEqual(t, "https://coolify.example.com", config.URL)
-		AssertEqual(t, "secret-token", config.Token)
-		AssertEqual(t, "app-123", config.AppID)
-		AssertEqual(t, "staging-456", config.StagingAppID)
+		AssertEqual(t, testCoolifyURL, config.URL)
+		AssertEqual(t, testCoolifyToken, config.Token)
+		AssertEqual(t, testCoolifyAppID, config.AppID)
+		AssertEqual(t, testCoolifyStagingAppID, config.StagingAppID)
 	})
 }
 
 func TestPHP_CoolifyDeployment_Good(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		now := time.Now()
 		deployment := CoolifyDeployment{
-			ID:          "dep-123",
+			ID:          testDeploymentID123,
 			Status:      "finished",
 			CommitSHA:   "abc123",
-			CommitMsg:   "Test commit",
+			CommitMsg:   testCommitMessage,
 			Branch:      "main",
 			CreatedAt:   now,
 			FinishedAt:  now.Add(5 * time.Minute),
 			Log:         "Build successful",
-			DeployedURL: "https://app.example.com",
+			DeployedURL: testAppURL,
 		}
 
-		AssertEqual(t, "dep-123", deployment.ID)
+		AssertEqual(t, testDeploymentID123, deployment.ID)
 		AssertEqual(t, "finished", deployment.Status)
 		AssertEqual(t, "abc123", deployment.CommitSHA)
-		AssertEqual(t, "Test commit", deployment.CommitMsg)
+		AssertEqual(t, testCommitMessage, deployment.CommitMsg)
 		AssertEqual(t, "main", deployment.Branch)
 	})
 }
 
 func TestPHP_CoolifyApp_Good(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		app := CoolifyApp{
-			ID:          "app-123",
+			ID:          testCoolifyAppID,
 			Name:        "MyApp",
-			FQDN:        "https://myapp.example.com",
+			FQDN:        testMyAppURL,
 			Status:      "running",
 			Repository:  "https://github.com/user/repo",
 			Branch:      "main",
 			Environment: "production",
 		}
 
-		AssertEqual(t, "app-123", app.ID)
+		AssertEqual(t, testCoolifyAppID, app.ID)
 		AssertEqual(t, "MyApp", app.Name)
-		AssertEqual(t, "https://myapp.example.com", app.FQDN)
+		AssertEqual(t, testMyAppURL, app.FQDN)
 		AssertEqual(t, "running", app.Status)
 	})
 }
@@ -101,24 +101,23 @@ COOLIFY_STAGING_APP_ID=staging-456`
 
 		config, err := LoadCoolifyConfigFromFile(filepath.Join(dir, ".env"))
 		AssertNoError(t, err)
-		AssertEqual(t, "https://coolify.example.com", config.URL)
-		AssertEqual(t, "secret-token", config.Token)
-		AssertEqual(t, "app-123", config.AppID)
-		AssertEqual(t, "staging-456", config.StagingAppID)
+		AssertEqual(t, testCoolifyURL, config.URL)
+		AssertEqual(t, testCoolifyToken, config.Token)
+		AssertEqual(t, testCoolifyAppID, config.AppID)
+		AssertEqual(t, testCoolifyStagingAppID, config.StagingAppID)
 	})
 
 	t.Run("handles quoted values", func(t *T) {
 		dir := t.TempDir()
-		envContent := `COOLIFY_URL="https://coolify.example.com"
-COOLIFY_TOKEN='secret-token'`
+		envContent := "COOLIFY_URL=\"" + testCoolifyURL + "\"\nCOOLIFY_TOKEN='" + testCoolifyToken + "'"
 
 		err := os.WriteFile(filepath.Join(dir, ".env"), []byte(envContent), 0644)
 		RequireNoError(t, err)
 
 		config, err := LoadCoolifyConfigFromFile(filepath.Join(dir, ".env"))
 		AssertNoError(t, err)
-		AssertEqual(t, "https://coolify.example.com", config.URL)
-		AssertEqual(t, "secret-token", config.Token)
+		AssertEqual(t, testCoolifyURL, config.URL)
+		AssertEqual(t, testCoolifyToken, config.Token)
 	})
 
 	t.Run("ignores comments", func(t *T) {
@@ -147,7 +146,7 @@ COOLIFY_TOKEN=secret-token`
 
 		config, err := LoadCoolifyConfigFromFile(filepath.Join(dir, ".env"))
 		AssertNoError(t, err)
-		AssertEqual(t, "https://coolify.example.com", config.URL)
+		AssertEqual(t, testCoolifyURL, config.URL)
 	})
 }
 
@@ -188,7 +187,7 @@ COOLIFY_TOKEN=secret-token`
 
 		config, err := LoadCoolifyConfig(dir)
 		AssertNoError(t, err)
-		AssertEqual(t, "https://coolify.example.com", config.URL)
+		AssertEqual(t, testCoolifyURL, config.URL)
 	})
 }
 
@@ -201,7 +200,7 @@ func TestPHP_ValidateCoolifyConfig_Bad(t *T) {
 	})
 
 	t.Run("returns error for empty token", func(t *T) {
-		config := &CoolifyConfig{URL: "https://coolify.example.com"}
+		config := &CoolifyConfig{URL: testCoolifyURL}
 		_, err := validateCoolifyConfig(config)
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "COOLIFY_TOKEN is not set")
@@ -214,10 +213,10 @@ func TestPHP_CoolifyClient_TriggerDeploy_Good(t *T) {
 			AssertEqual(t, "/api/v1/applications/app-123/deploy", r.URL.Path)
 			AssertEqual(t, "POST", r.Method)
 			AssertEqual(t, "Bearer secret-token", r.Header.Get("Authorization"))
-			AssertEqual(t, "application/json", r.Header.Get("Content-Type"))
+			AssertEqual(t, testContentTypeJSON, r.Header.Get("Content-Type"))
 
 			resp := CoolifyDeployment{
-				ID:        "dep-456",
+				ID:        testDeploymentID456,
 				Status:    "queued",
 				CreatedAt: time.Now(),
 			}
@@ -225,11 +224,11 @@ func TestPHP_CoolifyClient_TriggerDeploy_Good(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		deployment, err := client.TriggerDeploy(context.Background(), "app-123", false)
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		deployment, err := client.TriggerDeploy(context.Background(), testCoolifyAppID, false)
 
 		AssertNoError(t, err)
-		AssertEqual(t, "dep-456", deployment.ID)
+		AssertEqual(t, testDeploymentID456, deployment.ID)
 		AssertEqual(t, "queued", deployment.Status)
 	})
 
@@ -239,13 +238,13 @@ func TestPHP_CoolifyClient_TriggerDeploy_Good(t *T) {
 			_ = json.NewDecoder(r.Body).Decode(&body)
 			AssertEqual(t, true, body["force"])
 
-			resp := CoolifyDeployment{ID: "dep-456", Status: "queued"}
+			resp := CoolifyDeployment{ID: testDeploymentID456, Status: "queued"}
 			_ = json.NewEncoder(w).Encode(resp)
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		_, err := client.TriggerDeploy(context.Background(), "app-123", true)
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		_, err := client.TriggerDeploy(context.Background(), testCoolifyAppID, true)
 		AssertNoError(t, err)
 	})
 
@@ -256,8 +255,8 @@ func TestPHP_CoolifyClient_TriggerDeploy_Good(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		deployment, err := client.TriggerDeploy(context.Background(), "app-123", false)
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		deployment, err := client.TriggerDeploy(context.Background(), testCoolifyAppID, false)
 
 		AssertNoError(t, err)
 		// The fallback response should be returned
@@ -273,8 +272,8 @@ func TestPHP_CoolifyClient_TriggerDeploy_Bad(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		_, err := client.TriggerDeploy(context.Background(), "app-123", false)
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		_, err := client.TriggerDeploy(context.Background(), testCoolifyAppID, false)
 
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "API error")
@@ -288,7 +287,7 @@ func TestPHP_CoolifyClient_GetDeployment_Good(t *T) {
 			AssertEqual(t, "GET", r.Method)
 
 			resp := CoolifyDeployment{
-				ID:        "dep-456",
+				ID:        testDeploymentID456,
 				Status:    "finished",
 				CommitSHA: "abc123",
 				Branch:    "main",
@@ -297,11 +296,11 @@ func TestPHP_CoolifyClient_GetDeployment_Good(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		deployment, err := client.GetDeployment(context.Background(), "app-123", "dep-456")
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		deployment, err := client.GetDeployment(context.Background(), testCoolifyAppID, testDeploymentID456)
 
 		AssertNoError(t, err)
-		AssertEqual(t, "dep-456", deployment.ID)
+		AssertEqual(t, testDeploymentID456, deployment.ID)
 		AssertEqual(t, "finished", deployment.Status)
 		AssertEqual(t, "abc123", deployment.CommitSHA)
 	})
@@ -315,8 +314,8 @@ func TestPHP_CoolifyClient_GetDeployment_Bad(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		_, err := client.GetDeployment(context.Background(), "app-123", "dep-456")
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		_, err := client.GetDeployment(context.Background(), testCoolifyAppID, testDeploymentID456)
 
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "Not found")
@@ -337,8 +336,8 @@ func TestPHP_CoolifyClient_ListDeployments_Good(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		deployments, err := client.ListDeployments(context.Background(), "app-123", 10)
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		deployments, err := client.ListDeployments(context.Background(), testCoolifyAppID, 10)
 
 		AssertNoError(t, err)
 		AssertLen(t, deployments, 2)
@@ -353,8 +352,8 @@ func TestPHP_CoolifyClient_ListDeployments_Good(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		_, err := client.ListDeployments(context.Background(), "app-123", 0)
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		_, err := client.ListDeployments(context.Background(), testCoolifyAppID, 0)
 		AssertNoError(t, err)
 	})
 }
@@ -377,8 +376,8 @@ func TestPHP_CoolifyClient_Rollback_Good(t *T) {
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		deployment, err := client.Rollback(context.Background(), "app-123", "dep-old")
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		deployment, err := client.Rollback(context.Background(), testCoolifyAppID, "dep-old")
 
 		AssertNoError(t, err)
 		AssertEqual(t, "dep-new", deployment.ID)
@@ -393,35 +392,35 @@ func TestPHP_CoolifyClient_GetApp_Good(t *T) {
 			AssertEqual(t, "GET", r.Method)
 
 			resp := CoolifyApp{
-				ID:     "app-123",
+				ID:     testCoolifyAppID,
 				Name:   "MyApp",
-				FQDN:   "https://myapp.example.com",
+				FQDN:   testMyAppURL,
 				Status: "running",
 			}
 			_ = json.NewEncoder(w).Encode(resp)
 		}))
 		defer server.Close()
 
-		client := NewCoolifyClient(server.URL, "secret-token")
-		app, err := client.GetApp(context.Background(), "app-123")
+		client := NewCoolifyClient(server.URL, testCoolifyToken)
+		app, err := client.GetApp(context.Background(), testCoolifyAppID)
 
 		AssertNoError(t, err)
-		AssertEqual(t, "app-123", app.ID)
+		AssertEqual(t, testCoolifyAppID, app.ID)
 		AssertEqual(t, "MyApp", app.Name)
-		AssertEqual(t, "https://myapp.example.com", app.FQDN)
+		AssertEqual(t, testMyAppURL, app.FQDN)
 	})
 }
 
 func TestCoolifyClient_SetHeaders(t *T) {
 	t.Run("sets all required headers", func(t *T) {
-		client := NewCoolifyClient("https://coolify.example.com", "my-token")
-		req, _ := http.NewRequest("GET", "https://coolify.example.com", nil)
+		client := NewCoolifyClient(testCoolifyURL, "my-token")
+		req, _ := http.NewRequest("GET", testCoolifyURL, nil)
 
 		client.setHeaders(req)
 
 		AssertEqual(t, "Bearer my-token", req.Header.Get("Authorization"))
-		AssertEqual(t, "application/json", req.Header.Get("Content-Type"))
-		AssertEqual(t, "application/json", req.Header.Get("Accept"))
+		AssertEqual(t, testContentTypeJSON, req.Header.Get("Content-Type"))
+		AssertEqual(t, testContentTypeJSON, req.Header.Get("Accept"))
 	})
 }
 
@@ -434,7 +433,7 @@ func TestCoolifyClient_ParseError(t *T) {
 		defer server.Close()
 
 		client := NewCoolifyClient(server.URL, "token")
-		_, err := client.GetApp(context.Background(), "app-123")
+		_, err := client.GetApp(context.Background(), testCoolifyAppID)
 
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "Bad request message")
@@ -448,7 +447,7 @@ func TestCoolifyClient_ParseError(t *T) {
 		defer server.Close()
 
 		client := NewCoolifyClient(server.URL, "token")
-		_, err := client.GetApp(context.Background(), "app-123")
+		_, err := client.GetApp(context.Background(), testCoolifyAppID)
 
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "Error message")
@@ -462,7 +461,7 @@ func TestCoolifyClient_ParseError(t *T) {
 		defer server.Close()
 
 		client := NewCoolifyClient(server.URL, "token")
-		_, err := client.GetApp(context.Background(), "app-123")
+		_, err := client.GetApp(context.Background(), testCoolifyAppID)
 
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "Raw error message")

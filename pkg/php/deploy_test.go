@@ -20,19 +20,19 @@ func TestPHP_LoadCoolifyConfig_Good(t *T) {
 COOLIFY_TOKEN=secret-token
 COOLIFY_APP_ID=app-123
 COOLIFY_STAGING_APP_ID=staging-456`,
-			wantURL:     "https://coolify.example.com",
-			wantToken:   "secret-token",
-			wantAppID:   "app-123",
-			wantStaging: "staging-456",
+			wantURL:     testCoolifyURL,
+			wantToken:   testCoolifyToken,
+			wantAppID:   testCoolifyAppID,
+			wantStaging: testCoolifyStagingAppID,
 		},
 		{
 			name: "quoted values",
-			envContent: `COOLIFY_URL="https://coolify.example.com"
-COOLIFY_TOKEN='secret-token'
-COOLIFY_APP_ID="app-123"`,
-			wantURL:   "https://coolify.example.com",
-			wantToken: "secret-token",
-			wantAppID: "app-123",
+			envContent: "COOLIFY_URL=\"" + testCoolifyURL + "\"\n" +
+				"COOLIFY_TOKEN='" + testCoolifyToken + "'\n" +
+				"COOLIFY_APP_ID=\"" + testCoolifyAppID + "\"",
+			wantURL:   testCoolifyURL,
+			wantToken: testCoolifyToken,
+			wantAppID: testCoolifyAppID,
 		},
 		{
 			name: "with comments and blank lines",
@@ -43,42 +43,52 @@ COOLIFY_URL=https://coolify.example.com
 COOLIFY_TOKEN=secret-token
 COOLIFY_APP_ID=app-123
 # COOLIFY_STAGING_APP_ID=not-this`,
-			wantURL:   "https://coolify.example.com",
-			wantToken: "secret-token",
-			wantAppID: "app-123",
+			wantURL:   testCoolifyURL,
+			wantToken: testCoolifyToken,
+			wantAppID: testCoolifyAppID,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *T) {
-			// Create temp directory
 			dir := t.TempDir()
-			envPath := filepath.Join(dir, ".env")
-
-			// Write .env file
-			if err := os.WriteFile(envPath, []byte(tt.envContent), 0644); err != nil {
-				t.Fatalf("failed to write .env: %v", err)
-			}
-
-			// Load config
-			config, err := LoadCoolifyConfig(dir)
-			if err != nil {
-				t.Fatalf("LoadCoolifyConfig() error = %v", err)
-			}
-
-			if config.URL != tt.wantURL {
-				t.Errorf("URL = %q, want %q", config.URL, tt.wantURL)
-			}
-			if config.Token != tt.wantToken {
-				t.Errorf("Token = %q, want %q", config.Token, tt.wantToken)
-			}
-			if config.AppID != tt.wantAppID {
-				t.Errorf("AppID = %q, want %q", config.AppID, tt.wantAppID)
-			}
-			if tt.wantStaging != "" && config.StagingAppID != tt.wantStaging {
-				t.Errorf("StagingAppID = %q, want %q", config.StagingAppID, tt.wantStaging)
-			}
+			writeCoolifyEnv(t, dir, tt.envContent)
+			config := loadCoolifyConfigForTest(t, dir)
+			assertCoolifyConfig(t, config, tt.wantURL, tt.wantToken, tt.wantAppID, tt.wantStaging)
 		})
+	}
+}
+
+func writeCoolifyEnv(t *T, dir, content string) {
+	t.Helper()
+	envPath := filepath.Join(dir, ".env")
+	if err := os.WriteFile(envPath, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write .env: %v", err)
+	}
+}
+
+func loadCoolifyConfigForTest(t *T, dir string) *CoolifyConfig {
+	t.Helper()
+	config, err := LoadCoolifyConfig(dir)
+	if err != nil {
+		t.Fatalf("LoadCoolifyConfig() error = %v", err)
+	}
+	return config
+}
+
+func assertCoolifyConfig(t *T, config *CoolifyConfig, wantURL, wantToken, wantAppID, wantStaging string) {
+	t.Helper()
+	if config.URL != wantURL {
+		t.Errorf("URL = %q, want %q", config.URL, wantURL)
+	}
+	if config.Token != wantToken {
+		t.Errorf("Token = %q, want %q", config.Token, wantToken)
+	}
+	if config.AppID != wantAppID {
+		t.Errorf("AppID = %q, want %q", config.AppID, wantAppID)
+	}
+	if wantStaging != "" && config.StagingAppID != wantStaging {
+		t.Errorf("StagingAppID = %q, want %q", config.StagingAppID, wantStaging)
 	}
 }
 
@@ -131,10 +141,10 @@ func TestPHP_LoadCoolifyConfig_Bad(t *T) {
 
 func TestPHP_GetAppIDForEnvironment_Good(t *T) {
 	config := &CoolifyConfig{
-		URL:          "https://coolify.example.com",
+		URL:          testCoolifyURL,
 		Token:        "token",
-		AppID:        "prod-123",
-		StagingAppID: "staging-456",
+		AppID:        testProdAppID,
+		StagingAppID: testCoolifyStagingAppID,
 	}
 
 	tests := []struct {
@@ -145,17 +155,17 @@ func TestPHP_GetAppIDForEnvironment_Good(t *T) {
 		{
 			name:   "production environment",
 			env:    EnvProduction,
-			wantID: "prod-123",
+			wantID: testProdAppID,
 		},
 		{
 			name:   "staging environment",
 			env:    EnvStaging,
-			wantID: "staging-456",
+			wantID: testCoolifyStagingAppID,
 		},
 		{
 			name:   "empty defaults to production",
 			env:    "",
-			wantID: "prod-123",
+			wantID: testProdAppID,
 		},
 	}
 
@@ -171,16 +181,16 @@ func TestPHP_GetAppIDForEnvironment_Good(t *T) {
 
 func TestGetAppIDForEnvironment_FallbackToProduction(t *T) {
 	config := &CoolifyConfig{
-		URL:   "https://coolify.example.com",
+		URL:   testCoolifyURL,
 		Token: "token",
-		AppID: "prod-123",
+		AppID: testProdAppID,
 		// No staging app ID
 	}
 
 	// Staging should fall back to production
 	id := getAppIDForEnvironment(config, EnvStaging)
-	if id != "prod-123" {
-		t.Errorf("getAppIDForEnvironment(EnvStaging) = %q, want %q (should fallback)", id, "prod-123")
+	if id != testProdAppID {
+		t.Errorf("getAppIDForEnvironment(EnvStaging) = %q, want %q (should fallback)", id, testProdAppID)
 	}
 }
 
@@ -224,13 +234,13 @@ func TestPHP_NewCoolifyClient_Good(t *T) {
 	}{
 		{
 			name:        "URL without trailing slash",
-			baseURL:     "https://coolify.example.com",
-			wantBaseURL: "https://coolify.example.com",
+			baseURL:     testCoolifyURL,
+			wantBaseURL: testCoolifyURL,
 		},
 		{
 			name:        "URL with trailing slash",
 			baseURL:     "https://coolify.example.com/",
-			wantBaseURL: "https://coolify.example.com",
+			wantBaseURL: testCoolifyURL,
 		},
 		{
 			name:        "URL with api path",

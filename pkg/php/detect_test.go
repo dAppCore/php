@@ -11,7 +11,7 @@ func TestPHP_IsLaravelProject_Good(t *T) {
 
 		// Create artisan file
 		artisanPath := filepath.Join(dir, "artisan")
-		err := os.WriteFile(artisanPath, []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(artisanPath, []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		// Create composer.json with laravel/framework
@@ -22,7 +22,7 @@ func TestPHP_IsLaravelProject_Good(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		composerPath := filepath.Join(dir, "composer.json")
+		composerPath := filepath.Join(dir, composerJSONFile)
 		err = os.WriteFile(composerPath, []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
@@ -34,7 +34,7 @@ func TestPHP_IsLaravelProject_Good(t *T) {
 
 		// Create artisan file
 		artisanPath := filepath.Join(dir, "artisan")
-		err := os.WriteFile(artisanPath, []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(artisanPath, []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		// Create composer.json with laravel/framework in require-dev
@@ -44,7 +44,7 @@ func TestPHP_IsLaravelProject_Good(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		composerPath := filepath.Join(dir, "composer.json")
+		composerPath := filepath.Join(dir, composerJSONFile)
 		err = os.WriteFile(composerPath, []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
@@ -63,7 +63,7 @@ func TestPHP_IsLaravelProject_Bad(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		composerPath := filepath.Join(dir, "composer.json")
+		composerPath := filepath.Join(dir, composerJSONFile)
 		err := os.WriteFile(composerPath, []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
@@ -75,7 +75,7 @@ func TestPHP_IsLaravelProject_Bad(t *T) {
 
 		// Create artisan but no composer.json
 		artisanPath := filepath.Join(dir, "artisan")
-		err := os.WriteFile(artisanPath, []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(artisanPath, []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		AssertFalse(t, IsLaravelProject(dir))
@@ -86,7 +86,7 @@ func TestPHP_IsLaravelProject_Bad(t *T) {
 
 		// Create artisan file
 		artisanPath := filepath.Join(dir, "artisan")
-		err := os.WriteFile(artisanPath, []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(artisanPath, []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		// Create composer.json without laravel/framework
@@ -96,7 +96,7 @@ func TestPHP_IsLaravelProject_Bad(t *T) {
 				"symfony/framework-bundle": "^7.0"
 			}
 		}`
-		composerPath := filepath.Join(dir, "composer.json")
+		composerPath := filepath.Join(dir, composerJSONFile)
 		err = os.WriteFile(composerPath, []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
@@ -108,11 +108,11 @@ func TestPHP_IsLaravelProject_Bad(t *T) {
 
 		// Create artisan file
 		artisanPath := filepath.Join(dir, "artisan")
-		err := os.WriteFile(artisanPath, []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(artisanPath, []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		// Create invalid composer.json
-		composerPath := filepath.Join(dir, "composer.json")
+		composerPath := filepath.Join(dir, composerJSONFile)
 		err = os.WriteFile(composerPath, []byte("not valid json{"), 0644)
 		RequireNoError(t, err)
 
@@ -139,7 +139,7 @@ func TestPHP_IsFrankenPHPProject_Good(t *T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// Create config directory and octane.php
@@ -151,7 +151,7 @@ func TestPHP_IsFrankenPHPProject_Good(t *T) {
 return [
     'server' => 'frankenphp',
 ];`
-		err = os.WriteFile(filepath.Join(configDir, "octane.php"), []byte(octaneConfig), 0644)
+		err = os.WriteFile(filepath.Join(configDir, testOctaneFile), []byte(octaneConfig), 0644)
 		RequireNoError(t, err)
 
 		AssertTrue(t, IsFrankenPHPProject(dir))
@@ -166,7 +166,7 @@ return [
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// No config file - should still return true (assume frankenphp)
@@ -185,7 +185,7 @@ return [
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// Create config directory and octane.php with no read permissions
@@ -193,8 +193,8 @@ return [
 		err = os.MkdirAll(configDir, 0755)
 		RequireNoError(t, err)
 
-		octanePath := filepath.Join(configDir, "octane.php")
-		err = os.WriteFile(octanePath, []byte("<?php return [];"), 0000)
+		octanePath := filepath.Join(configDir, testOctaneFile)
+		err = os.WriteFile(octanePath, []byte(testPHPReturnEmptyArray), 0000)
 		RequireNoError(t, err)
 		defer func() { _ = os.Chmod(octanePath, 0644) }() // Clean up
 
@@ -212,7 +212,7 @@ func TestPHP_IsFrankenPHPProject_Bad(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		AssertFalse(t, IsFrankenPHPProject(dir))
@@ -229,7 +229,7 @@ func TestPHP_DetectServices_Good(t *T) {
 		dir := t.TempDir()
 
 		// Setup Laravel project
-		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		composerJSON := `{
@@ -238,7 +238,7 @@ func TestPHP_DetectServices_Good(t *T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// Add vite.config.js
@@ -251,11 +251,11 @@ func TestPHP_DetectServices_Good(t *T) {
 		RequireNoError(t, err)
 
 		// Add horizon.php
-		err = os.WriteFile(filepath.Join(configDir, "horizon.php"), []byte("<?php return [];"), 0644)
+		err = os.WriteFile(filepath.Join(configDir, "horizon.php"), []byte(testPHPReturnEmptyArray), 0644)
 		RequireNoError(t, err)
 
 		// Add reverb.php
-		err = os.WriteFile(filepath.Join(configDir, "reverb.php"), []byte("<?php return [];"), 0644)
+		err = os.WriteFile(filepath.Join(configDir, "reverb.php"), []byte(testPHPReturnEmptyArray), 0644)
 		RequireNoError(t, err)
 
 		// Add .env with Redis
@@ -278,7 +278,7 @@ REDIS_HOST=127.0.0.1`
 		dir := t.TempDir()
 
 		// Setup minimal Laravel project
-		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte("#!/usr/bin/env php\n"), 0755)
+		err := os.WriteFile(filepath.Join(dir, "artisan"), []byte(testPHPShebang), 0755)
 		RequireNoError(t, err)
 
 		composerJSON := `{
@@ -286,7 +286,7 @@ REDIS_HOST=127.0.0.1`
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		services := DetectServices(dir)
@@ -306,7 +306,7 @@ func TestPHP_HasHorizon_Good(t *T) {
 		err := os.MkdirAll(configDir, 0755)
 		RequireNoError(t, err)
 
-		err = os.WriteFile(filepath.Join(configDir, "horizon.php"), []byte("<?php return [];"), 0644)
+		err = os.WriteFile(filepath.Join(configDir, "horizon.php"), []byte(testPHPReturnEmptyArray), 0644)
 		RequireNoError(t, err)
 
 		AssertTrue(t, hasHorizon(dir))
@@ -327,7 +327,7 @@ func TestPHP_HasReverb_Good(t *T) {
 		err := os.MkdirAll(configDir, 0755)
 		RequireNoError(t, err)
 
-		err = os.WriteFile(filepath.Join(configDir, "reverb.php"), []byte("<?php return [];"), 0644)
+		err = os.WriteFile(filepath.Join(configDir, "reverb.php"), []byte(testPHPReturnEmptyArray), 0644)
 		RequireNoError(t, err)
 
 		AssertTrue(t, hasReverb(dir))
@@ -476,11 +476,11 @@ func TestPHP_ExtractDomainFromURL_Good(t *T) {
 		url      string
 		expected string
 	}{
-		{"https://example.com", "example.com"},
-		{"http://example.com", "example.com"},
-		{"https://example.com:8080", "example.com"},
-		{"https://example.com/path/to/page", "example.com"},
-		{"https://example.com:443/path", "example.com"},
+		{"https://example.com", testExampleDomain},
+		{"http://example.com", testExampleDomain},
+		{"https://example.com:8080", testExampleDomain},
+		{"https://example.com/path/to/page", testExampleDomain},
+		{"https://example.com:443/path", testExampleDomain},
 		{"localhost", "localhost"},
 		{"localhost:8000", "localhost"},
 	}
@@ -639,7 +639,7 @@ func TestIsFrankenPHPProject_ConfigWithoutFrankenPHP(t *T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// Create config directory and octane.php without frankenphp
@@ -651,7 +651,7 @@ func TestIsFrankenPHPProject_ConfigWithoutFrankenPHP(t *T) {
 return [
     'server' => 'swoole',
 ];`
-		err = os.WriteFile(filepath.Join(configDir, "octane.php"), []byte(octaneConfig), 0644)
+		err = os.WriteFile(filepath.Join(configDir, testOctaneFile), []byte(octaneConfig), 0644)
 		RequireNoError(t, err)
 
 		AssertFalse(t, IsFrankenPHPProject(dir))

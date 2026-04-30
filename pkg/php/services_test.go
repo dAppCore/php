@@ -3,8 +3,8 @@ package php
 import ()
 
 func TestPHP_NewFrankenPHPService_Good(t *T) {
-	t.Run("default options", func(t *T) {
-		dir := "/tmp/test"
+	t.Run(testDefaultOptions, func(t *T) {
+		dir := testTmpDir
 		service := NewFrankenPHPService(dir, FrankenPHPOptions{})
 
 		AssertEqual(t, "FrankenPHP", service.Name())
@@ -14,7 +14,7 @@ func TestPHP_NewFrankenPHPService_Good(t *T) {
 	})
 
 	t.Run("custom options", func(t *T) {
-		dir := "/tmp/test"
+		dir := testTmpDir
 		opts := FrankenPHPOptions{
 			Port:      9000,
 			HTTPSPort: 8443,
@@ -33,7 +33,7 @@ func TestPHP_NewFrankenPHPService_Good(t *T) {
 }
 
 func TestPHP_NewViteService_Good(t *T) {
-	t.Run("default options", func(t *T) {
+	t.Run(testDefaultOptions, func(t *T) {
 		dir := t.TempDir()
 		service := NewViteService(dir, ViteOptions{})
 
@@ -51,34 +51,34 @@ func TestPHP_NewViteService_Good(t *T) {
 }
 
 func TestPHP_NewHorizonService_Good(t *T) {
-	service := NewHorizonService("/tmp/test")
+	service := NewHorizonService(testTmpDir)
 	AssertEqual(t, "Horizon", service.Name())
 	AssertEqual(t, 0, service.port)
 }
 
 func TestPHP_NewReverbService_Good(t *T) {
-	t.Run("default options", func(t *T) {
-		service := NewReverbService("/tmp/test", ReverbOptions{})
+	t.Run(testDefaultOptions, func(t *T) {
+		service := NewReverbService(testTmpDir, ReverbOptions{})
 		AssertEqual(t, "Reverb", service.Name())
 		AssertEqual(t, 8080, service.port)
 	})
 
 	t.Run("custom port", func(t *T) {
-		service := NewReverbService("/tmp/test", ReverbOptions{Port: 9090})
+		service := NewReverbService(testTmpDir, ReverbOptions{Port: 9090})
 		AssertEqual(t, 9090, service.port)
 	})
 }
 
 func TestPHP_NewRedisService_Good(t *T) {
-	t.Run("default options", func(t *T) {
-		service := NewRedisService("/tmp/test", RedisOptions{})
+	t.Run(testDefaultOptions, func(t *T) {
+		service := NewRedisService(testTmpDir, RedisOptions{})
 		AssertEqual(t, "Redis", service.Name())
 		AssertEqual(t, 6379, service.port)
 	})
 
 	t.Run("custom config", func(t *T) {
-		service := NewRedisService("/tmp/test", RedisOptions{ConfigFile: "redis.conf"})
-		AssertEqual(t, "redis.conf", service.configFile)
+		service := NewRedisService(testTmpDir, RedisOptions{ConfigFile: ax7RedisConfigFile})
+		AssertEqual(t, ax7RedisConfigFile, service.configFile)
 	})
 }
 

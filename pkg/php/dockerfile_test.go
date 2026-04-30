@@ -18,11 +18,11 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		// Create composer.lock
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
@@ -47,9 +47,9 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"laravel/octane": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
@@ -69,9 +69,9 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		packageJSON := `{
@@ -81,7 +81,7 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"build": "vite build"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
 		RequireNoError(t, err)
 		err = os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte("{}"), 0644)
 		RequireNoError(t, err)
@@ -106,9 +106,9 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"laravel/framework": "^11.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		packageJSON := `{
@@ -117,7 +117,7 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"build": "vite build"
 			}
 		}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
 		RequireNoError(t, err)
 
 		// Create pnpm-lock.yaml
@@ -142,9 +142,9 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"predis/predis": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
@@ -166,9 +166,9 @@ func TestPHP_GenerateDockerfile_Good(t *T) {
 				"ext-intl": "*"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		content, err := GenerateDockerfile(dir)
@@ -187,13 +187,13 @@ func TestPHP_GenerateDockerfile_Bad(t *T) {
 
 		_, err := GenerateDockerfile(dir)
 		AssertError(t, err)
-		AssertContains(t, err.Error(), "composer.json")
+		AssertContains(t, err.Error(), composerJSONFile)
 	})
 
 	t.Run("invalid composer.json", func(t *T) {
 		dir := t.TempDir()
 
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte("not json{"), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte("not json{"), 0644)
 		RequireNoError(t, err)
 
 		_, err = GenerateDockerfile(dir)
@@ -215,11 +215,11 @@ func TestPHP_DetectDockerfileConfig_Good(t *T) {
 				"intervention/image": "^3.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		packageJSON := `{"scripts": {"build": "vite build"}}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
 		RequireNoError(t, err)
 		err = os.WriteFile(filepath.Join(dir, "yarn.lock"), []byte(""), 0644)
 		RequireNoError(t, err)
@@ -358,7 +358,7 @@ func TestPHP_HasNodeAssets_Good(t *T) {
 				"build": "vite build"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
 		RequireNoError(t, err)
 
 		AssertTrue(t, hasNodeAssets(dir))
@@ -380,7 +380,7 @@ func TestPHP_HasNodeAssets_Bad(t *T) {
 				"dev": "vite"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
 		RequireNoError(t, err)
 
 		AssertFalse(t, hasNodeAssets(dir))
@@ -389,7 +389,7 @@ func TestPHP_HasNodeAssets_Bad(t *T) {
 	t.Run("invalid package.json", func(t *T) {
 		dir := t.TempDir()
 
-		err := os.WriteFile(filepath.Join(dir, "package.json"), []byte("invalid{"), 0644)
+		err := os.WriteFile(filepath.Join(dir, packageJSONFile), []byte("invalid{"), 0644)
 		RequireNoError(t, err)
 
 		AssertFalse(t, hasNodeAssets(dir))
@@ -416,7 +416,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("minimal config", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion: "8.3",
-			BaseImage:  "dunglas/frankenphp",
+			BaseImage:  testFrankenPHPImage,
 			UseAlpine:  true,
 		}
 
@@ -431,7 +431,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("with extensions", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:    "8.3",
-			BaseImage:     "dunglas/frankenphp",
+			BaseImage:     testFrankenPHPImage,
 			UseAlpine:     true,
 			PHPExtensions: []string{"redis", "gd", "intl"},
 		}
@@ -444,7 +444,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("Laravel with Octane", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion: "8.3",
-			BaseImage:  "dunglas/frankenphp",
+			BaseImage:  testFrankenPHPImage,
 			UseAlpine:  true,
 			IsLaravel:  true,
 			HasOctane:  true,
@@ -462,7 +462,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("with frontend assets", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:     "8.3",
-			BaseImage:      "dunglas/frankenphp",
+			BaseImage:      testFrankenPHPImage,
 			UseAlpine:      true,
 			HasAssets:      true,
 			PackageManager: "npm",
@@ -481,7 +481,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("with yarn", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:     "8.3",
-			BaseImage:      "dunglas/frankenphp",
+			BaseImage:      testFrankenPHPImage,
 			UseAlpine:      true,
 			HasAssets:      true,
 			PackageManager: "yarn",
@@ -497,7 +497,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("with bun", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion:     "8.3",
-			BaseImage:      "dunglas/frankenphp",
+			BaseImage:      testFrankenPHPImage,
 			UseAlpine:      true,
 			HasAssets:      true,
 			PackageManager: "bun",
@@ -514,7 +514,7 @@ func TestPHP_GenerateDockerfileFromConfig_Good(t *T) {
 	t.Run("non-alpine image", func(t *T) {
 		config := &DockerfileConfig{
 			PHPVersion: "8.3",
-			BaseImage:  "dunglas/frankenphp",
+			BaseImage:  testFrankenPHPImage,
 			UseAlpine:  false,
 		}
 
@@ -529,7 +529,7 @@ func TestPHP_IsPHPProject_Good(t *T) {
 	t.Run("project with composer.json", func(t *T) {
 		dir := t.TempDir()
 
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte("{}"), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		AssertTrue(t, IsPHPProject(dir))
@@ -580,13 +580,13 @@ func TestPHP_DockerfileStructure_Good(t *T) {
 				"predis/predis": "^2.0"
 			}
 		}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
-		err = os.WriteFile(filepath.Join(dir, "composer.lock"), []byte("{}"), 0644)
+		err = os.WriteFile(filepath.Join(dir, composerLockFile), []byte("{}"), 0644)
 		RequireNoError(t, err)
 
 		packageJSON := `{"scripts": {"build": "vite build"}}`
-		err = os.WriteFile(filepath.Join(dir, "package.json"), []byte(packageJSON), 0644)
+		err = os.WriteFile(filepath.Join(dir, packageJSONFile), []byte(packageJSON), 0644)
 		RequireNoError(t, err)
 		err = os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte("{}"), 0644)
 		RequireNoError(t, err)

@@ -452,7 +452,9 @@ func TestCLI_Blank_Bad(t *testing.T) {
 }
 
 func TestCLI_Blank_Ugly(t *testing.T) {
-	got := captureStdout(t, func() {})
+	got := captureStdout(t, func() {
+		// Intentionally empty to verify captureStdout handles no writes.
+	})
 	if got != "" {
 		t.Fatalf("empty capture = %q", got)
 	}

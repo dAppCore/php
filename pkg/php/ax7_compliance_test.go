@@ -24,12 +24,6 @@ func (ax7BridgeHandler) HandleBridgeCall(method string, args json.RawMessage) (a
 	return map[string]string{"method": method, "args": string(args)}, nil
 }
 
-type ax7FailingWriter struct{}
-
-func (ax7FailingWriter) Write([]byte) (int, error) {
-	return 0, errors.New("write failed")
-}
-
 type ax7FailingCloser struct{}
 
 func (ax7FailingCloser) Read([]byte) (int, error) {
@@ -104,15 +98,15 @@ func ax7TempFile(t *T) *os.File {
 func ax7PHPProject(t *T) string {
 	t.Helper()
 	dir := t.TempDir()
-	ax7WriteFile(t, filepath.Join(dir, "composer.json"), `{"name":"acme/demo","require":{"php":"^8.3"}}`)
+	ax7WriteFile(t, filepath.Join(dir, composerJSONFile), `{"name":"acme/demo","require":{"php":"^8.3"}}`)
 	return dir
 }
 
 func ax7LaravelProject(t *T) string {
 	t.Helper()
 	dir := t.TempDir()
-	ax7WriteFile(t, filepath.Join(dir, "artisan"), "#!/usr/bin/env php\n")
-	ax7WriteFile(t, filepath.Join(dir, "composer.json"), `{"name":"Acme Demo","require":{"php":"^8.3","laravel/framework":"^11.0","laravel/octane":"^2.0"}}`)
+	ax7WriteFile(t, filepath.Join(dir, "artisan"), testPHPShebang)
+	ax7WriteFile(t, filepath.Join(dir, composerJSONFile), `{"name":"Acme Demo","require":{"php":"^8.3","laravel/framework":"^11.0","laravel/octane":"^2.0"}}`)
 	ax7WriteFile(t, filepath.Join(dir, ".env"), "APP_NAME=\"Acme Demo\"\nAPP_URL=https://demo.test:8443/path\n")
 	return dir
 }
@@ -121,14 +115,14 @@ func ax7CommandProject(t *T, command string) string {
 	t.Helper()
 	dir := ax7PHPProject(t)
 	bin := filepath.Join(dir, "vendor", "bin")
-	ax7Executable(t, bin, command, "exit 0\n")
+	ax7Executable(t, bin, command, ax7ExitOKScript)
 	return dir
 }
 
 func ax7LongRunningCommand(t *T, name string) {
 	t.Helper()
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, name, "exit 0\n")
+	ax7Executable(t, bin, name, ax7ExitOKScript)
 }
 
 func ax7RuntimeCleanup(t *T, appName string) {
@@ -150,15 +144,15 @@ func ax7CoolifyServer(t *T, status int) *httptest.Server {
 			http.Error(w, `{"message":"boom"}`, status)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", testContentTypeJSON)
 		switch {
 		case strings.HasSuffix(r.URL.Path, "/deploy"):
 			w.WriteHeader(http.StatusAccepted)
-			_, _ = w.Write([]byte(`{"id":"deploy-1","status":"queued","commit_sha":"abc","branch":"main"}`))
+			_, _ = w.Write([]byte(`{"id":"` + ax7DeployID + `","status":"queued","commit_sha":"abc","branch":"main"}`))
 		case strings.HasSuffix(r.URL.Path, "/rollback"):
 			_, _ = w.Write([]byte(`{"id":"rollback-1","status":"queued","branch":"main"}`))
-		case strings.Contains(r.URL.Path, "/deployments/deploy-1"):
-			_, _ = w.Write([]byte(`{"id":"deploy-1","status":"finished","commit_sha":"abc","branch":"main"}`))
+		case strings.Contains(r.URL.Path, "/deployments/"+ax7DeployID):
+			_, _ = w.Write([]byte(`{"id":"` + ax7DeployID + `","status":"finished","commit_sha":"abc","branch":"main"}`))
 		case strings.HasSuffix(r.URL.Path, "/deployments"):
 			_, _ = w.Write([]byte(`[{"id":"current","status":"finished"},{"id":"previous","status":"finished"}]`))
 		case strings.Contains(r.URL.Path, "/applications/"):
@@ -283,7 +277,7 @@ func TestPHP_DetectFormatter_Bad(t *T) {
 
 func TestPHP_DetectFormatter_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "pint", "exit 0\n")
+	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "pint", ax7ExitOKScript)
 	formatter, ok := DetectFormatter(dir)
 	AssertTrue(t, ok)
 	AssertEqual(t, FormatterPint, formatter)
@@ -291,7 +285,7 @@ func TestPHP_DetectFormatter_Ugly(t *T) {
 
 func TestPHP_DetectAnalyser_Good(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "phpstan.neon"), "parameters: {}\n")
+	ax7WriteFile(t, filepath.Join(dir, ax7PHPStanFile), ax7YAMLParameters)
 	analyser, ok := DetectAnalyser(dir)
 	AssertTrue(t, ok)
 	AssertEqual(t, AnalyserPHPStan, analyser)
@@ -306,7 +300,7 @@ func TestPHP_DetectAnalyser_Bad(t *T) {
 
 func TestPHP_DetectAnalyser_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "phpstan.neon.dist"), "parameters: {}\n")
+	ax7WriteFile(t, filepath.Join(dir, "phpstan.neon.dist"), ax7YAMLParameters)
 	ax7WriteFile(t, filepath.Join(dir, "vendor", "larastan", "larastan", "extension.neon"), "")
 	analyser, ok := DetectAnalyser(dir)
 	AssertTrue(t, ok)
@@ -330,7 +324,7 @@ func TestPHP_DetectPsalm_Bad(t *T) {
 
 func TestPHP_DetectPsalm_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "psalm", "exit 0\n")
+	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "psalm", ax7ExitOKScript)
 	psalm, ok := DetectPsalm(dir)
 	AssertTrue(t, ok)
 	AssertEqual(t, PsalmStandard, psalm)
@@ -351,7 +345,7 @@ func TestPHP_DetectRector_Bad(t *T) {
 
 func TestPHP_DetectRector_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "rector", "exit 0\n")
+	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "rector", ax7ExitOKScript)
 	ok := DetectRector(dir)
 	AssertTrue(t, ok)
 }
@@ -371,14 +365,14 @@ func TestPHP_DetectInfection_Bad(t *T) {
 
 func TestPHP_DetectInfection_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "infection", "exit 0\n")
+	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "infection", ax7ExitOKScript)
 	ok := DetectInfection(dir)
 	AssertTrue(t, ok)
 }
 
 func TestPHP_DetectTestRunner_Good(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "tests", "Pest.php"), "<?php\n")
+	ax7WriteFile(t, filepath.Join(dir, "tests", ax7PestFile), ax7PHPOpen)
 	runner := DetectTestRunner(dir)
 	AssertEqual(t, TestRunnerPest, runner)
 }
@@ -391,7 +385,7 @@ func TestPHP_DetectTestRunner_Bad(t *T) {
 
 func TestPHP_DetectTestRunner_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "tests", "Feature", "ExampleTest.php"), "<?php\n")
+	ax7WriteFile(t, filepath.Join(dir, "tests", "Feature", "ExampleTest.php"), ax7PHPOpen)
 	runner := DetectTestRunner(dir)
 	AssertEqual(t, TestRunnerPHPUnit, runner)
 }
@@ -413,7 +407,7 @@ func TestPHP_DetectPackageManager_Ugly(t *T) {
 func TestPHP_DetectServices_Ugly(t *T) {
 	dir := ax7LaravelProject(t)
 	ax7WriteFile(t, filepath.Join(dir, "vite.config.js"), "export default {}\n")
-	ax7WriteFile(t, filepath.Join(dir, "config", "horizon.php"), "<?php\n")
+	ax7WriteFile(t, filepath.Join(dir, "config", "horizon.php"), ax7PHPOpen)
 	services := DetectServices(dir)
 	AssertContains(t, services, ServiceVite)
 	AssertContains(t, services, ServiceHorizon)
@@ -421,21 +415,21 @@ func TestPHP_DetectServices_Ugly(t *T) {
 
 func TestPHP_IsLaravelProject_Ugly(t *T) {
 	dir := t.TempDir()
-	ax7WriteFile(t, filepath.Join(dir, "artisan"), "#!/usr/bin/env php\n")
-	ax7WriteFile(t, filepath.Join(dir, "composer.json"), `{"require-dev":{"laravel/framework":"^11.0"}}`)
+	ax7WriteFile(t, filepath.Join(dir, "artisan"), testPHPShebang)
+	ax7WriteFile(t, filepath.Join(dir, composerJSONFile), `{"require-dev":{"laravel/framework":"^11.0"}}`)
 	AssertTrue(t, IsLaravelProject(dir))
 }
 
 func TestPHP_IsFrankenPHPProject_Ugly(t *T) {
 	dir := t.TempDir()
-	ax7WriteFile(t, filepath.Join(dir, "composer.json"), `{"require":{"laravel/octane":"^2.0"}}`)
-	ax7WriteFile(t, filepath.Join(dir, "config", "octane.php"), "<?php return ['server' => 'swoole'];")
+	ax7WriteFile(t, filepath.Join(dir, composerJSONFile), `{"require":{"laravel/octane":"^2.0"}}`)
+	ax7WriteFile(t, filepath.Join(dir, "config", testOctaneFile), "<?php return ['server' => 'swoole'];")
 	AssertFalse(t, IsFrankenPHPProject(dir))
 }
 
 func TestPHP_IsPHPProject_Ugly(t *T) {
 	dir := t.TempDir()
-	ax7WriteFile(t, filepath.Join(dir, "composer.json"), "{")
+	ax7WriteFile(t, filepath.Join(dir, composerJSONFile), "{")
 	AssertTrue(t, IsPHPProject(dir))
 }
 
@@ -481,7 +475,7 @@ func TestPHP_Format_Ugly(t *T) {
 
 func TestPHP_Analyse_Good(t *T) {
 	dir := ax7CommandProject(t, "phpstan")
-	ax7WriteFile(t, filepath.Join(dir, "phpstan.neon"), "parameters: {}\n")
+	ax7WriteFile(t, filepath.Join(dir, ax7PHPStanFile), ax7YAMLParameters)
 	err := Analyse(context.Background(), AnalyseOptions{Dir: dir, Level: 5, Output: io.Discard})
 	AssertNoError(t, err)
 }
@@ -494,7 +488,7 @@ func TestPHP_Analyse_Bad(t *T) {
 
 func TestPHP_Analyse_Ugly(t *T) {
 	dir := ax7CommandProject(t, "phpstan")
-	ax7WriteFile(t, filepath.Join(dir, "phpstan.neon"), "parameters: {}\n")
+	ax7WriteFile(t, filepath.Join(dir, ax7PHPStanFile), ax7YAMLParameters)
 	err := Analyse(context.Background(), AnalyseOptions{Dir: dir, JSON: true, SARIF: true, Paths: []string{"app"}, Output: io.Discard})
 	AssertNoError(t, err)
 }
@@ -571,14 +565,14 @@ func TestPHP_RunTests_Bad(t *T) {
 
 func TestPHP_RunTests_Ugly(t *T) {
 	dir := ax7CommandProject(t, "pest")
-	ax7WriteFile(t, filepath.Join(dir, "tests", "Pest.php"), "<?php\n")
+	ax7WriteFile(t, filepath.Join(dir, "tests", ax7PestFile), ax7PHPOpen)
 	err := RunTests(context.Background(), TestOptions{Dir: dir, Parallel: true, Coverage: true, CoverageFormat: "clover", Groups: []string{"feature"}, JUnit: true, Output: io.Discard})
 	AssertNoError(t, err)
 }
 
 func TestPHP_RunParallel_Good(t *T) {
 	dir := ax7CommandProject(t, "phpunit")
-	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "paratest", "exit 0\n")
+	ax7Executable(t, filepath.Join(dir, "vendor", "bin"), "paratest", ax7ExitOKScript)
 	err := RunParallel(context.Background(), TestOptions{Dir: dir, Output: io.Discard})
 	AssertNoError(t, err)
 }
@@ -592,14 +586,14 @@ func TestPHP_RunParallel_Bad(t *T) {
 
 func TestPHP_RunParallel_Ugly(t *T) {
 	dir := ax7CommandProject(t, "pest")
-	ax7WriteFile(t, filepath.Join(dir, "tests", "Pest.php"), "<?php\n")
+	ax7WriteFile(t, filepath.Join(dir, "tests", ax7PestFile), ax7PHPOpen)
 	err := RunParallel(context.Background(), TestOptions{Dir: dir, Coverage: true, Output: io.Discard})
 	AssertNoError(t, err)
 }
 
 func TestPHP_RunAudit_Good(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "composer", "printf '{\"advisories\":{}}'\n")
+	ax7Executable(t, bin, "composer", ax7AuditNoAdvisoriesScript)
 	results, err := RunAudit(context.Background(), AuditOptions{Dir: t.TempDir(), Output: io.Discard})
 	AssertNoError(t, err)
 	AssertEqual(t, "composer", results[0].Tool)
@@ -622,7 +616,7 @@ func TestPHP_RunAudit_Ugly(t *T) {
 
 func TestPHP_RunSecurityChecks_Good(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "composer", "printf '{\"advisories\":{}}'\n")
+	ax7Executable(t, bin, "composer", ax7AuditNoAdvisoriesScript)
 	result, err := RunSecurityChecks(context.Background(), SecurityOptions{Dir: t.TempDir(), Output: io.Discard})
 	AssertNoError(t, err)
 	AssertGreater(t, result.Summary.Total, 0)
@@ -630,7 +624,7 @@ func TestPHP_RunSecurityChecks_Good(t *T) {
 
 func TestPHP_RunSecurityChecks_Bad(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "composer", "printf '{\"advisories\":{}}'\n")
+	ax7Executable(t, bin, "composer", ax7AuditNoAdvisoriesScript)
 	dir := t.TempDir()
 	ax7WriteFile(t, filepath.Join(dir, ".env"), "APP_DEBUG=true\n")
 	result, err := RunSecurityChecks(context.Background(), SecurityOptions{Dir: dir, Output: io.Discard})
@@ -640,7 +634,7 @@ func TestPHP_RunSecurityChecks_Bad(t *T) {
 
 func TestPHP_RunSecurityChecks_Ugly(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "composer", "printf '{\"advisories\":{}}'\n")
+	ax7Executable(t, bin, "composer", ax7AuditNoAdvisoriesScript)
 	dir := t.TempDir()
 	ax7WriteFile(t, filepath.Join(dir, ".env"), "APP_KEY=\n")
 	result, err := RunSecurityChecks(context.Background(), SecurityOptions{Dir: dir, JSON: true, SARIF: true, Output: io.Discard})
@@ -680,7 +674,7 @@ func TestPHP_GetQAChecks_Bad(t *T) {
 
 func TestPHP_GetQAChecks_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "rector.php"), "<?php\n")
+	ax7WriteFile(t, filepath.Join(dir, "rector.php"), ax7PHPOpen)
 	ax7WriteFile(t, filepath.Join(dir, "infection.json"), "{}")
 	checks := GetQAChecks(dir, QAStageFull)
 	AssertContains(t, checks, "rector")
@@ -689,7 +683,7 @@ func TestPHP_GetQAChecks_Ugly(t *T) {
 
 func TestPHP_GenerateDockerfile_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "package.json"), `{"scripts":{"build":"vite build"}}`)
+	ax7WriteFile(t, filepath.Join(dir, packageJSONFile), `{"scripts":{"build":"vite build"}}`)
 	got, err := GenerateDockerfile(dir)
 	AssertNoError(t, err)
 	AssertContains(t, got, "FROM node:20-alpine")
@@ -697,7 +691,7 @@ func TestPHP_GenerateDockerfile_Ugly(t *T) {
 
 func TestPHP_DetectDockerfileConfig_Ugly(t *T) {
 	dir := ax7PHPProject(t)
-	ax7WriteFile(t, filepath.Join(dir, "composer.json"), `{"require":{"php":"8"}}`)
+	ax7WriteFile(t, filepath.Join(dir, composerJSONFile), `{"require":{"php":"8"}}`)
 	config, err := DetectDockerfileConfig(dir)
 	AssertNoError(t, err)
 	AssertEqual(t, "8.0", config.PHPVersion)
@@ -732,7 +726,7 @@ func TestPHP_GenerateDockerignore_Ugly(t *T) {
 func TestPHP_BuildDocker_Good(t *T) {
 	ax7FakeDocker(t, "")
 	dir := ax7PHPProject(t)
-	err := BuildDocker(context.Background(), DockerBuildOptions{ProjectDir: dir, ImageName: "demo", Dockerfile: filepath.Join(dir, "composer.json"), Output: io.Discard})
+	err := BuildDocker(context.Background(), DockerBuildOptions{ProjectDir: dir, ImageName: "demo", Dockerfile: filepath.Join(dir, composerJSONFile), Output: io.Discard})
 	AssertNoError(t, err)
 }
 
@@ -745,7 +739,7 @@ func TestPHP_BuildDocker_Ugly(t *T) {
 
 func TestPHP_BuildLinuxKit_Good(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "linuxkit", "exit 0\n")
+	ax7Executable(t, bin, "linuxkit", ax7ExitOKScript)
 	dir := ax7PHPProject(t)
 	err := BuildLinuxKit(context.Background(), LinuxKitBuildOptions{ProjectDir: dir, Output: io.Discard})
 	AssertNoError(t, err)
@@ -753,9 +747,9 @@ func TestPHP_BuildLinuxKit_Good(t *T) {
 
 func TestPHP_BuildLinuxKit_Ugly(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "linuxkit", "exit 0\n")
+	ax7Executable(t, bin, "linuxkit", ax7ExitOKScript)
 	dir := ax7PHPProject(t)
-	err := BuildLinuxKit(context.Background(), LinuxKitBuildOptions{ProjectDir: dir, Template: "server-php", Format: "iso", Variables: map[string]string{"EXTRA": "1"}, Output: io.Discard})
+	err := BuildLinuxKit(context.Background(), LinuxKitBuildOptions{ProjectDir: dir, Template: defaultLinuxKitTemplateName, Format: "iso", Variables: map[string]string{"EXTRA": "1"}, Output: io.Discard})
 	AssertNoError(t, err)
 }
 
@@ -841,22 +835,22 @@ printf cert > "$cert"
 printf key > "$key"
 `)
 	dir := t.TempDir()
-	err := SetupSSL("demo.test", SSLOptions{Dir: dir})
+	err := SetupSSL(ax7DemoDomain, SSLOptions{Dir: dir})
 	AssertNoError(t, err)
-	AssertTrue(t, CertsExist("demo.test", SSLOptions{Dir: dir}))
+	AssertTrue(t, CertsExist(ax7DemoDomain, SSLOptions{Dir: dir}))
 }
 
 func TestPHP_SetupSSL_Ugly(t *T) {
 	bin := ax7BinPath(t)
 	ax7Executable(t, bin, "mkcert", "if [ \"$1\" = \"-install\" ]; then exit 0; fi\nexit 2\n")
-	err := SetupSSL("demo.test", SSLOptions{Dir: t.TempDir()})
+	err := SetupSSL(ax7DemoDomain, SSLOptions{Dir: t.TempDir()})
 	AssertError(t, err, "failed to generate certificates")
 }
 
 func TestPHP_SetupSSLIfNeeded_Ugly(t *T) {
 	dir := t.TempDir()
 	ax7WriteFile(t, filepath.Join(dir, "demo.test.pem"), "cert")
-	_, _, err := SetupSSLIfNeeded("demo.test", SSLOptions{Dir: dir})
+	_, _, err := SetupSSLIfNeeded(ax7DemoDomain, SSLOptions{Dir: dir})
 	AssertError(t, err)
 }
 
@@ -868,14 +862,14 @@ func TestPHP_IsMkcertInstalled_Bad(t *T) {
 
 func TestPHP_IsMkcertInstalled_Ugly(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "mkcert", "exit 0\n")
+	ax7Executable(t, bin, "mkcert", ax7ExitOKScript)
 	got := IsMkcertInstalled()
 	AssertTrue(t, got)
 }
 
 func TestPHP_InstallMkcertCA_Good(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "mkcert", "exit 0\n")
+	ax7Executable(t, bin, "mkcert", ax7ExitOKScript)
 	err := InstallMkcertCA()
 	AssertNoError(t, err)
 }
@@ -985,13 +979,13 @@ func TestPHP_CoolifyClient_TriggerDeploy_Ugly(t *T) {
 	defer server.Close()
 	deployment, err := NewCoolifyClient(server.URL, "tok").TriggerDeploy(context.Background(), "app-1", true)
 	AssertNoError(t, err)
-	AssertEqual(t, "deploy-1", deployment.ID)
+	AssertEqual(t, ax7DeployID, deployment.ID)
 }
 
 func TestPHP_CoolifyClient_GetDeployment_Ugly(t *T) {
 	server := ax7CoolifyServer(t, http.StatusOK)
 	defer server.Close()
-	deployment, err := NewCoolifyClient(server.URL, "tok").GetDeployment(context.Background(), "app-1", "deploy-1")
+	deployment, err := NewCoolifyClient(server.URL, "tok").GetDeployment(context.Background(), "app-1", ax7DeployID)
 	AssertNoError(t, err)
 	AssertEqual(t, "finished", deployment.Status)
 }
@@ -1049,7 +1043,7 @@ func TestPHP_Deploy_Good(t *T) {
 	defer server.Close()
 	status, err := Deploy(context.Background(), DeployOptions{Dir: ax7CoolifyProject(t, server.URL)})
 	AssertNoError(t, err)
-	AssertEqual(t, "deploy-1", status.ID)
+	AssertEqual(t, ax7DeployID, status.ID)
 }
 
 func TestPHP_Deploy_Bad(t *T) {
@@ -1069,7 +1063,7 @@ func TestPHP_Deploy_Ugly(t *T) {
 func TestPHP_DeployStatus_Good(t *T) {
 	server := ax7CoolifyServer(t, http.StatusOK)
 	defer server.Close()
-	status, err := DeployStatus(context.Background(), StatusOptions{Dir: ax7CoolifyProject(t, server.URL), DeploymentID: "deploy-1"})
+	status, err := DeployStatus(context.Background(), StatusOptions{Dir: ax7CoolifyProject(t, server.URL), DeploymentID: ax7DeployID})
 	AssertNoError(t, err)
 	AssertEqual(t, "finished", status.Status)
 }
@@ -1155,7 +1149,8 @@ func TestPHP_Bridge_Port_Good(t *T) {
 	bridge, err := NewBridge(ax7BridgeHandler{})
 	RequireNoError(t, err)
 	t.Cleanup(func() { _ = bridge.Shutdown(context.Background()) })
-	AssertGreater(t, bridge.Port(), 0)
+	port := bridge.Port()
+	AssertGreater(t, port, 0)
 }
 
 func TestPHP_Bridge_Port_Bad(t *T) {
@@ -1237,7 +1232,7 @@ func TestPHP_NewHandler_Ugly(t *T) {
 }
 
 func TestPHP_Handler_LaravelRoot_Good(t *T) {
-	handler := &Handler{laravelRoot: "/app", docRoot: "/app/public"}
+	handler := &Handler{laravelRoot: "/app", docRoot: ax7PublicPath}
 	got := handler.LaravelRoot()
 	AssertEqual(t, "/app", got)
 }
@@ -1255,9 +1250,9 @@ func TestPHP_Handler_LaravelRoot_Ugly(t *T) {
 }
 
 func TestPHP_Handler_DocRoot_Good(t *T) {
-	handler := &Handler{laravelRoot: "/app", docRoot: "/app/public"}
+	handler := &Handler{laravelRoot: "/app", docRoot: ax7PublicPath}
 	got := handler.DocRoot()
-	AssertEqual(t, "/app/public", got)
+	AssertEqual(t, ax7PublicPath, got)
 }
 
 func TestPHP_Handler_DocRoot_Bad(t *T) {
@@ -1414,9 +1409,9 @@ func TestPHP_NewRedisService_Bad(t *T) {
 }
 
 func TestPHP_NewRedisService_Ugly(t *T) {
-	service := NewRedisService(t.TempDir(), RedisOptions{Port: 6380, ConfigFile: "redis.conf"})
+	service := NewRedisService(t.TempDir(), RedisOptions{Port: 6380, ConfigFile: ax7RedisConfigFile})
 	AssertEqual(t, 6380, service.Status().Port)
-	AssertEqual(t, "redis.conf", service.configFile)
+	AssertEqual(t, ax7RedisConfigFile, service.configFile)
 }
 
 func TestPHP_Service_Name_Good(t *T) {
@@ -1464,7 +1459,7 @@ func TestPHP_Service_Logs_Good(t *T) {
 	service := &baseService{name: "Log", logPath: path}
 	reader, err := service.Logs(false)
 	AssertNoError(t, err)
-	reader.Close()
+	_ = reader.Close()
 }
 
 func TestPHP_Service_Logs_Bad(t *T) {
@@ -1481,7 +1476,7 @@ func TestPHP_Service_Logs_Ugly(t *T) {
 	service := &baseService{name: "Log", logPath: path}
 	reader, err := service.Logs(true)
 	AssertNoError(t, err)
-	reader.Close()
+	_ = reader.Close()
 }
 
 func TestPHP_FrankenPHPService_Start_Good(t *T) {
@@ -1660,7 +1655,7 @@ func TestPHP_ReverbService_Stop_Ugly(t *T) {
 }
 
 func TestPHP_RedisService_Start_Good(t *T) {
-	ax7LongRunningCommand(t, "redis-server")
+	ax7LongRunningCommand(t, ax7RedisServer)
 	service := NewRedisService(t.TempDir(), RedisOptions{})
 	err := service.Start(context.Background())
 	t.Cleanup(func() { _ = service.Stop() })
@@ -1675,8 +1670,8 @@ func TestPHP_RedisService_Start_Bad(t *T) {
 }
 
 func TestPHP_RedisService_Start_Ugly(t *T) {
-	ax7LongRunningCommand(t, "redis-server")
-	service := NewRedisService(t.TempDir(), RedisOptions{ConfigFile: "redis.conf"})
+	ax7LongRunningCommand(t, ax7RedisServer)
+	service := NewRedisService(t.TempDir(), RedisOptions{ConfigFile: ax7RedisConfigFile})
 	err := service.Start(context.Background())
 	t.Cleanup(func() { _ = service.Stop() })
 	AssertNoError(t, err)
@@ -1696,7 +1691,7 @@ func TestPHP_RedisService_Stop_Bad(t *T) {
 }
 
 func TestPHP_RedisService_Stop_Ugly(t *T) {
-	ax7LongRunningCommand(t, "redis-server")
+	ax7LongRunningCommand(t, ax7RedisServer)
 	ax7LongRunningCommand(t, "redis-cli")
 	service := NewRedisService(t.TempDir(), RedisOptions{})
 	RequireNoError(t, service.Start(context.Background()))
@@ -1743,7 +1738,9 @@ func TestPHP_DevServer_Stop_Bad(t *T) {
 func TestPHP_DevServer_Stop_Ugly(t *T) {
 	server := NewDevServer(Options{})
 	server.running = true
-	server.cancel = func() {}
+	server.cancel = func() {
+		// Intentionally empty; this test only verifies Stop calls the hook.
+	}
 	err := server.Stop()
 	AssertNoError(t, err)
 }
@@ -1795,7 +1792,7 @@ func TestPHP_DevServer_Services_Ugly(t *T) {
 }
 
 func TestPHP_Reader_Read_Good(t *T) {
-	path := filepath.Join(t.TempDir(), "tail.log")
+	path := filepath.Join(t.TempDir(), ax7TailLog)
 	ax7WriteFile(t, path, "line")
 	file, err := os.Open(path)
 	RequireNoError(t, err)
@@ -1807,7 +1804,7 @@ func TestPHP_Reader_Read_Good(t *T) {
 }
 
 func TestPHP_Reader_Read_Bad(t *T) {
-	path := filepath.Join(t.TempDir(), "tail.log")
+	path := filepath.Join(t.TempDir(), ax7TailLog)
 	ax7WriteFile(t, path, "line")
 	file, err := os.Open(path)
 	RequireNoError(t, err)
@@ -1819,7 +1816,7 @@ func TestPHP_Reader_Read_Bad(t *T) {
 }
 
 func TestPHP_Reader_Read_Ugly(t *T) {
-	path := filepath.Join(t.TempDir(), "tail.log")
+	path := filepath.Join(t.TempDir(), ax7TailLog)
 	ax7WriteFile(t, path, "abc")
 	file, err := os.Open(path)
 	RequireNoError(t, err)
@@ -1831,7 +1828,7 @@ func TestPHP_Reader_Read_Ugly(t *T) {
 }
 
 func TestPHP_Reader_Close_Good(t *T) {
-	path := filepath.Join(t.TempDir(), "tail.log")
+	path := filepath.Join(t.TempDir(), ax7TailLog)
 	ax7WriteFile(t, path, "line")
 	file, err := os.Open(path)
 	RequireNoError(t, err)
@@ -1841,7 +1838,7 @@ func TestPHP_Reader_Close_Good(t *T) {
 }
 
 func TestPHP_Reader_Close_Bad(t *T) {
-	path := filepath.Join(t.TempDir(), "tail.log")
+	path := filepath.Join(t.TempDir(), ax7TailLog)
 	ax7WriteFile(t, path, "line")
 	file, err := os.Open(path)
 	RequireNoError(t, err)
@@ -1852,7 +1849,7 @@ func TestPHP_Reader_Close_Bad(t *T) {
 }
 
 func TestPHP_Reader_Close_Ugly(t *T) {
-	path := filepath.Join(t.TempDir(), "tail.log")
+	path := filepath.Join(t.TempDir(), ax7TailLog)
 	ax7WriteFile(t, path, "")
 	file, err := os.Open(path)
 	RequireNoError(t, err)
@@ -1904,7 +1901,7 @@ func TestPHP_ServiceReader_Close_Ugly(t *T) {
 func TestPHP_LinkPackages_Ugly(t *T) {
 	dir := ax7PHPProject(t)
 	pkg := t.TempDir()
-	ax7WriteFile(t, filepath.Join(pkg, "composer.json"), `{"name":"acme/package","version":"dev-main"}`)
+	ax7WriteFile(t, filepath.Join(pkg, composerJSONFile), `{"name":"acme/package","version":"dev-main"}`)
 	err := LinkPackages(dir, []string{pkg})
 	AssertNoError(t, err)
 }
@@ -1912,7 +1909,7 @@ func TestPHP_LinkPackages_Ugly(t *T) {
 func TestPHP_UnlinkPackages_Ugly(t *T) {
 	dir := ax7PHPProject(t)
 	pkg := t.TempDir()
-	ax7WriteFile(t, filepath.Join(pkg, "composer.json"), `{"name":"acme/package"}`)
+	ax7WriteFile(t, filepath.Join(pkg, composerJSONFile), `{"name":"acme/package"}`)
 	RequireNoError(t, LinkPackages(dir, []string{pkg}))
 	err := UnlinkPackages(dir, []string{"acme/package"})
 	AssertNoError(t, err)
@@ -1920,7 +1917,7 @@ func TestPHP_UnlinkPackages_Ugly(t *T) {
 
 func TestPHP_UpdatePackages_Ugly(t *T) {
 	bin := ax7BinPath(t)
-	ax7Executable(t, bin, "composer", "exit 0\n")
+	ax7Executable(t, bin, "composer", ax7ExitOKScript)
 	dir := ax7PHPProject(t)
 	err := UpdatePackages(dir, []string{})
 	AssertNoError(t, err)

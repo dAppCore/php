@@ -92,7 +92,7 @@ func (s *baseService) Logs(follow bool) (io.ReadCloser, error) {
 	// Type assert to get the underlying *os.File for tailing
 	osFile, ok := file.(*os.File)
 	if !ok {
-		file.Close()
+		_ = file.Close()
 		return nil, cli.Err("log file is not a regular file")
 	}
 	return newTailReader(osFile), nil
@@ -121,7 +121,7 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 	// Type assert to get the underlying *os.File for use with exec.Cmd
 	logFile, ok := logWriter.(*os.File)
 	if !ok {
-		logWriter.Close()
+		_ = logWriter.Close()
 		return cli.Err("log file is not a regular file")
 	}
 	s.logFile = logFile

@@ -7,11 +7,11 @@ import (
 )
 
 func TestPHP_DockerBuildOptions_Good(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := DockerBuildOptions{
-			ProjectDir:   "/project",
+			ProjectDir:   testProjectDir,
 			ImageName:    "myapp",
-			Tag:          "v1.0.0",
+			Tag:          testVersionV100,
 			Platform:     "linux/amd64",
 			Dockerfile:   "/path/to/Dockerfile",
 			NoBuildCache: true,
@@ -19,9 +19,9 @@ func TestPHP_DockerBuildOptions_Good(t *T) {
 			Output:       os.Stdout,
 		}
 
-		AssertEqual(t, "/project", opts.ProjectDir)
+		AssertEqual(t, testProjectDir, opts.ProjectDir)
 		AssertEqual(t, "myapp", opts.ImageName)
-		AssertEqual(t, "v1.0.0", opts.Tag)
+		AssertEqual(t, testVersionV100, opts.Tag)
 		AssertEqual(t, "linux/amd64", opts.Platform)
 		AssertEqual(t, "/path/to/Dockerfile", opts.Dockerfile)
 		AssertTrue(t, opts.NoBuildCache)
@@ -31,27 +31,27 @@ func TestPHP_DockerBuildOptions_Good(t *T) {
 }
 
 func TestPHP_LinuxKitBuildOptions_Good(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := LinuxKitBuildOptions{
-			ProjectDir: "/project",
+			ProjectDir: testProjectDir,
 			OutputPath: "/output/image.qcow2",
 			Format:     "qcow2",
-			Template:   "server-php",
+			Template:   defaultLinuxKitTemplateName,
 			Variables:  map[string]string{"VAR1": "value1"},
 			Output:     os.Stdout,
 		}
 
-		AssertEqual(t, "/project", opts.ProjectDir)
+		AssertEqual(t, testProjectDir, opts.ProjectDir)
 		AssertEqual(t, "/output/image.qcow2", opts.OutputPath)
 		AssertEqual(t, "qcow2", opts.Format)
-		AssertEqual(t, "server-php", opts.Template)
+		AssertEqual(t, defaultLinuxKitTemplateName, opts.Template)
 		AssertEqual(t, "value1", opts.Variables["VAR1"])
 		AssertNotNil(t, opts.Output)
 	})
 }
 
 func TestPHP_ServeOptions_Good(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := ServeOptions{
 			ImageName:     "myapp",
 			Tag:           "latest",
@@ -79,7 +79,7 @@ func TestPHP_ServeOptions_Good(t *T) {
 func TestPHP_IsPHPProject_Container_Good(t *T) {
 	t.Run("returns true with composer.json", func(t *T) {
 		dir := t.TempDir()
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(`{}`), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(`{}`), 0644)
 		RequireNoError(t, err)
 
 		AssertTrue(t, IsPHPProject(dir))
@@ -119,7 +119,7 @@ func TestPHP_LookupLinuxKit_Bad(t *T) {
 
 func TestPHP_GetLinuxKitTemplate_Good(t *T) {
 	t.Run("returns server-php template", func(t *T) {
-		content, err := getLinuxKitTemplate("server-php")
+		content, err := getLinuxKitTemplate(defaultLinuxKitTemplateName)
 		AssertNoError(t, err)
 		AssertContains(t, content, "kernel:")
 		AssertContains(t, content, "linuxkit/kernel")
@@ -194,24 +194,24 @@ func TestPHP_DefaultServerPHPTemplate_Good(t *T) {
 }
 
 func TestPHP_BuildDocker_Bad(t *T) {
-	t.Skip("requires Docker installed")
+	t.Skip(testRequiresDockerInstalled)
 
-	t.Run("fails for non-PHP project", func(t *T) {
+	t.Run(testFailsNonPHPProject, func(t *T) {
 		dir := t.TempDir()
 		err := BuildDocker(context.TODO(), DockerBuildOptions{ProjectDir: dir})
 		AssertError(t, err)
-		AssertContains(t, err.Error(), "not a PHP project")
+		AssertContains(t, err.Error(), testNotPHPProject)
 	})
 }
 
 func TestPHP_BuildLinuxKit_Bad(t *T) {
 	t.Skip("requires linuxkit installed")
 
-	t.Run("fails for non-PHP project", func(t *T) {
+	t.Run(testFailsNonPHPProject, func(t *T) {
 		dir := t.TempDir()
 		err := BuildLinuxKit(context.TODO(), LinuxKitBuildOptions{ProjectDir: dir})
 		AssertError(t, err)
-		AssertContains(t, err.Error(), "not a PHP project")
+		AssertContains(t, err.Error(), testNotPHPProject)
 	})
 }
 
@@ -239,7 +239,7 @@ func TestPHP_ResolveDockerContainerID_Bad(t *T) {
 }
 
 func TestBuildDocker_DefaultOptions(t *T) {
-	t.Run("sets defaults correctly", func(t *T) {
+	t.Run(testSetsDefaultsCorrectly, func(t *T) {
 		// This tests the default logic without actually running Docker
 		opts := DockerBuildOptions{}
 
@@ -257,14 +257,14 @@ func TestBuildDocker_DefaultOptions(t *T) {
 }
 
 func TestBuildLinuxKit_DefaultOptions(t *T) {
-	t.Run("sets defaults correctly", func(t *T) {
+	t.Run(testSetsDefaultsCorrectly, func(t *T) {
 		opts := LinuxKitBuildOptions{}
 
 		// Verify default values would be set
 		if opts.Template == "" {
-			opts.Template = "server-php"
+			opts.Template = defaultLinuxKitTemplateName
 		}
-		AssertEqual(t, "server-php", opts.Template)
+		AssertEqual(t, defaultLinuxKitTemplateName, opts.Template)
 
 		if opts.Format == "" {
 			opts.Format = "qcow2"
@@ -274,7 +274,7 @@ func TestBuildLinuxKit_DefaultOptions(t *T) {
 }
 
 func TestServeProduction_DefaultOptions(t *T) {
-	t.Run("sets defaults correctly", func(t *T) {
+	t.Run(testSetsDefaultsCorrectly, func(t *T) {
 		opts := ServeOptions{ImageName: "myapp"}
 
 		// Verify default values would be set
@@ -306,11 +306,11 @@ func TestPHP_LookupLinuxKit_Good(t *T) {
 }
 
 func TestBuildDocker_WithCustomDockerfile(t *T) {
-	t.Skip("requires Docker installed")
+	t.Skip(testRequiresDockerInstalled)
 
 	t.Run("uses custom Dockerfile when provided", func(t *T) {
 		dir := t.TempDir()
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(`{"name":"test"}`), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(`{"name":"test"}`), 0644)
 		RequireNoError(t, err)
 
 		dockerfilePath := filepath.Join(dir, "Dockerfile.custom")
@@ -328,14 +328,14 @@ func TestBuildDocker_WithCustomDockerfile(t *T) {
 }
 
 func TestBuildDocker_GeneratesDockerfile(t *T) {
-	t.Skip("requires Docker installed")
+	t.Skip(testRequiresDockerInstalled)
 
 	t.Run("generates Dockerfile when not provided", func(t *T) {
 		dir := t.TempDir()
 
 		// Create valid PHP project
 		composerJSON := `{"name":"test","require":{"php":"^8.2","laravel/framework":"^11.0"}}`
-		err := os.WriteFile(filepath.Join(dir, "composer.json"), []byte(composerJSON), 0644)
+		err := os.WriteFile(filepath.Join(dir, composerJSONFile), []byte(composerJSON), 0644)
 		RequireNoError(t, err)
 
 		opts := DockerBuildOptions{
@@ -351,7 +351,7 @@ func TestServeProduction_BuildsCorrectArgs(t *T) {
 	t.Run("builds correct docker run arguments", func(t *T) {
 		opts := ServeOptions{
 			ImageName:     "myapp",
-			Tag:           "v1.0.0",
+			Tag:           testVersionV100,
 			ContainerName: "myapp-prod",
 			Port:          8080,
 			HTTPSPort:     8443,

@@ -74,29 +74,66 @@ func runPHPDev(opts phpDevOptions) error {
 		return errors.New(i18n.T("cmd.php.error.not_laravel"))
 	}
 
-	// Get app name for display
-	appName := GetLaravelAppName(cwd)
-	if appName == "" {
-		appName = "Laravel"
-	}
-
-	cli.Print("%s %s\n\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.dev.starting", map[string]interface{}{"AppName": appName}))
+	cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.dev.starting", map[string]interface{}{"AppName": laravelDisplayName(cwd)}))
 
 	// Detect services
 	services := DetectServices(cwd)
-	cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.services")), i18n.T("cmd.php.dev.detected_services"))
+	printDetectedServices(services)
+
+	// Create and start dev server
+	devOpts := makeDevServerOptions(cwd, opts)
+	server := NewDevServer(devOpts)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle shutdown signals
+	notifyDevShutdown(cancel)
+
+	if err := server.Start(ctx, devOpts); err != nil {
+		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.start", "services"), err)
+	}
+
+	// Print status
+	printDevServerReady(cwd, opts, devOpts.FrankenPHPPort, services, server)
+
+	cli.Print("\n%s\n\n", dimStyle.Render(i18n.T("cmd.php.dev.press_ctrl_c")))
+
+	// Stream unified logs
+	streamDevLogs(ctx, server)
+
+	// Stop services
+	if err := server.Stop(); err != nil {
+		cli.Print(cliLabelValueFormat, errorStyle.Render(i18n.Label("error")), i18n.T("cmd.php.dev.stop_error", map[string]interface{}{"Error": err}))
+	}
+
+	cli.Print(cliLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.dev.all_stopped"))
+	return nil
+}
+
+func laravelDisplayName(dir string) string {
+	appName := GetLaravelAppName(dir)
+	if appName == "" {
+		return "Laravel"
+	}
+	return appName
+}
+
+func printDetectedServices(services []DetectedService) {
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.services")), i18n.T("cmd.php.dev.detected_services"))
 	for _, svc := range services {
-		cli.Print("  %s %s\n", successStyle.Render("*"), svc)
+		cli.Print(cliIndentedLabelValueFormat, successStyle.Render("*"), svc)
 	}
 	cli.Blank()
+}
 
-	// Setup options
+func makeDevServerOptions(cwd string, opts phpDevOptions) Options {
 	port := opts.Port
 	if port == 0 {
 		port = 8000
 	}
 
-	devOpts := Options{
+	return Options{
 		Dir:            cwd,
 		NoVite:         opts.NoVite,
 		NoHorizon:      opts.NoHorizon,
@@ -106,77 +143,58 @@ func runPHPDev(opts phpDevOptions) error {
 		Domain:         opts.Domain,
 		FrankenPHPPort: port,
 	}
+}
 
-	// Create and start dev server
-	server := NewDevServer(devOpts)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle shutdown signals
+func notifyDevShutdown(cancel context.CancelFunc) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		<-sigCh
-		cli.Print("\n%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.dev.shutting_down"))
+		cli.Print(cliSectionLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.dev.shutting_down"))
 		cancel()
 	}()
+}
 
-	if err := server.Start(ctx, devOpts); err != nil {
-		return cli.Err("%s: %w", i18n.T("i18n.fail.start", "services"), err)
-	}
-
-	// Print status
-	cli.Print("%s %s\n", successStyle.Render(i18n.T("cmd.php.label.running")), i18n.T("cmd.php.dev.services_started"))
+func printDevServerReady(cwd string, opts phpDevOptions, port int, services []DetectedService, server *DevServer) {
+	cli.Print(cliLabelValueFormat, successStyle.Render(i18n.T("cmd.php.label.running")), i18n.T("cmd.php.dev.services_started"))
 	printServiceStatuses(server.Status())
 	cli.Blank()
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.app_url")), linkStyle.Render(devAppURL(cwd, opts, port)))
 
-	// Print URLs
-	appURL := GetLaravelAppURL(cwd)
-	if appURL == "" {
-		if opts.HTTPS {
-			appURL = cli.Sprintf("https://localhost:%d", port)
-		} else {
-			appURL = cli.Sprintf("http://localhost:%d", port)
-		}
-	}
-	cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.app_url")), linkStyle.Render(appURL))
-
-	// Check for Vite
 	if !opts.NoVite && containsService(services, ServiceVite) {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.vite")), linkStyle.Render("http://localhost:5173"))
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.vite")), linkStyle.Render("http://localhost:5173"))
 	}
+}
 
-	cli.Print("\n%s\n\n", dimStyle.Render(i18n.T("cmd.php.dev.press_ctrl_c")))
+func devAppURL(cwd string, opts phpDevOptions, port int) string {
+	appURL := GetLaravelAppURL(cwd)
+	if appURL != "" {
+		return appURL
+	}
+	if opts.HTTPS {
+		return cli.Sprintf("https://localhost:%d", port)
+	}
+	return cli.Sprintf("http://localhost:%d", port)
+}
 
-	// Stream unified logs
+func streamDevLogs(ctx context.Context, server *DevServer) {
 	logsReader, err := server.Logs("", true)
 	if err != nil {
-		cli.Print("%s %s\n", errorStyle.Render(i18n.Label("warning")), i18n.T("i18n.fail.get", "logs"))
-	} else {
-		defer func() { _ = logsReader.Close() }()
+		cli.Print(cliLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T(i18nFailGetKey, "logs"))
+		return
+	}
+	defer func() { _ = logsReader.Close() }()
 
-		scanner := bufio.NewScanner(logsReader)
-		for scanner.Scan() {
-			select {
-			case <-ctx.Done():
-				goto shutdown
-			default:
-				line := scanner.Text()
-				printColoredLog(line)
-			}
+	scanner := bufio.NewScanner(logsReader)
+	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			printColoredLog(scanner.Text())
 		}
 	}
-
-shutdown:
-	// Stop services
-	if err := server.Stop(); err != nil {
-		cli.Print("%s %s\n", errorStyle.Render(i18n.Label("error")), i18n.T("cmd.php.dev.stop_error", map[string]interface{}{"Error": err}))
-	}
-
-	cli.Print("%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.dev.all_stopped"))
-	return nil
 }
 
 var (
@@ -215,7 +233,7 @@ func runPHPLogs(service string, follow bool) error {
 
 	logsReader, err := server.Logs(service, follow)
 	if err != nil {
-		return cli.Err("%s: %w", i18n.T("i18n.fail.get", "logs"), err)
+		return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, "logs"), err)
 	}
 	defer func() { _ = logsReader.Close() }()
 
@@ -262,16 +280,16 @@ func runPHPStop() error {
 		return err
 	}
 
-	cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.label.php")), i18n.T("cmd.php.stop.stopping"))
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T(cmdPHPLabelKey)), i18n.T("cmd.php.stop.stopping"))
 
 	// We need to find running processes
 	// This is a simplified version - in practice you'd want to track PIDs
 	server := NewDevServer(Options{Dir: cwd})
 	if err := server.Stop(); err != nil {
-		return cli.Err("%s: %w", i18n.T("i18n.fail.stop", "services"), err)
+		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.stop", "services"), err)
 	}
 
-	cli.Print("%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.dev.all_stopped"))
+	cli.Print(cliLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.dev.all_stopped"))
 	return nil
 }
 
@@ -302,24 +320,24 @@ func runPHPStatus() error {
 		appName = "Laravel"
 	}
 
-	cli.Print("%s %s\n\n", dimStyle.Render(i18n.Label("project")), appName)
+	cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.Label("project")), appName)
 
 	// Detect available services
 	services := DetectServices(cwd)
 	cli.Print("%s\n", dimStyle.Render(i18n.T("cmd.php.status.detected_services")))
 	for _, svc := range services {
 		style := getServiceStyle(string(svc))
-		cli.Print("  %s %s\n", style.Render("*"), svc)
+		cli.Print(cliIndentedLabelValueFormat, style.Render("*"), svc)
 	}
 	cli.Blank()
 
 	// Package manager
 	pm := DetectPackageManager(cwd)
-	cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.status.package_manager")), pm)
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.status.package_manager")), pm)
 
 	// FrankenPHP status
 	if IsFrankenPHPProject(cwd) {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.status.octane_server")), "FrankenPHP")
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.status.octane_server")), "FrankenPHP")
 	}
 
 	// SSL status
@@ -327,9 +345,9 @@ func runPHPStatus() error {
 	if appURL != "" {
 		domain := ExtractDomainFromURL(appURL)
 		if CertsExist(domain, SSLOptions{}) {
-			cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.status.ssl_certs")), successStyle.Render(i18n.T("cmd.php.status.ssl_installed")))
+			cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.status.ssl_certs")), successStyle.Render(i18n.T("cmd.php.status.ssl_installed")))
 		} else {
-			cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.status.ssl_certs")), dimStyle.Render(i18n.T("cmd.php.status.ssl_not_setup")))
+			cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.status.ssl_certs")), dimStyle.Render(i18n.T("cmd.php.status.ssl_not_setup")))
 		}
 	}
 
@@ -371,35 +389,35 @@ func runPHPSSL(domain string) error {
 
 	// Check if mkcert is installed
 	if !IsMkcertInstalled() {
-		cli.Print("%s %s\n", errorStyle.Render(i18n.Label("error")), i18n.T("cmd.php.ssl.mkcert_not_installed"))
-		cli.Print("\n%s\n", i18n.T("common.hint.install_with"))
+		cli.Print(cliLabelValueFormat, errorStyle.Render(i18n.Label("error")), i18n.T("cmd.php.ssl.mkcert_not_installed"))
+		cli.Print(cliSingleLineFormat, i18n.T("common.hint.install_with"))
 		cli.Print("  %s\n", i18n.T("cmd.php.ssl.install_macos"))
 		cli.Print("  %s\n", i18n.T("cmd.php.ssl.install_linux"))
 		return errors.New(i18n.T("cmd.php.error.mkcert_not_installed"))
 	}
 
-	cli.Print("%s %s\n", dimStyle.Render("SSL:"), i18n.T("cmd.php.ssl.setting_up", map[string]interface{}{"Domain": domain}))
+	cli.Print(cliLabelValueFormat, dimStyle.Render("SSL:"), i18n.T("cmd.php.ssl.setting_up", map[string]interface{}{"Domain": domain}))
 
 	// Check if certs already exist
 	if CertsExist(domain, SSLOptions{}) {
-		cli.Print("%s %s\n", dimStyle.Render(i18n.Label("skip")), i18n.T("cmd.php.ssl.certs_exist"))
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.Label("skip")), i18n.T("cmd.php.ssl.certs_exist"))
 
 		certFile, keyFile, _ := CertPaths(domain, SSLOptions{})
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.ssl.cert_label")), certFile)
-		cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.ssl.key_label")), keyFile)
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.ssl.cert_label")), certFile)
+		cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.ssl.key_label")), keyFile)
 		return nil
 	}
 
 	// Setup SSL
 	if err := SetupSSL(domain, SSLOptions{}); err != nil {
-		return cli.Err("%s: %w", i18n.T("i18n.fail.setup", "SSL"), err)
+		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.setup", "SSL"), err)
 	}
 
 	certFile, keyFile, _ := CertPaths(domain, SSLOptions{})
 
-	cli.Print("%s %s\n", successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.ssl.certs_created"))
-	cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.ssl.cert_label")), certFile)
-	cli.Print("%s %s\n", dimStyle.Render(i18n.T("cmd.php.ssl.key_label")), keyFile)
+	cli.Print(cliLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.ssl.certs_created"))
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.ssl.cert_label")), certFile)
+	cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.ssl.key_label")), keyFile)
 
 	return nil
 }
@@ -425,7 +443,7 @@ func printServiceStatuses(statuses []ServiceStatus) {
 			statusText = phpStatusStopped.Render(i18n.T("cmd.php.status.stopped"))
 		}
 
-		cli.Print("  %s %s\n", style.Render(s.Name+":"), statusText)
+		cli.Print(cliIndentedLabelValueFormat, style.Render(s.Name+":"), statusText)
 	}
 }
 
@@ -458,7 +476,7 @@ func printColoredLog(line string) {
 		line = strings.TrimPrefix(line, "[Redis] ")
 	} else {
 		// Unknown service, print as-is
-		cli.Print("%s %s\n", dimStyle.Render(timestamp), line)
+		cli.Print(cliLabelValueFormat, dimStyle.Render(timestamp), line)
 		return
 	}
 

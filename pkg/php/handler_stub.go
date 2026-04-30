@@ -34,7 +34,9 @@ func NewHandler(laravelRoot string, cfg HandlerConfig) (*Handler, func(), error)
 		docRoot:     filepath.Join(laravelRoot, "public"),
 		laravelRoot: laravelRoot,
 	}
-	cleanup := func() {}
+	cleanup := func() {
+		// No resources are allocated when embedded FrankenPHP is not built.
+	}
 	return handler, cleanup, fmt.Errorf("embedded FrankenPHP support is not built; rebuild with -tags frankenphp")
 }
 

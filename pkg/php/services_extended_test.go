@@ -53,7 +53,7 @@ func TestPHP_BaseService_Status_Good(t *T) {
 func TestPHP_BaseService_Logs_Good(t *T) {
 	t.Run("returns log file content", func(t *T) {
 		dir := t.TempDir()
-		logPath := filepath.Join(dir, "test.log")
+		logPath := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logPath, []byte("test log content"), 0644)
 		RequireNoError(t, err)
 
@@ -67,7 +67,7 @@ func TestPHP_BaseService_Logs_Good(t *T) {
 
 	t.Run("returns tail reader in follow mode", func(t *T) {
 		dir := t.TempDir()
-		logPath := filepath.Join(dir, "test.log")
+		logPath := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logPath, []byte("test log content"), 0644)
 		RequireNoError(t, err)
 
@@ -103,7 +103,7 @@ func TestPHP_BaseService_Logs_Bad(t *T) {
 func TestPHP_TailReader_Good(t *T) {
 	t.Run("creates new tail reader", func(t *T) {
 		dir := t.TempDir()
-		logPath := filepath.Join(dir, "test.log")
+		logPath := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logPath, []byte("content"), 0644)
 		RequireNoError(t, err)
 
@@ -120,7 +120,7 @@ func TestPHP_TailReader_Good(t *T) {
 
 	t.Run("closes file on Close", func(t *T) {
 		dir := t.TempDir()
-		logPath := filepath.Join(dir, "test.log")
+		logPath := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logPath, []byte("content"), 0644)
 		RequireNoError(t, err)
 
@@ -135,7 +135,7 @@ func TestPHP_TailReader_Good(t *T) {
 
 	t.Run("returns EOF when closed", func(t *T) {
 		dir := t.TempDir()
-		logPath := filepath.Join(dir, "test.log")
+		logPath := filepath.Join(dir, testLogFile)
 		err := os.WriteFile(logPath, []byte("content"), 0644)
 		RequireNoError(t, err)
 
@@ -162,7 +162,7 @@ func TestFrankenPHPService_Extended(t *T) {
 			KeyFile:   "/path/to/key.pem",
 		}
 
-		service := NewFrankenPHPService("/project", opts)
+		service := NewFrankenPHPService(testProjectDir, opts)
 
 		AssertEqual(t, "FrankenPHP", service.Name())
 		AssertEqual(t, 9000, service.port)
@@ -170,7 +170,7 @@ func TestFrankenPHPService_Extended(t *T) {
 		AssertTrue(t, service.https)
 		AssertEqual(t, "/path/to/cert.pem", service.certFile)
 		AssertEqual(t, "/path/to/key.pem", service.keyFile)
-		AssertEqual(t, "/project", service.dir)
+		AssertEqual(t, testProjectDir, service.dir)
 	})
 }
 
@@ -197,37 +197,37 @@ func TestViteService_Extended(t *T) {
 
 func TestHorizonService_Extended(t *T) {
 	t.Run("has zero port", func(t *T) {
-		service := NewHorizonService("/project")
+		service := NewHorizonService(testProjectDir)
 		AssertEqual(t, 0, service.port)
 	})
 }
 
 func TestReverbService_Extended(t *T) {
 	t.Run("uses default port 8080", func(t *T) {
-		service := NewReverbService("/project", ReverbOptions{})
+		service := NewReverbService(testProjectDir, ReverbOptions{})
 		AssertEqual(t, 8080, service.port)
 	})
 
 	t.Run("uses custom port", func(t *T) {
-		service := NewReverbService("/project", ReverbOptions{Port: 9090})
+		service := NewReverbService(testProjectDir, ReverbOptions{Port: 9090})
 		AssertEqual(t, 9090, service.port)
 	})
 }
 
 func TestRedisService_Extended(t *T) {
 	t.Run("uses default port 6379", func(t *T) {
-		service := NewRedisService("/project", RedisOptions{})
+		service := NewRedisService(testProjectDir, RedisOptions{})
 		AssertEqual(t, 6379, service.port)
 	})
 
 	t.Run("accepts config file", func(t *T) {
-		service := NewRedisService("/project", RedisOptions{ConfigFile: "/path/to/redis.conf"})
+		service := NewRedisService(testProjectDir, RedisOptions{ConfigFile: "/path/to/redis.conf"})
 		AssertEqual(t, "/path/to/redis.conf", service.configFile)
 	})
 }
 
 func TestServiceStatus_Struct(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		testErr := AnError
 		status := ServiceStatus{
 			Name:    "TestService",
@@ -246,7 +246,7 @@ func TestServiceStatus_Struct(t *T) {
 }
 
 func TestFrankenPHPOptions_Struct(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := FrankenPHPOptions{
 			Port:      8000,
 			HTTPSPort: 443,
@@ -264,7 +264,7 @@ func TestFrankenPHPOptions_Struct(t *T) {
 }
 
 func TestViteOptions_Struct(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := ViteOptions{
 			Port:           5173,
 			PackageManager: "bun",
@@ -276,21 +276,21 @@ func TestViteOptions_Struct(t *T) {
 }
 
 func TestReverbOptions_Struct(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := ReverbOptions{Port: 8080}
 		AssertEqual(t, 8080, opts.Port)
 	})
 }
 
 func TestRedisOptions_Struct(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := RedisOptions{
 			Port:       6379,
-			ConfigFile: "redis.conf",
+			ConfigFile: ax7RedisConfigFile,
 		}
 
 		AssertEqual(t, 6379, opts.Port)
-		AssertEqual(t, "redis.conf", opts.ConfigFile)
+		AssertEqual(t, ax7RedisConfigFile, opts.ConfigFile)
 	})
 }
 

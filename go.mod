@@ -69,3 +69,8 @@ require (
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
+
+replace (
+	dappco.re/go/cli => ./internal/clishim
+	dappco.re/go/i18n => ./internal/i18nshim
+)

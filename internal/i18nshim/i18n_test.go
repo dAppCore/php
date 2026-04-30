@@ -6,8 +6,10 @@ import (
 	"time"
 )
 
+const testEnglishLocaleFile = "locales/en.json"
+
 func TestI18N_RegisterLocales_Good(t *testing.T) {
-	RegisterLocales(fstest.MapFS{"locales/en.json": {Data: []byte(`{"common":{"label":{"done":"Done"}}}`)}}, "locales")
+	RegisterLocales(fstest.MapFS{testEnglishLocaleFile: {Data: []byte(`{"common":{"label":{"done":"Done"}}}`)}}, "locales")
 	got := Label("done")
 	if got != "Done" {
 		t.Fatalf("Label(done) = %q", got)
@@ -31,7 +33,7 @@ func TestI18N_RegisterLocales_Ugly(t *testing.T) {
 }
 
 func TestI18N_T_Good(t *testing.T) {
-	RegisterLocales(fstest.MapFS{"locales/en.json": {Data: []byte(`{"hello":"Hello {{.Name}}"}`)}}, "locales")
+	RegisterLocales(fstest.MapFS{testEnglishLocaleFile: {Data: []byte(`{"hello":"Hello {{.Name}}"}`)}}, "locales")
 	got := T("hello", map[string]any{"Name": "Ada"})
 	if got != "Hello Ada" {
 		t.Fatalf("T rendered %q", got)
@@ -46,7 +48,7 @@ func TestI18N_T_Bad(t *testing.T) {
 }
 
 func TestI18N_T_Ugly(t *testing.T) {
-	RegisterLocales(fstest.MapFS{"locales/en.json": {Data: []byte(`{"pct":"%s:%s"}`)}}, "locales")
+	RegisterLocales(fstest.MapFS{testEnglishLocaleFile: {Data: []byte(`{"pct":"%s:%s"}`)}}, "locales")
 	got := T("pct", "a", "b")
 	if got != "a:b" {
 		t.Fatalf("T printf render = %q", got)
@@ -54,7 +56,7 @@ func TestI18N_T_Ugly(t *testing.T) {
 }
 
 func TestI18N_Label_Good(t *testing.T) {
-	RegisterLocales(fstest.MapFS{"locales/en.json": {Data: []byte(`{"common":{"label":{"status":"Status"}}}`)}}, "locales")
+	RegisterLocales(fstest.MapFS{testEnglishLocaleFile: {Data: []byte(`{"common":{"label":{"status":"Status"}}}`)}}, "locales")
 	got := Label("status")
 	if got != "Status" {
 		t.Fatalf("Label(status) = %q", got)
@@ -69,7 +71,7 @@ func TestI18N_Label_Bad(t *testing.T) {
 }
 
 func TestI18N_Label_Ugly(t *testing.T) {
-	RegisterLocales(fstest.MapFS{"locales/en.json": {Data: []byte(`{"common":{"label":{"two_words":"Two Words"}}}`)}}, "locales")
+	RegisterLocales(fstest.MapFS{testEnglishLocaleFile: {Data: []byte(`{"common":{"label":{"two_words":"Two Words"}}}`)}}, "locales")
 	got := Label("two_words")
 	if got != "Two Words" {
 		t.Fatalf("Label underscore key = %q", got)

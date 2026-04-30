@@ -6,7 +6,7 @@ import (
 )
 
 func TestSSLOptions_Struct(t *T) {
-	t.Run("all fields accessible", func(t *T) {
+	t.Run(testAllFieldsAccessible, func(t *T) {
 		opts := SSLOptions{Dir: "/custom/ssl/dir"}
 		AssertEqual(t, "/custom/ssl/dir", opts.Dir)
 	})
@@ -15,7 +15,7 @@ func TestSSLOptions_Struct(t *T) {
 func TestPHP_GetSSLDir_Bad(t *T) {
 	t.Run("fails to create directory in invalid path", func(t *T) {
 		// Try to create a directory in a path that can't exist
-		opts := SSLOptions{Dir: "/dev/null/cannot/create"}
+		opts := SSLOptions{Dir: testCannotCreatePath}
 		_, err := GetSSLDir(opts)
 		AssertError(t, err)
 		AssertContains(t, err.Error(), "failed to create SSL directory")
@@ -24,8 +24,8 @@ func TestPHP_GetSSLDir_Bad(t *T) {
 
 func TestPHP_CertPaths_Bad(t *T) {
 	t.Run("fails when GetSSLDir fails", func(t *T) {
-		opts := SSLOptions{Dir: "/dev/null/cannot/create"}
-		_, _, err := CertPaths("domain.test", opts)
+		opts := SSLOptions{Dir: testCannotCreatePath}
+		_, _, err := CertPaths(testDomain, opts)
 		AssertError(t, err)
 	})
 }
@@ -33,11 +33,11 @@ func TestPHP_CertPaths_Bad(t *T) {
 func TestCertsExist_Detailed(t *T) {
 	t.Run("returns true when both cert and key exist", func(t *T) {
 		dir := t.TempDir()
-		domain := "test.local"
+		domain := testLocalDomain
 
 		// Create both files
 		certPath := filepath.Join(dir, domain+".pem")
-		keyPath := filepath.Join(dir, domain+"-key.pem")
+		keyPath := filepath.Join(dir, domain+testKeySuffix)
 
 		err := os.WriteFile(certPath, []byte("cert"), 0644)
 		RequireNoError(t, err)
@@ -50,7 +50,7 @@ func TestCertsExist_Detailed(t *T) {
 
 	t.Run("returns false when only cert exists", func(t *T) {
 		dir := t.TempDir()
-		domain := "test.local"
+		domain := testLocalDomain
 
 		certPath := filepath.Join(dir, domain+".pem")
 		err := os.WriteFile(certPath, []byte("cert"), 0644)
@@ -62,9 +62,9 @@ func TestCertsExist_Detailed(t *T) {
 
 	t.Run("returns false when only key exists", func(t *T) {
 		dir := t.TempDir()
-		domain := "test.local"
+		domain := testLocalDomain
 
-		keyPath := filepath.Join(dir, domain+"-key.pem")
+		keyPath := filepath.Join(dir, domain+testKeySuffix)
 		err := os.WriteFile(keyPath, []byte("key"), 0644)
 		RequireNoError(t, err)
 
@@ -73,20 +73,20 @@ func TestCertsExist_Detailed(t *T) {
 	})
 
 	t.Run("returns false when CertPaths fails", func(t *T) {
-		result := CertsExist("domain.test", SSLOptions{Dir: "/dev/null/cannot/create"})
+		result := CertsExist(testDomain, SSLOptions{Dir: testCannotCreatePath})
 		AssertFalse(t, result)
 	})
 }
 
 func TestSetupSSL_RequiresMkcert(t *T) {
-	t.Run("fails when mkcert not installed", func(t *T) {
+	t.Run(testMkcertMissingName, func(t *T) {
 		if IsMkcertInstalled() {
-			t.Skip("mkcert is installed, skipping error test")
+			t.Skip(testMkcertInstalledSkip)
 		}
 
 		err := SetupSSL("example.test", SSLOptions{})
 		AssertError(t, err)
-		AssertContains(t, err.Error(), "mkcert is not installed")
+		AssertContains(t, err.Error(), testMkcertNotInstalled)
 	})
 }
 
@@ -97,7 +97,7 @@ func TestSetupSSLIfNeeded_UsesExisting(t *T) {
 
 		// Create existing certs
 		certPath := filepath.Join(dir, domain+".pem")
-		keyPath := filepath.Join(dir, domain+"-key.pem")
+		keyPath := filepath.Join(dir, domain+testKeySuffix)
 
 		err := os.WriteFile(certPath, []byte("existing cert"), 0644)
 		RequireNoError(t, err)
@@ -118,42 +118,42 @@ func TestSetupSSLIfNeeded_UsesExisting(t *T) {
 
 func TestPHP_SetupSSLIfNeeded_Bad(t *T) {
 	t.Run("fails when CertPaths fails", func(t *T) {
-		_, _, err := SetupSSLIfNeeded("domain.test", SSLOptions{Dir: "/dev/null/cannot/create"})
+		_, _, err := SetupSSLIfNeeded(testDomain, SSLOptions{Dir: testCannotCreatePath})
 		AssertError(t, err)
 	})
 
 	t.Run("fails when SetupSSL fails", func(t *T) {
 		if IsMkcertInstalled() {
-			t.Skip("mkcert is installed, skipping error test")
+			t.Skip(testMkcertInstalledSkip)
 		}
 
 		dir := t.TempDir()
-		_, _, err := SetupSSLIfNeeded("domain.test", SSLOptions{Dir: dir})
+		_, _, err := SetupSSLIfNeeded(testDomain, SSLOptions{Dir: dir})
 		AssertError(t, err)
 	})
 }
 
 func TestPHP_InstallMkcertCA_Bad(t *T) {
-	t.Run("fails when mkcert not installed", func(t *T) {
+	t.Run(testMkcertMissingName, func(t *T) {
 		if IsMkcertInstalled() {
-			t.Skip("mkcert is installed, skipping error test")
+			t.Skip(testMkcertInstalledSkip)
 		}
 
 		err := InstallMkcertCA()
 		AssertError(t, err)
-		AssertContains(t, err.Error(), "mkcert is not installed")
+		AssertContains(t, err.Error(), testMkcertNotInstalled)
 	})
 }
 
 func TestPHP_GetMkcertCARoot_Bad(t *T) {
-	t.Run("fails when mkcert not installed", func(t *T) {
+	t.Run(testMkcertMissingName, func(t *T) {
 		if IsMkcertInstalled() {
-			t.Skip("mkcert is installed, skipping error test")
+			t.Skip(testMkcertInstalledSkip)
 		}
 
 		_, err := GetMkcertCARoot()
 		AssertError(t, err)
-		AssertContains(t, err.Error(), "mkcert is not installed")
+		AssertContains(t, err.Error(), testMkcertNotInstalled)
 	})
 }
 

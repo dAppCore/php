@@ -76,13 +76,7 @@ func LoadCoolifyConfig(dir string) (*CoolifyConfig, error) {
 // LoadCoolifyConfigFromFile loads Coolify configuration from a specific .env file.
 func LoadCoolifyConfigFromFile(path string) (*CoolifyConfig, error) {
 	m := getMedium()
-	config := &CoolifyConfig{}
-
-	// First try environment variables
-	config.URL = os.Getenv("COOLIFY_URL")
-	config.Token = os.Getenv("COOLIFY_TOKEN")
-	config.AppID = os.Getenv("COOLIFY_APP_ID")
-	config.StagingAppID = os.Getenv("COOLIFY_STAGING_APP_ID")
+	config := coolifyConfigFromEnv()
 
 	// Then try .env file
 	if !m.Exists(path) {
@@ -95,46 +89,64 @@ func LoadCoolifyConfigFromFile(path string) (*CoolifyConfig, error) {
 		return nil, cli.WrapVerb(err, "read", ".env file")
 	}
 
-	// Parse .env file
-	lines := strings.Split(content, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
+	applyCoolifyEnvFile(config, content)
+	return validateCoolifyConfig(config)
+}
+
+func coolifyConfigFromEnv() *CoolifyConfig {
+	return &CoolifyConfig{
+		URL:          os.Getenv("COOLIFY_URL"),
+		Token:        os.Getenv("COOLIFY_TOKEN"),
+		AppID:        os.Getenv("COOLIFY_APP_ID"),
+		StagingAppID: os.Getenv("COOLIFY_STAGING_APP_ID"),
+	}
+}
+
+func applyCoolifyEnvFile(config *CoolifyConfig, content string) {
+	for _, line := range strings.Split(content, "\n") {
+		key, value, ok := parseCoolifyEnvLine(line)
+		if !ok {
 			continue
 		}
+		setCoolifyConfigValue(config, key, value)
+	}
+}
 
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		// Remove quotes if present
-		value = strings.Trim(value, `"'`)
-
-		// Only override if not already set from env
-		switch key {
-		case "COOLIFY_URL":
-			if config.URL == "" {
-				config.URL = value
-			}
-		case "COOLIFY_TOKEN":
-			if config.Token == "" {
-				config.Token = value
-			}
-		case "COOLIFY_APP_ID":
-			if config.AppID == "" {
-				config.AppID = value
-			}
-		case "COOLIFY_STAGING_APP_ID":
-			if config.StagingAppID == "" {
-				config.StagingAppID = value
-			}
-		}
+func parseCoolifyEnvLine(line string) (string, string, bool) {
+	line = strings.TrimSpace(line)
+	if line == "" || strings.HasPrefix(line, "#") {
+		return "", "", false
 	}
 
-	return validateCoolifyConfig(config)
+	parts := strings.SplitN(line, "=", 2)
+	if len(parts) != 2 {
+		return "", "", false
+	}
+
+	key := strings.TrimSpace(parts[0])
+	value := strings.Trim(strings.TrimSpace(parts[1]), `"'`)
+	return key, value, true
+}
+
+func setCoolifyConfigValue(config *CoolifyConfig, key, value string) {
+	switch key {
+	case "COOLIFY_URL":
+		if config.URL == "" {
+			config.URL = value
+		}
+	case "COOLIFY_TOKEN":
+		if config.Token == "" {
+			config.Token = value
+		}
+	case "COOLIFY_APP_ID":
+		if config.AppID == "" {
+			config.AppID = value
+		}
+	case "COOLIFY_STAGING_APP_ID":
+		if config.StagingAppID == "" {
+			config.StagingAppID = value
+		}
+	}
 }
 
 // validateCoolifyConfig checks that required fields are set.
@@ -171,7 +183,7 @@ func (c *CoolifyClient) TriggerDeploy(ctx context.Context, appID string, force b
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, "request failed")
+		return nil, cli.Wrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -204,7 +216,7 @@ func (c *CoolifyClient) GetDeployment(ctx context.Context, appID, deploymentID s
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, "request failed")
+		return nil, cli.Wrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -236,7 +248,7 @@ func (c *CoolifyClient) ListDeployments(ctx context.Context, appID string, limit
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, "request failed")
+		return nil, cli.Wrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -274,7 +286,7 @@ func (c *CoolifyClient) Rollback(ctx context.Context, appID, deploymentID string
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, "request failed")
+		return nil, cli.Wrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -306,7 +318,7 @@ func (c *CoolifyClient) GetApp(ctx context.Context, appID string) (*CoolifyApp, 
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, "request failed")
+		return nil, cli.Wrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -340,12 +352,12 @@ func (c *CoolifyClient) parseError(resp *http.Response) error {
 
 	if err := json.Unmarshal(body, &errResp); err == nil {
 		if errResp.Message != "" {
-			return cli.Err("API error (%d): %s", resp.StatusCode, errResp.Message)
+			return cli.Err(apiErrorFormat, resp.StatusCode, errResp.Message)
 		}
 		if errResp.Error != "" {
-			return cli.Err("API error (%d): %s", resp.StatusCode, errResp.Error)
+			return cli.Err(apiErrorFormat, resp.StatusCode, errResp.Error)
 		}
 	}
 
-	return cli.Err("API error (%d): %s", resp.StatusCode, string(body))
+	return cli.Err(apiErrorFormat, resp.StatusCode, string(body))
 }
