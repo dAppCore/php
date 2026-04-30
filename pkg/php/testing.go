@@ -6,8 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"dappco.re/go/cli/pkg/cli"
 )
 
 // TestOptions configures PHP test execution.
@@ -65,7 +63,7 @@ func RunTests(ctx context.Context, opts TestOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}

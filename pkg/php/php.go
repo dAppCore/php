@@ -70,7 +70,7 @@ func (d *DevServer) Start(ctx context.Context, opts Options) error {
 	defer d.mu.Unlock()
 
 	if d.running {
-		return cli.Err("dev server is already running")
+		return phpErr("dev server is already running")
 	}
 
 	if err := d.applyStartOptions(opts); err != nil {
@@ -79,7 +79,7 @@ func (d *DevServer) Start(ctx context.Context, opts Options) error {
 
 	// Verify this is a Laravel project
 	if !IsLaravelProject(d.opts.Dir) {
-		return cli.Err("not a Laravel project: %s", d.opts.Dir)
+		return phpErr("not a Laravel project: %s", d.opts.Dir)
 	}
 
 	// Create cancellable context
@@ -113,7 +113,7 @@ func (d *DevServer) applyStartOptions(opts Options) error {
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		return cli.WrapVerb(err, "get", workingDirectorySubject)
+		return phpWrapVerb(err, "get", workingDirectorySubject)
 	}
 	d.opts.Dir = cwd
 	return nil
@@ -126,7 +126,7 @@ func setupDevSSL(dir string, opts Options) (string, string, error) {
 
 	certFile, keyFile, err := SetupSSLIfNeeded(devSSLDomain(dir, opts.Domain), SSLOptions{})
 	if err != nil {
-		return "", "", cli.WrapVerb(err, "setup", "SSL")
+		return "", "", phpWrapVerb(err, "setup", "SSL")
 	}
 
 	return certFile, keyFile, nil
@@ -193,7 +193,7 @@ func (d *DevServer) startServices() error {
 	var startErrors []error
 	for _, svc := range d.services {
 		if err := svc.Start(d.ctx); err != nil {
-			startErrors = append(startErrors, cli.Err("%s: %v", svc.Name(), err))
+			startErrors = append(startErrors, phpErr("%s: %v", svc.Name(), err))
 		}
 	}
 
@@ -203,10 +203,10 @@ func (d *DevServer) startServices() error {
 
 	for _, svc := range d.services {
 		if err := svc.Stop(); err != nil {
-			startErrors = append(startErrors, cli.Err("cleanup %s: %v", svc.Name(), err))
+			startErrors = append(startErrors, phpErr("cleanup %s: %v", svc.Name(), err))
 		}
 	}
-	return cli.Err("failed to start services: %v", startErrors)
+	return phpErr("failed to start services: %v", startErrors)
 }
 
 // filterServices removes disabled services from the list.
@@ -258,14 +258,14 @@ func (d *DevServer) Stop() error {
 	for i := len(d.services) - 1; i >= 0; i-- {
 		svc := d.services[i]
 		if err := svc.Stop(); err != nil {
-			stopErrors = append(stopErrors, cli.Err("%s: %v", svc.Name(), err))
+			stopErrors = append(stopErrors, phpErr("%s: %v", svc.Name(), err))
 		}
 	}
 
 	d.running = false
 
 	if len(stopErrors) > 0 {
-		return cli.Err("errors stopping services: %v", stopErrors)
+		return phpErr("errors stopping services: %v", stopErrors)
 	}
 
 	return nil
@@ -289,7 +289,7 @@ func (d *DevServer) Logs(service string, follow bool) (io.ReadCloser, error) {
 		}
 	}
 
-	return nil, cli.Err("service not found: %s", service)
+	return nil, phpErr("service not found: %s", service)
 }
 
 // unifiedLogs creates a reader that combines logs from all services.
@@ -307,9 +307,9 @@ func (d *DevServer) unifiedLogs(follow bool) (io.ReadCloser, error) {
 				}
 			}
 			if len(closeErrors) > 0 {
-				return nil, cli.Err("failed to get logs for %s: %v; failed to close readers: %v", svc.Name(), err, closeErrors)
+				return nil, phpErr("failed to get logs for %s: %v; failed to close readers: %v", svc.Name(), err, closeErrors)
 			}
-			return nil, cli.Err("failed to get logs for %s: %v", svc.Name(), err)
+			return nil, phpErr("failed to get logs for %s: %v", svc.Name(), err)
 		}
 		readers = append(readers, reader)
 	}

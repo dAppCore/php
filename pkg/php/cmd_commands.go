@@ -33,9 +33,9 @@
 //   - deploy:list: List recent deployments
 package php
 
-import "dappco.re/go/cli/pkg/cli"
+import core "dappco.re/go"
 
 // AddCommands registers the 'php' command and all subcommands.
-func AddCommands(root *cli.Command) {
-	AddPHPCommands(root)
+func AddCommands(c *core.Core) {
+	AddPHPCommands(c)
 }

@@ -133,7 +133,7 @@ func Format(ctx context.Context, opts FormatOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -145,7 +145,7 @@ func Format(ctx context.Context, opts FormatOptions) error {
 	// Check if formatter is available
 	formatter, found := DetectFormatter(opts.Dir)
 	if !found {
-		return cli.Err("no formatter found (install Laravel Pint: composer require laravel/pint --dev)")
+		return phpErr("no formatter found (install Laravel Pint: composer require laravel/pint --dev)")
 	}
 
 	var cmdName string
@@ -169,7 +169,7 @@ func Analyse(ctx context.Context, opts AnalyseOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -181,7 +181,7 @@ func Analyse(ctx context.Context, opts AnalyseOptions) error {
 	// Check if analyser is available
 	analyser, found := DetectAnalyser(opts.Dir)
 	if !found {
-		return cli.Err("no static analyser found (install PHPStan: composer require phpstan/phpstan --dev)")
+		return phpErr("no static analyser found (install PHPStan: composer require phpstan/phpstan --dev)")
 	}
 
 	var cmdName string
@@ -318,7 +318,7 @@ func RunPsalm(ctx context.Context, opts PsalmOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -403,7 +403,7 @@ func RunAudit(ctx context.Context, opts AuditOptions) ([]AuditResult, error) {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return nil, cli.WrapVerb(err, "get", workingDirectorySubject)
+			return nil, phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -553,7 +553,7 @@ func RunRector(ctx context.Context, opts RectorOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -630,7 +630,7 @@ func RunInfection(ctx context.Context, opts InfectionOptions) error {
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return cli.WrapVerb(err, "get", workingDirectorySubject)
+			return phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}
@@ -813,7 +813,7 @@ func RunSecurityChecks(ctx context.Context, opts SecurityOptions) (*SecurityResu
 	if opts.Dir == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return nil, cli.WrapVerb(err, "get", workingDirectorySubject)
+			return nil, phpWrapVerb(err, "get", workingDirectorySubject)
 		}
 		opts.Dir = cwd
 	}

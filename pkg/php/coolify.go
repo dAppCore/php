@@ -86,7 +86,7 @@ func LoadCoolifyConfigFromFile(path string) (*CoolifyConfig, error) {
 
 	content, err := m.Read(path)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "read", ".env file")
+		return nil, phpWrapVerb(err, "read", ".env file")
 	}
 
 	applyCoolifyEnvFile(config, content)
@@ -152,10 +152,10 @@ func setCoolifyConfigValue(config *CoolifyConfig, key, value string) {
 // validateCoolifyConfig checks that required fields are set.
 func validateCoolifyConfig(config *CoolifyConfig) (*CoolifyConfig, error) {
 	if config.URL == "" {
-		return nil, cli.Err("COOLIFY_URL is not set")
+		return nil, phpErr("COOLIFY_URL is not set")
 	}
 	if config.Token == "" {
-		return nil, cli.Err("COOLIFY_TOKEN is not set")
+		return nil, phpErr("COOLIFY_TOKEN is not set")
 	}
 	return config, nil
 }
@@ -171,19 +171,19 @@ func (c *CoolifyClient) TriggerDeploy(ctx context.Context, appID string, force b
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "marshal", "request")
+		return nil, phpWrapVerb(err, "marshal", "request")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
-		return nil, cli.WrapVerb(err, "create", "request")
+		return nil, phpWrapVerb(err, "create", "request")
 	}
 
 	c.setHeaders(req)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, requestFailedMessage)
+		return nil, phpWrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -209,14 +209,14 @@ func (c *CoolifyClient) GetDeployment(ctx context.Context, appID, deploymentID s
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "create", "request")
+		return nil, phpWrapVerb(err, "create", "request")
 	}
 
 	c.setHeaders(req)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, requestFailedMessage)
+		return nil, phpWrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -226,7 +226,7 @@ func (c *CoolifyClient) GetDeployment(ctx context.Context, appID, deploymentID s
 
 	var deployment CoolifyDeployment
 	if err := json.NewDecoder(resp.Body).Decode(&deployment); err != nil {
-		return nil, cli.WrapVerb(err, "decode", "response")
+		return nil, phpWrapVerb(err, "decode", "response")
 	}
 
 	return &deployment, nil
@@ -241,14 +241,14 @@ func (c *CoolifyClient) ListDeployments(ctx context.Context, appID string, limit
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "create", "request")
+		return nil, phpWrapVerb(err, "create", "request")
 	}
 
 	c.setHeaders(req)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, requestFailedMessage)
+		return nil, phpWrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -258,7 +258,7 @@ func (c *CoolifyClient) ListDeployments(ctx context.Context, appID string, limit
 
 	var deployments []CoolifyDeployment
 	if err := json.NewDecoder(resp.Body).Decode(&deployments); err != nil {
-		return nil, cli.WrapVerb(err, "decode", "response")
+		return nil, phpWrapVerb(err, "decode", "response")
 	}
 
 	return deployments, nil
@@ -274,19 +274,19 @@ func (c *CoolifyClient) Rollback(ctx context.Context, appID, deploymentID string
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "marshal", "request")
+		return nil, phpWrapVerb(err, "marshal", "request")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
-		return nil, cli.WrapVerb(err, "create", "request")
+		return nil, phpWrapVerb(err, "create", "request")
 	}
 
 	c.setHeaders(req)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, requestFailedMessage)
+		return nil, phpWrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -311,14 +311,14 @@ func (c *CoolifyClient) GetApp(ctx context.Context, appID string) (*CoolifyApp, 
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "create", "request")
+		return nil, phpWrapVerb(err, "create", "request")
 	}
 
 	c.setHeaders(req)
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return nil, cli.Wrap(err, requestFailedMessage)
+		return nil, phpWrap(err, requestFailedMessage)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -328,7 +328,7 @@ func (c *CoolifyClient) GetApp(ctx context.Context, appID string) (*CoolifyApp, 
 
 	var app CoolifyApp
 	if err := json.NewDecoder(resp.Body).Decode(&app); err != nil {
-		return nil, cli.WrapVerb(err, "decode", "response")
+		return nil, phpWrapVerb(err, "decode", "response")
 	}
 
 	return &app, nil
@@ -352,12 +352,12 @@ func (c *CoolifyClient) parseError(resp *http.Response) error {
 
 	if err := json.Unmarshal(body, &errResp); err == nil {
 		if errResp.Message != "" {
-			return cli.Err(apiErrorFormat, resp.StatusCode, errResp.Message)
+			return phpErr(apiErrorFormat, resp.StatusCode, errResp.Message)
 		}
 		if errResp.Error != "" {
-			return cli.Err(apiErrorFormat, resp.StatusCode, errResp.Error)
+			return phpErr(apiErrorFormat, resp.StatusCode, errResp.Error)
 		}
 	}
 
-	return cli.Err(apiErrorFormat, resp.StatusCode, string(body))
+	return phpErr(apiErrorFormat, resp.StatusCode, string(body))
 }

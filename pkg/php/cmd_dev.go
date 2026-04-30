@@ -10,47 +10,25 @@ import (
 	"syscall"
 	"time"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/i18n"
 )
 
-var (
-	devNoVite    bool
-	devNoHorizon bool
-	devNoReverb  bool
-	devNoRedis   bool
-	devHTTPS     bool
-	devDomain    string
-	devPort      int
-)
-
-func addPHPDevCommand(parent *cli.Command) {
-	devCmd := &cli.Command{
-		Use:   "dev",
-		Short: i18n.T("cmd.php.dev.short"),
-		Long:  i18n.T("cmd.php.dev.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			return runPHPDev(phpDevOptions{
-				NoVite:    devNoVite,
-				NoHorizon: devNoHorizon,
-				NoReverb:  devNoReverb,
-				NoRedis:   devNoRedis,
-				HTTPS:     devHTTPS,
-				Domain:    devDomain,
-				Port:      devPort,
-			})
-		},
-	}
-
-	devCmd.Flags().BoolVar(&devNoVite, "no-vite", false, i18n.T("cmd.php.dev.flag.no_vite"))
-	devCmd.Flags().BoolVar(&devNoHorizon, "no-horizon", false, i18n.T("cmd.php.dev.flag.no_horizon"))
-	devCmd.Flags().BoolVar(&devNoReverb, "no-reverb", false, i18n.T("cmd.php.dev.flag.no_reverb"))
-	devCmd.Flags().BoolVar(&devNoRedis, "no-redis", false, i18n.T("cmd.php.dev.flag.no_redis"))
-	devCmd.Flags().BoolVar(&devHTTPS, "https", false, i18n.T("cmd.php.dev.flag.https"))
-	devCmd.Flags().StringVar(&devDomain, "domain", "", i18n.T("cmd.php.dev.flag.domain"))
-	devCmd.Flags().IntVar(&devPort, "port", 0, i18n.T("cmd.php.dev.flag.port"))
-
-	parent.AddCommand(devCmd)
+func addPHPDevCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "dev")
+	phpErrorCommand(c, path, i18n.T("cmd.php.dev.short"), func(opts core.Options) error {
+		line := phpCommandLineFor(path, opts)
+		return runPHPDev(phpDevOptions{
+			NoVite:    line.Bool("no-vite"),
+			NoHorizon: line.Bool("no-horizon"),
+			NoReverb:  line.Bool("no-reverb"),
+			NoRedis:   line.Bool("no-redis"),
+			HTTPS:     line.Bool("https"),
+			Domain:    line.String("domain", ""),
+			Port:      line.Int("port", 0),
+		})
+	})
 }
 
 type phpDevOptions struct {
@@ -66,7 +44,7 @@ type phpDevOptions struct {
 func runPHPDev(opts phpDevOptions) error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return cli.Err("failed to get working directory: %w", err)
+		return phpErr("failed to get working directory: %w", err)
 	}
 
 	// Check if this is a Laravel project
@@ -91,7 +69,7 @@ func runPHPDev(opts phpDevOptions) error {
 	notifyDevShutdown(cancel)
 
 	if err := server.Start(ctx, devOpts); err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.start", "services"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.start", "services"), err)
 	}
 
 	// Print status
@@ -110,7 +88,6 @@ func runPHPDev(opts phpDevOptions) error {
 	cli.Print(cliLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.dev.all_stopped"))
 	return nil
 }
-
 func laravelDisplayName(dir string) string {
 	appName := GetLaravelAppName(dir)
 	if appName == "" {
@@ -197,25 +174,12 @@ func streamDevLogs(ctx context.Context, server *DevServer) {
 	}
 }
 
-var (
-	logsFollow  bool
-	logsService string
-)
-
-func addPHPLogsCommand(parent *cli.Command) {
-	logsCmd := &cli.Command{
-		Use:   "logs",
-		Short: i18n.T("cmd.php.logs.short"),
-		Long:  i18n.T("cmd.php.logs.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			return runPHPLogs(logsService, logsFollow)
-		},
-	}
-
-	logsCmd.Flags().BoolVar(&logsFollow, "follow", false, i18n.T("common.flag.follow"))
-	logsCmd.Flags().StringVar(&logsService, "service", "", i18n.T("cmd.php.logs.flag.service"))
-
-	parent.AddCommand(logsCmd)
+func addPHPLogsCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "logs")
+	phpErrorCommand(c, path, i18n.T("cmd.php.logs.short"), func(opts core.Options) error {
+		line := phpCommandLineFor(path, opts)
+		return runPHPLogs(line.String("service", ""), line.Bool("follow"))
+	})
 }
 
 func runPHPLogs(service string, follow bool) error {
@@ -233,7 +197,7 @@ func runPHPLogs(service string, follow bool) error {
 
 	logsReader, err := server.Logs(service, follow)
 	if err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, "logs"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, "logs"), err)
 	}
 	defer func() { _ = logsReader.Close() }()
 
@@ -262,16 +226,10 @@ func runPHPLogs(service string, follow bool) error {
 	return scanner.Err()
 }
 
-func addPHPStopCommand(parent *cli.Command) {
-	stopCmd := &cli.Command{
-		Use:   "stop",
-		Short: i18n.T("cmd.php.stop.short"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			return runPHPStop()
-		},
-	}
-
-	parent.AddCommand(stopCmd)
+func addPHPStopCommand(c *core.Core, prefix string) {
+	phpErrorCommand(c, phpCommandPath(prefix, "stop"), i18n.T("cmd.php.stop.short"), func(core.Options) error {
+		return runPHPStop()
+	})
 }
 
 func runPHPStop() error {
@@ -286,23 +244,17 @@ func runPHPStop() error {
 	// This is a simplified version - in practice you'd want to track PIDs
 	server := NewDevServer(Options{Dir: cwd})
 	if err := server.Stop(); err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.stop", "services"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.stop", "services"), err)
 	}
 
 	cli.Print(cliLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.dev.all_stopped"))
 	return nil
 }
 
-func addPHPStatusCommand(parent *cli.Command) {
-	statusCmd := &cli.Command{
-		Use:   "status",
-		Short: i18n.T("cmd.php.status.short"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			return runPHPStatus()
-		},
-	}
-
-	parent.AddCommand(statusCmd)
+func addPHPStatusCommand(c *core.Core, prefix string) {
+	phpErrorCommand(c, phpCommandPath(prefix, "status"), i18n.T("cmd.php.status.short"), func(core.Options) error {
+		return runPHPStatus()
+	})
 }
 
 func runPHPStatus() error {
@@ -354,20 +306,12 @@ func runPHPStatus() error {
 	return nil
 }
 
-var sslDomain string
-
-func addPHPSSLCommand(parent *cli.Command) {
-	sslCmd := &cli.Command{
-		Use:   "ssl",
-		Short: i18n.T("cmd.php.ssl.short"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			return runPHPSSL(sslDomain)
-		},
-	}
-
-	sslCmd.Flags().StringVar(&sslDomain, "domain", "", i18n.T("cmd.php.ssl.flag.domain"))
-
-	parent.AddCommand(sslCmd)
+func addPHPSSLCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "ssl")
+	phpErrorCommand(c, path, i18n.T("cmd.php.ssl.short"), func(opts core.Options) error {
+		line := phpCommandLineFor(path, opts)
+		return runPHPSSL(line.String("domain", ""))
+	})
 }
 
 func runPHPSSL(domain string) error {
@@ -410,7 +354,7 @@ func runPHPSSL(domain string) error {
 
 	// Setup SSL
 	if err := SetupSSL(domain, SSLOptions{}); err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.setup", "SSL"), err)
+		return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.setup", "SSL"), err)
 	}
 
 	certFile, keyFile, _ := CertPaths(domain, SSLOptions{})

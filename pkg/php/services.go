@@ -75,13 +75,13 @@ func (s *baseService) Status() ServiceStatus {
 
 func (s *baseService) Logs(follow bool) (io.ReadCloser, error) {
 	if s.logPath == "" {
-		return nil, cli.Err("no log file available for %s", s.name)
+		return nil, phpErr("no log file available for %s", s.name)
 	}
 
 	m := getMedium()
 	file, err := m.Open(s.logPath)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "open", "log file")
+		return nil, phpWrapVerb(err, "open", "log file")
 	}
 
 	if !follow {
@@ -93,7 +93,7 @@ func (s *baseService) Logs(follow bool) (io.ReadCloser, error) {
 	osFile, ok := file.(*os.File)
 	if !ok {
 		_ = file.Close()
-		return nil, cli.Err("log file is not a regular file")
+		return nil, phpErr("log file is not a regular file")
 	}
 	return newTailReader(osFile), nil
 }
@@ -103,26 +103,26 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 	defer s.mu.Unlock()
 
 	if s.running {
-		return cli.Err("%s is already running", s.name)
+		return phpErr("%s is already running", s.name)
 	}
 
 	// Create log file
 	m := getMedium()
 	logDir := filepath.Join(s.dir, ".core", "logs")
 	if err := m.EnsureDir(logDir); err != nil {
-		return cli.WrapVerb(err, "create", "log directory")
+		return phpWrapVerb(err, "create", "log directory")
 	}
 
 	s.logPath = filepath.Join(logDir, cli.Sprintf("%s.log", strings.ToLower(s.name)))
 	logWriter, err := m.Create(s.logPath)
 	if err != nil {
-		return cli.WrapVerb(err, "create", "log file")
+		return phpWrapVerb(err, "create", "log file")
 	}
 	// Type assert to get the underlying *os.File for use with exec.Cmd
 	logFile, ok := logWriter.(*os.File)
 	if !ok {
 		_ = logWriter.Close()
-		return cli.Err("log file is not a regular file")
+		return phpErr("log file is not a regular file")
 	}
 	s.logFile = logFile
 
@@ -138,10 +138,10 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 
 	if err := s.cmd.Start(); err != nil {
 		if closeErr := logFile.Close(); closeErr != nil {
-			err = cli.Err("%v; close log file: %v", err, closeErr)
+			err = phpErr("%v; close log file: %v", err, closeErr)
 		}
 		s.lastError = err
-		return cli.WrapVerb(err, "start", s.name)
+		return phpWrapVerb(err, "start", s.name)
 	}
 
 	s.running = true

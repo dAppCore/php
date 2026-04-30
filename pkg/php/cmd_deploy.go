@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/i18n"
 )
@@ -16,242 +17,186 @@ var (
 	phpDeployFailedStyle  = cli.ErrorStyle
 )
 
-func addPHPDeployCommands(parent *cli.Command) {
+func addPHPDeployCommands(c *core.Core, prefix string) {
 	// Main deploy command
-	addPHPDeployCommand(parent)
+	addPHPDeployCommand(c, prefix)
 
 	// Deploy status subcommand (using colon notation: deploy:status)
-	addPHPDeployStatusCommand(parent)
+	addPHPDeployStatusCommand(c, prefix)
 
 	// Deploy rollback subcommand
-	addPHPDeployRollbackCommand(parent)
+	addPHPDeployRollbackCommand(c, prefix)
 
 	// Deploy list subcommand
-	addPHPDeployListCommand(parent)
+	addPHPDeployListCommand(c, prefix)
 }
 
-var (
-	deployStaging bool
-	deployForce   bool
-	deployWait    bool
-)
+func addPHPDeployCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "deploy")
+	phpErrorCommand(c, path, i18n.T("cmd.php.deploy.short"), func(options core.Options) error {
+		line := phpCommandLineFor(path, options)
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-func addPHPDeployCommand(parent *cli.Command) {
-	deployCmd := &cli.Command{
-		Use:   "deploy",
-		Short: i18n.T("cmd.php.deploy.short"),
-		Long:  i18n.T("cmd.php.deploy.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+		env := EnvProduction
+		if line.Bool("staging") {
+			env = EnvStaging
+		}
 
-			env := EnvProduction
-			if deployStaging {
-				env = EnvStaging
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy.deploying", map[string]interface{}{"Environment": env}))
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy.deploying", map[string]interface{}{"Environment": env}))
+		ctx := context.Background()
 
-			ctx := context.Background()
+		deployOpts := DeployOptions{
+			Dir:         cwd,
+			Environment: env,
+			Force:       line.Bool("force"),
+			Wait:        line.Bool("wait"),
+		}
 
-			opts := DeployOptions{
-				Dir:         cwd,
-				Environment: env,
-				Force:       deployForce,
-				Wait:        deployWait,
-			}
+		status, err := Deploy(ctx, deployOpts)
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("cmd.php.error.deploy_failed"), err)
+		}
 
-			status, err := Deploy(ctx, opts)
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("cmd.php.error.deploy_failed"), err)
-			}
+		printDeploymentStatus(status)
 
-			printDeploymentStatus(status)
-
-			if deployWait {
-				if IsDeploymentSuccessful(status.Status) {
-					cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Deployment completed"}))
-				} else {
-					cli.Print(cliSectionLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy.warning_status", map[string]interface{}{"Status": status.Status}))
-				}
+		if deployOpts.Wait {
+			if IsDeploymentSuccessful(status.Status) {
+				cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Deployment completed"}))
 			} else {
-				cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy.triggered"))
+				cli.Print(cliSectionLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy.warning_status", map[string]interface{}{"Status": status.Status}))
 			}
+		} else {
+			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy.triggered"))
+		}
 
-			return nil
-		},
-	}
-
-	deployCmd.Flags().BoolVar(&deployStaging, "staging", false, i18n.T("cmd.php.deploy.flag.staging"))
-	deployCmd.Flags().BoolVar(&deployForce, "force", false, i18n.T("cmd.php.deploy.flag.force"))
-	deployCmd.Flags().BoolVar(&deployWait, "wait", false, i18n.T("cmd.php.deploy.flag.wait"))
-
-	parent.AddCommand(deployCmd)
+		return nil
+	})
 }
 
-var (
-	deployStatusStaging      bool
-	deployStatusDeploymentID string
-)
+func addPHPDeployStatusCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "deploy:status")
+	phpErrorCommand(c, path, i18n.T("cmd.php.deploy_status.short"), func(options core.Options) error {
+		line := phpCommandLineFor(path, options)
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-func addPHPDeployStatusCommand(parent *cli.Command) {
-	statusCmd := &cli.Command{
-		Use:   "deploy:status",
-		Short: i18n.T("cmd.php.deploy_status.short"),
-		Long:  i18n.T("cmd.php.deploy_status.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+		env := EnvProduction
+		if line.Bool("staging") {
+			env = EnvStaging
+		}
 
-			env := EnvProduction
-			if deployStatusStaging {
-				env = EnvStaging
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.ProgressSubject("check", "deployment status"))
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.ProgressSubject("check", "deployment status"))
+		ctx := context.Background()
 
-			ctx := context.Background()
+		statusOpts := StatusOptions{
+			Dir:          cwd,
+			Environment:  env,
+			DeploymentID: line.String("id", ""),
+		}
 
-			opts := StatusOptions{
-				Dir:          cwd,
-				Environment:  env,
-				DeploymentID: deployStatusDeploymentID,
-			}
+		status, err := DeployStatus(ctx, statusOpts)
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, "status"), err)
+		}
 
-			status, err := DeployStatus(ctx, opts)
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, "status"), err)
-			}
+		printDeploymentStatus(status)
 
-			printDeploymentStatus(status)
-
-			return nil
-		},
-	}
-
-	statusCmd.Flags().BoolVar(&deployStatusStaging, "staging", false, i18n.T("cmd.php.deploy_status.flag.staging"))
-	statusCmd.Flags().StringVar(&deployStatusDeploymentID, "id", "", i18n.T("cmd.php.deploy_status.flag.id"))
-
-	parent.AddCommand(statusCmd)
+		return nil
+	})
 }
 
-var (
-	rollbackStaging      bool
-	rollbackDeploymentID string
-	rollbackWait         bool
-)
+func addPHPDeployRollbackCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "deploy:rollback")
+	phpErrorCommand(c, path, i18n.T("cmd.php.deploy_rollback.short"), func(options core.Options) error {
+		line := phpCommandLineFor(path, options)
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-func addPHPDeployRollbackCommand(parent *cli.Command) {
-	rollbackCmd := &cli.Command{
-		Use:   "deploy:rollback",
-		Short: i18n.T("cmd.php.deploy_rollback.short"),
-		Long:  i18n.T("cmd.php.deploy_rollback.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+		env := EnvProduction
+		if line.Bool("staging") {
+			env = EnvStaging
+		}
 
-			env := EnvProduction
-			if rollbackStaging {
-				env = EnvStaging
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy_rollback.rolling_back", map[string]interface{}{"Environment": env}))
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy_rollback.rolling_back", map[string]interface{}{"Environment": env}))
+		ctx := context.Background()
 
-			ctx := context.Background()
+		rollbackOpts := RollbackOptions{
+			Dir:          cwd,
+			Environment:  env,
+			DeploymentID: line.String("id", ""),
+			Wait:         line.Bool("wait"),
+		}
 
-			opts := RollbackOptions{
-				Dir:          cwd,
-				Environment:  env,
-				DeploymentID: rollbackDeploymentID,
-				Wait:         rollbackWait,
-			}
+		status, err := Rollback(ctx, rollbackOpts)
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("cmd.php.error.rollback_failed"), err)
+		}
 
-			status, err := Rollback(ctx, opts)
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("cmd.php.error.rollback_failed"), err)
-			}
+		printDeploymentStatus(status)
 
-			printDeploymentStatus(status)
-
-			if rollbackWait {
-				if IsDeploymentSuccessful(status.Status) {
-					cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Rollback completed"}))
-				} else {
-					cli.Print(cliSectionLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy_rollback.warning_status", map[string]interface{}{"Status": status.Status}))
-				}
+		if rollbackOpts.Wait {
+			if IsDeploymentSuccessful(status.Status) {
+				cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("common.success.completed", map[string]any{"Action": "Rollback completed"}))
 			} else {
-				cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy_rollback.triggered"))
+				cli.Print(cliSectionLabelValueFormat, errorStyle.Render(i18n.Label("warning")), i18n.T("cmd.php.deploy_rollback.warning_status", map[string]interface{}{"Status": status.Status}))
 			}
+		} else {
+			cli.Print(cliSectionLabelValueFormat, successStyle.Render(i18n.Label("done")), i18n.T("cmd.php.deploy_rollback.triggered"))
+		}
 
-			return nil
-		},
-	}
-
-	rollbackCmd.Flags().BoolVar(&rollbackStaging, "staging", false, i18n.T("cmd.php.deploy_rollback.flag.staging"))
-	rollbackCmd.Flags().StringVar(&rollbackDeploymentID, "id", "", i18n.T("cmd.php.deploy_rollback.flag.id"))
-	rollbackCmd.Flags().BoolVar(&rollbackWait, "wait", false, i18n.T("cmd.php.deploy_rollback.flag.wait"))
-
-	parent.AddCommand(rollbackCmd)
+		return nil
+	})
 }
 
-var (
-	deployListStaging bool
-	deployListLimit   int
-)
+func addPHPDeployListCommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "deploy:list")
+	phpErrorCommand(c, path, i18n.T("cmd.php.deploy_list.short"), func(options core.Options) error {
+		line := phpCommandLineFor(path, options)
+		cwd, err := os.Getwd()
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		}
 
-func addPHPDeployListCommand(parent *cli.Command) {
-	listCmd := &cli.Command{
-		Use:   "deploy:list",
-		Short: i18n.T("cmd.php.deploy_list.short"),
-		Long:  i18n.T("cmd.php.deploy_list.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
-			}
+		env := EnvProduction
+		if line.Bool("staging") {
+			env = EnvStaging
+		}
 
-			env := EnvProduction
-			if deployListStaging {
-				env = EnvStaging
-			}
+		limit := line.Int("limit", 0)
+		if limit == 0 {
+			limit = 10
+		}
 
-			limit := deployListLimit
-			if limit == 0 {
-				limit = 10
-			}
+		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy_list.recent", map[string]interface{}{"Environment": env}))
 
-			cli.Print(cliLabelValueBlankFormat, dimStyle.Render(i18n.T(cmdPHPDeployLabelKey)), i18n.T("cmd.php.deploy_list.recent", map[string]interface{}{"Environment": env}))
+		ctx := context.Background()
 
-			ctx := context.Background()
+		deployments, err := ListDeployments(ctx, cwd, env, limit)
+		if err != nil {
+			return phpErr(cliWrapErrorFormat, i18n.T("i18n.fail.list", "deployments"), err)
+		}
 
-			deployments, err := ListDeployments(ctx, cwd, env, limit)
-			if err != nil {
-				return cli.Err(cliWrapErrorFormat, i18n.T("i18n.fail.list", "deployments"), err)
-			}
-
-			if len(deployments) == 0 {
-				cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.info")), i18n.T("cmd.php.deploy_list.none_found"))
-				return nil
-			}
-
-			for i, d := range deployments {
-				printDeploymentSummary(i+1, &d)
-			}
-
+		if len(deployments) == 0 {
+			cli.Print(cliLabelValueFormat, dimStyle.Render(i18n.T("cmd.php.label.info")), i18n.T("cmd.php.deploy_list.none_found"))
 			return nil
-		},
-	}
+		}
 
-	listCmd.Flags().BoolVar(&deployListStaging, "staging", false, i18n.T("cmd.php.deploy_list.flag.staging"))
-	listCmd.Flags().IntVar(&deployListLimit, "limit", 0, i18n.T("cmd.php.deploy_list.flag.limit"))
+		for i, d := range deployments {
+			printDeploymentSummary(i+1, &d)
+		}
 
-	parent.AddCommand(listCmd)
+		return nil
+	})
 }
 
 func printDeploymentStatus(status *DeploymentStatus) {

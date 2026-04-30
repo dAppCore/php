@@ -11,14 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"dappco.re/go/cli/pkg/cli"
-)
-
-var (
-	serveFPPort    int
-	serveFPPath    string
-	serveFPWorkers int
-	serveFPThreads int
+	core "dappco.re/go"
 )
 
 func init() {
@@ -27,41 +20,29 @@ func init() {
 
 // addFrankenPHPCommands adds FrankenPHP-specific commands to the php parent command.
 // Called from AddPHPCommands when CGO is enabled.
-func addFrankenPHPCommands(phpCmd *cli.Command) {
-	serveCmd := &cli.Command{
-		Use:   "serve:embedded",
-		Short: "Serve Laravel via embedded FrankenPHP runtime",
-		Long:  "Start an HTTP server using the embedded FrankenPHP runtime with Octane worker mode support.",
-		RunE:  runFrankenPHPServe,
-	}
-	serveCmd.Flags().IntVar(&serveFPPort, "port", 8000, "HTTP listen port")
-	serveCmd.Flags().StringVar(&serveFPPath, "path", ".", "Laravel application root")
-	serveCmd.Flags().IntVar(&serveFPWorkers, "workers", 2, "Octane worker count")
-	serveCmd.Flags().IntVar(&serveFPThreads, "threads", 4, "PHP thread count")
-	phpCmd.AddCommand(serveCmd)
+func addFrankenPHPCommands(c *core.Core, prefix string) {
+	servePath := phpCommandPath(prefix, "serve:embedded")
+	phpErrorCommand(c, servePath, "Serve Laravel via embedded FrankenPHP runtime", func(opts core.Options) error {
+		return runFrankenPHPServe(phpCommandLineFor(servePath, opts))
+	})
 
-	execCmd := &cli.Command{
-		Use:   "exec [command...]",
-		Short: "Execute a PHP artisan command via FrankenPHP",
-		Long:  "Boot FrankenPHP, run an artisan command, then exit. Stdin/stdout pass-through.",
-		Args:  cli.MinimumNArgs(1),
-		RunE:  runFrankenPHPExec,
-	}
-	execCmd.Flags().StringVar(&serveFPPath, "path", ".", "Laravel application root")
-	phpCmd.AddCommand(execCmd)
+	execPath := phpCommandPath(prefix, "exec")
+	phpErrorCommand(c, execPath, "Execute a PHP artisan command via FrankenPHP", func(opts core.Options) error {
+		return runFrankenPHPExec(phpCommandLineFor(execPath, opts))
+	})
 }
 
-func runFrankenPHPServe(cmd *cli.Command, args []string) error {
-	handler, cleanup, err := NewHandler(serveFPPath, HandlerConfig{
-		NumThreads: serveFPThreads,
-		NumWorkers: serveFPWorkers,
+func runFrankenPHPServe(line phpCommandLine) error {
+	handler, cleanup, err := NewHandler(line.String("path", "."), HandlerConfig{
+		NumThreads: line.Int("threads", 4),
+		NumWorkers: line.Int("workers", 2),
 	})
 	if err != nil {
 		return fmt.Errorf("init FrankenPHP: %w", err)
 	}
 	defer cleanup()
 
-	addr := fmt.Sprintf(":%d", serveFPPort)
+	addr := fmt.Sprintf(":%d", line.Int("port", 8000))
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
@@ -83,8 +64,13 @@ func runFrankenPHPServe(cmd *cli.Command, args []string) error {
 	return srv.Shutdown(context.Background())
 }
 
-func runFrankenPHPExec(cmd *cli.Command, args []string) error {
-	handler, cleanup, err := NewHandler(serveFPPath, HandlerConfig{
+func runFrankenPHPExec(line phpCommandLine) error {
+	args := line.Args()
+	if len(args) < 1 {
+		return phpErr("requires at least 1 arg(s), only received %d", len(args))
+	}
+
+	handler, cleanup, err := NewHandler(line.String("path", "."), HandlerConfig{
 		NumThreads: 1,
 		NumWorkers: 0,
 	})

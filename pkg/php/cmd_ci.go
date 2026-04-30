@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/i18n"
 )
@@ -71,29 +72,23 @@ type ciCheckDefinition struct {
 	sarif bool
 }
 
-func addPHPCICommand(parent *cli.Command) {
-	ciCmd := &cli.Command{
-		Use:   "ci",
-		Short: i18n.T("cmd.php.ci.short"),
-		Long:  i18n.T("cmd.php.ci.long"),
-		RunE: func(cmd *cli.Command, args []string) error {
-			return runPHPCI()
-		},
-	}
-
-	ciCmd.Flags().BoolVar(&ciJSON, "json", false, i18n.T("cmd.php.ci.flag.json"))
-	ciCmd.Flags().BoolVar(&ciSummary, "summary", false, i18n.T("cmd.php.ci.flag.summary"))
-	ciCmd.Flags().BoolVar(&ciSARIF, "sarif", false, i18n.T("cmd.php.ci.flag.sarif"))
-	ciCmd.Flags().BoolVar(&ciUploadSARIF, "upload-sarif", false, i18n.T("cmd.php.ci.flag.upload_sarif"))
-	ciCmd.Flags().StringVar(&ciFailOn, "fail-on", "error", i18n.T("cmd.php.ci.flag.fail_on"))
-
-	parent.AddCommand(ciCmd)
+func addPHPCICommand(c *core.Core, prefix string) {
+	path := phpCommandPath(prefix, "ci")
+	phpErrorCommand(c, path, i18n.T("cmd.php.ci.short"), func(opts core.Options) error {
+		line := phpCommandLineFor(path, opts)
+		ciJSON = line.Bool("json")
+		ciSummary = line.Bool("summary")
+		ciSARIF = line.Bool("sarif")
+		ciUploadSARIF = line.Bool("upload-sarif")
+		ciFailOn = line.String("fail-on", "error")
+		return runPHPCI()
+	})
 }
 
 func runPHPCI() error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return cli.Err(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
+		return phpErr(cliWrapErrorFormat, i18n.T(i18nFailGetKey, workingDirectorySubject), err)
 	}
 
 	if !IsPHPProject(cwd) {
@@ -238,7 +233,7 @@ func outputCIJSONResult(result CIResult) error {
 		return err
 	}
 	if !result.Passed {
-		return cli.Exit(result.ExitCode, cli.Err(ciPipelineFailedMessage))
+		return phpExit(result.ExitCode, phpErr(ciPipelineFailedMessage))
 	}
 	return nil
 }
@@ -248,7 +243,7 @@ func outputCISummaryResult(result CIResult) error {
 		return err
 	}
 	if !result.Passed {
-		return cli.Err(ciPipelineFailedMessage)
+		return phpErr(ciPipelineFailedMessage)
 	}
 	return nil
 }
@@ -273,7 +268,7 @@ func outputCIDefault(ctx context.Context, cwd string, result CIResult, artifacts
 	uploadCIArtifacts(ctx, artifacts)
 
 	if !result.Passed {
-		return cli.Err(ciPipelineFailedMessage)
+		return phpErr(ciPipelineFailedMessage)
 	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/i18n"
 	"dappco.re/go/io"
@@ -54,79 +55,53 @@ var (
 	phpQAWarningStyle = cli.WarningStyle
 )
 
-// AddPHPCommands adds PHP/Laravel development commands.
-func AddPHPCommands(root *cli.Command) {
-	phpCmd := &cli.Command{
-		Use:   "php",
-		Short: i18n.T("cmd.php.short"),
-		Long:  i18n.T("cmd.php.long"),
-		PersistentPreRunE: func(cmd *cli.Command, args []string) error {
-			return activateWorkspacePackage()
-		},
-	}
-	root.AddCommand(phpCmd)
-
-	// Development
-	addPHPDevCommand(phpCmd)
-	addPHPLogsCommand(phpCmd)
-	addPHPStopCommand(phpCmd)
-	addPHPStatusCommand(phpCmd)
-	addPHPSSLCommand(phpCmd)
-
-	// Build & Deploy
-	addPHPBuildCommand(phpCmd)
-	addPHPServeCommand(phpCmd)
-	addPHPShellCommand(phpCmd)
-
-	// CI/CD Integration
-	addPHPCICommand(phpCmd)
-
-	// Package Management
-	addPHPPackagesCommands(phpCmd)
-
-	// Deployment
-	addPHPDeployCommands(phpCmd)
-
-	// FrankenPHP embedded commands (CGO only)
-	if registerFrankenPHP != nil {
-		registerFrankenPHP(phpCmd)
-	}
+// AddPHPCommands adds PHP/Laravel development commands under the php namespace.
+func AddPHPCommands(c *core.Core) {
+	phpHelpCommand(c, "php", i18n.T("cmd.php.short"))
+	addPHPCommandSet(c, "php")
 }
 
 // registerFrankenPHP is set by cmd_serve_frankenphp.go when CGO is enabled.
-var registerFrankenPHP func(phpCmd *cli.Command)
+var registerFrankenPHP func(c *core.Core, prefix string)
 
 // AddPHPRootCommands adds PHP commands directly to root (for standalone core-php binary).
-func AddPHPRootCommands(root *cli.Command) {
-	root.PersistentPreRunE = func(cmd *cli.Command, args []string) error {
-		return activateWorkspacePackage()
-	}
+func AddPHPRootCommands(c *core.Core) {
+	addPHPCommandSet(c, "")
+}
 
+func addPHPCommandSet(c *core.Core, prefix string) {
 	// Development
-	addPHPDevCommand(root)
-	addPHPLogsCommand(root)
-	addPHPStopCommand(root)
-	addPHPStatusCommand(root)
-	addPHPSSLCommand(root)
+	addPHPDevCommand(c, prefix)
+	addPHPLogsCommand(c, prefix)
+	addPHPStopCommand(c, prefix)
+	addPHPStatusCommand(c, prefix)
+	addPHPSSLCommand(c, prefix)
 
 	// Build & Deploy
-	addPHPBuildCommand(root)
-	addPHPServeCommand(root)
-	addPHPShellCommand(root)
+	addPHPBuildCommand(c, prefix)
+	addPHPServeCommand(c, prefix)
+	addPHPShellCommand(c, prefix)
 
 	// CI/CD Integration
-	addPHPCICommand(root)
+	addPHPCICommand(c, prefix)
 
 	// Package Management
-	addPHPPackagesCommands(root)
+	addPHPPackagesCommands(c, prefix)
 
 	// Deployment
-	addPHPDeployCommands(root)
+	addPHPDeployCommands(c, prefix)
 
 	// FrankenPHP embedded commands (CGO only)
 	if registerFrankenPHP != nil {
-		registerFrankenPHP(root)
+		registerFrankenPHP(c, prefix)
 	}
+}
+
+func phpCommandPath(prefix, name string) string {
+	if prefix == "" {
+		return name
+	}
+	return prefix + "/" + name
 }
 
 func activateWorkspacePackage() error {
@@ -142,7 +117,7 @@ func activateWorkspacePackage() error {
 	}
 
 	if err := os.Chdir(targetDir); err != nil {
-		return cli.Err("failed to change directory to active package: %w", err)
+		return phpErr("failed to change directory to active package: %w", err)
 	}
 
 	cli.Print(cliLabelValueFormat, dimStyle.Render("Workspace:"), config.Active)

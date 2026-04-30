@@ -14,7 +14,7 @@ import (
 	"testing/fstest"
 	"time"
 
-	"dappco.re/go/cli/pkg/cli"
+	core "dappco.re/go"
 	coreio "dappco.re/go/io"
 )
 
@@ -207,57 +207,58 @@ func TestPHP_SetMedium_Ugly(t *T) {
 }
 
 func TestPHP_AddCommands_Good(t *T) {
-	root := &cli.Command{}
-	AddCommands(root)
-	AssertGreater(t, len(root.Commands()), 0)
+	c := core.New()
+	AddCommands(c)
+	AssertGreater(t, len(c.Commands()), 0)
 }
 
 func TestPHP_AddCommands_Bad(t *T) {
-	root := &cli.Command{Use: "root"}
-	AddCommands(root)
-	AssertEqual(t, "root", root.Use)
+	c := core.New()
+	AddCommands(c)
+	AssertTrue(t, c.Command("php").OK)
 }
 
 func TestPHP_AddCommands_Ugly(t *T) {
-	root := &cli.Command{}
-	AddCommands(root)
-	AssertEqual(t, "php", root.Commands()[0].Use)
+	c := core.New()
+	AddCommands(c)
+	AssertTrue(t, c.Command("php/dev").OK)
 }
 
 func TestPHP_AddPHPCommands_Good(t *T) {
-	root := &cli.Command{}
-	AddPHPCommands(root)
-	AssertEqual(t, "php", root.Commands()[0].Use)
+	c := core.New()
+	AddPHPCommands(c)
+	AssertTrue(t, c.Command("php").OK)
 }
 
 func TestPHP_AddPHPCommands_Bad(t *T) {
-	root := &cli.Command{}
-	AddPHPCommands(root)
-	AssertGreaterOrEqual(t, len(root.Commands()[0].Commands()), 1)
+	c := core.New()
+	AddPHPCommands(c)
+	AssertTrue(t, c.Command("php/packages/link").OK)
 }
 
 func TestPHP_AddPHPCommands_Ugly(t *T) {
-	root := &cli.Command{}
-	AddPHPCommands(root)
-	AssertNotNil(t, root.Commands()[0].PersistentPreRunE)
+	c := core.New()
+	AddPHPCommands(c)
+	command := c.Command("php").Value.(*core.Command)
+	AssertNotNil(t, command.Action)
 }
 
 func TestPHP_AddPHPRootCommands_Good(t *T) {
-	root := &cli.Command{}
-	AddPHPRootCommands(root)
-	AssertGreater(t, len(root.Commands()), 0)
+	c := core.New()
+	AddPHPRootCommands(c)
+	AssertGreater(t, len(c.Commands()), 0)
 }
 
 func TestPHP_AddPHPRootCommands_Bad(t *T) {
-	root := &cli.Command{}
-	AddPHPRootCommands(root)
-	AssertNotNil(t, root.PersistentPreRunE)
+	c := core.New()
+	AddPHPRootCommands(c)
+	AssertTrue(t, c.Command("dev").OK)
 }
 
 func TestPHP_AddPHPRootCommands_Ugly(t *T) {
-	root := &cli.Command{Use: "php"}
-	AddPHPRootCommands(root)
-	AssertEqual(t, "php", root.Use)
+	c := core.New()
+	AddPHPRootCommands(c)
+	AssertFalse(t, c.Command("php").OK)
 }
 
 func TestPHP_DetectFormatter_Good(t *T) {

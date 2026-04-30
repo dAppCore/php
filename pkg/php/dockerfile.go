@@ -60,12 +60,12 @@ func DetectDockerfileConfig(dir string) (*DockerfileConfig, error) {
 	composerPath := filepath.Join(dir, composerJSONFile)
 	composerContent, err := m.Read(composerPath)
 	if err != nil {
-		return nil, cli.WrapVerb(err, "read", composerJSONFile)
+		return nil, phpWrapVerb(err, "read", composerJSONFile)
 	}
 
 	var composer ComposerJSON
 	if err := json.Unmarshal([]byte(composerContent), &composer); err != nil {
-		return nil, cli.WrapVerb(err, "parse", composerJSONFile)
+		return nil, phpWrapVerb(err, "parse", composerJSONFile)
 	}
 
 	// Detect PHP version from composer.json
