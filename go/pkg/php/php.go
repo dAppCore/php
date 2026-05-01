@@ -3,10 +3,10 @@ package php
 import (
 	"context"
 	"io"
-	`os`
 	"sync"
 	"time"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
 
@@ -111,11 +111,12 @@ func (d *DevServer) applyStartOptions(opts Options) error { // Result boundary
 		return nil
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
+	cwdResult := core.Getwd()
+	if !cwdResult.OK {
+		err, _ := cwdResult.Value.(error)
 		return phpWrapAction(err, "get", workingDirectorySubject)
 	}
-	d.opts.Dir = cwd
+	d.opts.Dir, _ = cwdResult.Value.(string)
 	return nil
 }
 

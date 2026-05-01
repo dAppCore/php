@@ -1,8 +1,6 @@
 package php
 
 import (
-	`os`
-
 	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
@@ -23,10 +21,12 @@ func addPHPPackagesLinkCommand(c *core.Core, prefix string) {
 			return phpFailure("requires at least 1 arg(s), only received %d", len(args))
 		}
 
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.packages.link.linking"))
 
@@ -47,10 +47,12 @@ func addPHPPackagesUnlinkCommand(c *core.Core, prefix string) {
 			return phpFailure("requires at least 1 arg(s), only received %d", len(args))
 		}
 
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.packages.unlink.unlinking"))
 
@@ -67,10 +69,12 @@ func addPHPPackagesUpdateCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "packages/update")
 	phpFailureorCommand(c, path, phpT("cmd.php.packages.update.short"), func(opts core.Options) error {
 		args := phpCommandLineFor(path, opts).Args()
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.packages.update.updating"))
 
@@ -86,10 +90,12 @@ func addPHPPackagesUpdateCommand(c *core.Core, prefix string) {
 func addPHPPackagesListCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "packages/list")
 	phpFailureorCommand(c, path, phpT("cmd.php.packages.list.short"), func(opts core.Options) error {
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		packages, err := ListLinkedPackages(cwd)
 		if err != nil {

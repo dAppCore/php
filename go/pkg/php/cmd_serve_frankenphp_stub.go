@@ -4,12 +4,13 @@ package php
 
 import (
 	"net/http"
-	`os`
+
+	core "dappco.re/go"
 )
 
 // execResponseWriter writes HTTP response body directly to stdout.
 type execResponseWriter struct {
-	out *os.File
+	out *core.OSFile
 }
 
 func (w *execResponseWriter) Header() http.Header         { return http.Header{} }

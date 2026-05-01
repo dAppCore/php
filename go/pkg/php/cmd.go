@@ -1,9 +1,6 @@
 package php
 
 import (
-	`os`
-	`path/filepath`
-
 	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 	"dappco.re/go/io"
@@ -115,7 +112,8 @@ func activateWorkspacePackage() error { // Result boundary
 		return nil
 	}
 
-	if err := os.Chdir(targetDir); err != nil {
+	if r := core.Chdir(targetDir); !r.OK {
+		err, _ := r.Value.(error)
 		return core.E("php", "failed to change directory to active package", err)
 	}
 
@@ -142,9 +140,9 @@ func activeWorkspacePackageDir(wsRoot string, config *workspaceConfig) string {
 	if pkgDir == "" {
 		pkgDir = "./packages"
 	}
-	if !filepath.IsAbs(pkgDir) {
-		pkgDir = filepath.Join(wsRoot, pkgDir)
+	if !core.PathIsAbs(pkgDir) {
+		pkgDir = core.PathJoin(wsRoot, pkgDir)
 	}
 
-	return filepath.Join(pkgDir, config.Active)
+	return core.PathJoin(pkgDir, config.Active)
 }
