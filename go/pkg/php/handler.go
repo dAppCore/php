@@ -152,13 +152,3 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// trimTrailingSlash strips a single trailing "/" from s, if present. Equivalent
-// of strings.TrimRight(s, "/") for single-rune trim without importing strings;
-// the cutset variant of core.Trim is not yet published in this repo's pinned
-// core/go release.
-func trimTrailingSlash(s string) string {
-	for len(s) > 0 && s[len(s)-1] == '/' {
-		s = s[:len(s)-1]
-	}
-	return s
-}
