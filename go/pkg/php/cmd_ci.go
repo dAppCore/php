@@ -87,7 +87,7 @@ func addPHPCICommand(c *core.Core, prefix string) {
 func runPHPCI() error { // Result boundary
 	cwd, err := os.Getwd()
 	if err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+		return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 	}
 
 	if !IsPHPProject(cwd) {

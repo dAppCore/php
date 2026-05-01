@@ -25,13 +25,13 @@ func addPHPPackagesLinkCommand(c *core.Core, prefix string) {
 
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.packages.link.linking"))
 
 		if err := LinkPackages(cwd, args); err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.link", "packages"), err)
+			return core.E("php", phpT("i18n.fail.link", "packages"), err)
 		}
 
 		cli.Print(cliSectionLabelValueFormat, successStyle.Render(phpLabel("done")), phpT("cmd.php.packages.link.done"))
@@ -49,13 +49,13 @@ func addPHPPackagesUnlinkCommand(c *core.Core, prefix string) {
 
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.packages.unlink.unlinking"))
 
 		if err := UnlinkPackages(cwd, args); err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.unlink", "packages"), err)
+			return core.E("php", phpT("i18n.fail.unlink", "packages"), err)
 		}
 
 		cli.Print(cliSectionLabelValueFormat, successStyle.Render(phpLabel("done")), phpT("cmd.php.packages.unlink.done"))
@@ -69,13 +69,13 @@ func addPHPPackagesUpdateCommand(c *core.Core, prefix string) {
 		args := phpCommandLineFor(path, opts).Args()
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.packages.update.updating"))
 
 		if err := UpdatePackages(cwd, args); err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("cmd.php.error.update_packages"), err)
+			return core.E("php", phpT("cmd.php.error.update_packages"), err)
 		}
 
 		cli.Print(cliSectionLabelValueFormat, successStyle.Render(phpLabel("done")), phpT("cmd.php.packages.update.done"))
@@ -88,12 +88,12 @@ func addPHPPackagesListCommand(c *core.Core, prefix string) {
 	phpFailureorCommand(c, path, phpT("cmd.php.packages.list.short"), func(opts core.Options) error {
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		packages, err := ListLinkedPackages(cwd)
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.list", "packages"), err)
+			return core.E("php", phpT("i18n.fail.list", "packages"), err)
 		}
 
 		if len(packages) == 0 {

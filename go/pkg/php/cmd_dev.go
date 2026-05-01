@@ -43,7 +43,7 @@ type phpDevOptions struct {
 func runPHPDev(opts phpDevOptions) error { // Result boundary
 	cwd, err := os.Getwd()
 	if err != nil {
-		return phpFailure("failed to get working directory: %w", err)
+		return core.E("php", "failed to get working directory", err)
 	}
 
 	// Check if this is a Laravel project
@@ -68,7 +68,7 @@ func runPHPDev(opts phpDevOptions) error { // Result boundary
 	notifyDevShutdown(cancel)
 
 	if err := server.Start(ctx, devOpts); err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.start", "services"), err)
+		return core.E("php", phpT("i18n.fail.start", "services"), err)
 	}
 
 	// Print status
@@ -196,7 +196,7 @@ func runPHPLogs(service string, follow bool) error { // Result boundary
 
 	logsReader, err := server.Logs(service, follow)
 	if err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, "logs"), err)
+		return core.E("php", phpT(i18nFailGetKey, "logs"), err)
 	}
 	defer func() { _ = logsReader.Close() }()
 
@@ -243,7 +243,7 @@ func runPHPStop() error { // Result boundary
 	// This is a simplified version - in practice you'd want to track PIDs
 	server := NewDevServer(Options{Dir: cwd})
 	if err := server.Stop(); err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.stop", "services"), err)
+		return core.E("php", phpT("i18n.fail.stop", "services"), err)
 	}
 
 	cli.Print(cliLabelValueFormat, successStyle.Render(phpLabel("done")), phpT("cmd.php.dev.all_stopped"))
@@ -353,7 +353,7 @@ func runPHPSSL(domain string) error { // Result boundary
 
 	// Setup SSL
 	if err := SetupSSL(domain, SSLOptions{}); err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.setup", "SSL"), err)
+		return core.E("php", phpT("i18n.fail.setup", "SSL"), err)
 	}
 
 	certFile, keyFile, _ := CertPaths(domain, SSLOptions{})

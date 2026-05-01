@@ -16,7 +16,7 @@ func addPHPBuildCommand(c *core.Core, prefix string) {
 		line := phpCommandLineFor(path, opts)
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		ctx := context.Background()
@@ -64,7 +64,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 	// Show detected configuration
 	config, err := DetectDockerfileConfig(projectDir)
 	if err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.detect", "project configuration"), err)
+		return core.E("php", phpT("i18n.fail.detect", "project configuration"), err)
 	}
 
 	cli.Print(cliLabelValueFormat, dimStyle.Render(phpT("cmd.php.build.php_version")), config.PHPVersion)
@@ -107,7 +107,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 	cli.Blank()
 
 	if err := BuildDocker(ctx, buildOpts); err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.build"), err)
+		return core.E("php", phpT("i18n.fail.build"), err)
 	}
 
 	cli.Print(cliSectionLabelValueFormat, successStyle.Render(phpLabel("done")), phpT("common.success.completed", map[string]any{"Action": "Docker image built"}))
@@ -145,7 +145,7 @@ func runPHPBuildLinuxKit(ctx context.Context, projectDir string, opts linuxKitBu
 	cli.Blank()
 
 	if err := BuildLinuxKit(ctx, buildOpts); err != nil {
-		return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.build"), err)
+		return core.E("php", phpT("i18n.fail.build"), err)
 	}
 
 	cli.Print(cliSectionLabelValueFormat, successStyle.Render(phpLabel("done")), phpT("common.success.completed", map[string]any{"Action": "LinuxKit image built"}))
@@ -187,7 +187,7 @@ func addPHPServeCommand(c *core.Core, prefix string) {
 		cli.Blank()
 
 		if err := ServeProduction(ctx, serveOpts); err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.start", "container"), err)
+			return core.E("php", phpT("i18n.fail.start", "container"), err)
 		}
 
 		if !serveDetach {
@@ -247,7 +247,7 @@ func addPHPShellCommand(c *core.Core, prefix string) {
 		cli.Print(cliLabelValueFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.shell.opening", map[string]interface{}{"Container": args[0]}))
 
 		if err := Shell(ctx, args[0]); err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.open", "shell"), err)
+			return core.E("php", phpT("i18n.fail.open", "shell"), err)
 		}
 
 		return nil

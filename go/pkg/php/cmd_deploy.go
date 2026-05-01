@@ -36,7 +36,7 @@ func addPHPDeployCommand(c *core.Core, prefix string) {
 		line := phpCommandLineFor(path, options)
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		env := EnvProduction
@@ -57,7 +57,7 @@ func addPHPDeployCommand(c *core.Core, prefix string) {
 
 		status, err := Deploy(ctx, deployOpts)
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("cmd.php.error.deploy_failed"), err)
+			return core.E("php", phpT("cmd.php.error.deploy_failed"), err)
 		}
 
 		printDeploymentStatus(status)
@@ -82,7 +82,7 @@ func addPHPDeployStatusCommand(c *core.Core, prefix string) {
 		line := phpCommandLineFor(path, options)
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		env := EnvProduction
@@ -102,7 +102,7 @@ func addPHPDeployStatusCommand(c *core.Core, prefix string) {
 
 		status, err := DeployStatus(ctx, statusOpts)
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, "status"), err)
+			return core.E("php", phpT(i18nFailGetKey, "status"), err)
 		}
 
 		printDeploymentStatus(status)
@@ -117,7 +117,7 @@ func addPHPDeployRollbackCommand(c *core.Core, prefix string) {
 		line := phpCommandLineFor(path, options)
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		env := EnvProduction
@@ -138,7 +138,7 @@ func addPHPDeployRollbackCommand(c *core.Core, prefix string) {
 
 		status, err := Rollback(ctx, rollbackOpts)
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("cmd.php.error.rollback_failed"), err)
+			return core.E("php", phpT("cmd.php.error.rollback_failed"), err)
 		}
 
 		printDeploymentStatus(status)
@@ -163,7 +163,7 @@ func addPHPDeployListCommand(c *core.Core, prefix string) {
 		line := phpCommandLineFor(path, options)
 		cwd, err := os.Getwd()
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT(i18nFailGetKey, workingDirectorySubject), err)
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
 
 		env := EnvProduction
@@ -182,7 +182,7 @@ func addPHPDeployListCommand(c *core.Core, prefix string) {
 
 		deployments, err := ListDeployments(ctx, cwd, env, limit)
 		if err != nil {
-			return phpFailure(cliWrapErrorFormat, phpT("i18n.fail.list", "deployments"), err)
+			return core.E("php", phpT("i18n.fail.list", "deployments"), err)
 		}
 
 		if len(deployments) == 0 {
