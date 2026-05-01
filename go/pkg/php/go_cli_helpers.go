@@ -1,9 +1,6 @@
 package php
 
 import (
-	`fmt`
-	`strings`
-
 	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
@@ -36,22 +33,22 @@ type phpCommandLine struct {
 	args  []string
 }
 
-func phpFailure(format string, args ...any) error { // Result boundary
-	return fmt.Errorf(format, args...)
+func phpFailure(format string, args ...any) error {
+	return core.E("php", core.Sprintf(format, args...), nil)
 }
 
-func phpWrapMessage(err error, message string) error { // Result boundary
+func phpWrapMessage(err error, message string) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("%s: %w", message, err)
+	return core.E("php", message, err)
 }
 
-func phpWrapAction(err error, verb, subject string) error { // Result boundary
+func phpWrapAction(err error, verb, subject string) error {
 	if err == nil {
 		return nil
 	}
-	return fmt.Errorf("failed to %s %s: %w", verb, subject, err)
+	return core.E("php", core.Sprintf("failed to %s %s", verb, subject), err)
 }
 
 func phpExit(code int, err error) error { // Result boundary
@@ -177,25 +174,36 @@ func phpParseCommandLine(args []string) phpCommandLine {
 }
 
 func phpSplitFlag(arg string) (key, value string, hasValue bool, ok bool) {
-	if strings.HasPrefix(arg, "--") {
-		body := strings.TrimPrefix(arg, "--")
+	if core.HasPrefix(arg, "--") {
+		body := core.TrimPrefix(arg, "--")
 		if body == "" {
 			return "", "", false, false
 		}
-		key, value, hasValue = strings.Cut(body, "=")
+		key, value, hasValue = phpCutOnEquals(body)
 		return key, value, hasValue, key != ""
 	}
 
-	if strings.HasPrefix(arg, "-") {
-		body := strings.TrimPrefix(arg, "-")
+	if core.HasPrefix(arg, "-") {
+		body := core.TrimPrefix(arg, "-")
 		if body == "" {
 			return "", "", false, false
 		}
-		key, value, hasValue = strings.Cut(body, "=")
+		key, value, hasValue = phpCutOnEquals(body)
 		return key, value, hasValue, key != ""
 	}
 
 	return "", "", false, false
+}
+
+// phpCutOnEquals splits "key=value" into (key, value, true) or returns
+// (s, "", false) when no `=` is present. Equivalent of strings.Cut(s, "=")
+// without importing strings.
+func phpCutOnEquals(s string) (key, value string, hasValue bool) {
+	parts := core.SplitN(s, "=", 2)
+	if len(parts) == 2 {
+		return parts[0], parts[1], true
+	}
+	return s, "", false
 }
 
 func (line phpCommandLine) Bool(name string, aliases ...string) bool {
@@ -205,7 +213,7 @@ func (line phpCommandLine) Bool(name string, aliases ...string) bool {
 		if !ok {
 			continue
 		}
-		switch strings.ToLower(value) {
+		switch core.Lower(value) {
 		case "", "1", "true", "yes", "on":
 			return true
 		default:

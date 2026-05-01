@@ -6,6 +6,7 @@ import (
 	`os/exec`
 	`path/filepath`
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
 
@@ -156,7 +157,7 @@ func LinkPackages(dir string, packages []string) error { // Result boundary
 func validateLinkPackage(packagePath string) (string, string, error) { // Result boundary
 	absPath, err := filepath.Abs(packagePath)
 	if err != nil {
-		return "", "", phpFailure("failed to resolve path %s: %w", packagePath, err)
+		return "", "", core.E("php", core.Sprintf("failed to resolve path %s", packagePath), err)
 	}
 
 	if !IsPHPProject(absPath) {
@@ -165,7 +166,7 @@ func validateLinkPackage(packagePath string) (string, string, error) { // Result
 
 	pkgName, _, err := getPackageInfo(absPath)
 	if err != nil {
-		return "", "", phpFailure("failed to get package info from %s: %w", absPath, err)
+		return "", "", core.E("php", core.Sprintf("failed to get package info from %s", absPath), err)
 	}
 
 	return absPath, pkgName, nil

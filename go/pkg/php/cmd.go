@@ -116,7 +116,7 @@ func activateWorkspacePackage() error { // Result boundary
 	}
 
 	if err := os.Chdir(targetDir); err != nil {
-		return phpFailure("failed to change directory to active package: %w", err)
+		return core.E("php", "failed to change directory to active package", err)
 	}
 
 	cli.Print(cliLabelValueFormat, dimStyle.Render("Workspace:"), config.Active)
