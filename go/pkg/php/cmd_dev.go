@@ -3,10 +3,8 @@ package php
 import (
 	"bufio"
 	"context"
-	`errors`
-	`os`
+	"os"
 	"os/signal"
-	`strings`
 	"syscall"
 	"time"
 
@@ -41,14 +39,15 @@ type phpDevOptions struct {
 }
 
 func runPHPDev(opts phpDevOptions) error { // Result boundary
-	cwd, err := os.Getwd()
-	if err != nil {
-		return core.E("php", "failed to get working directory", err)
+	cwdResult := core.Getwd()
+	if !cwdResult.OK {
+		return core.E("php", "failed to get working directory", cwdResult.Value.(error))
 	}
+	cwd := cwdResult.Value.(string)
 
 	// Check if this is a Laravel project
 	if !IsLaravelProject(cwd) {
-		return errors.New(phpT("cmd.php.error.not_laravel"))
+		return core.E("php", phpT("cmd.php.error.not_laravel"), nil)
 	}
 
 	cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.dev.starting", map[string]interface{}{"AppName": laravelDisplayName(cwd)}))
@@ -182,13 +181,14 @@ func addPHPLogsCommand(c *core.Core, prefix string) {
 }
 
 func runPHPLogs(service string, follow bool) error { // Result boundary
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
+	cwdResult := core.Getwd()
+	if !cwdResult.OK {
+		return cwdResult.Value.(error)
 	}
+	cwd := cwdResult.Value.(string)
 
 	if !IsLaravelProject(cwd) {
-		return errors.New(phpT("cmd.php.error.not_laravel_short"))
+		return core.E("php", phpT("cmd.php.error.not_laravel_short"), nil)
 	}
 
 	// Create a minimal server just to access logs
@@ -232,10 +232,11 @@ func addPHPStopCommand(c *core.Core, prefix string) {
 }
 
 func runPHPStop() error { // Result boundary
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
+	cwdResult := core.Getwd()
+	if !cwdResult.OK {
+		return cwdResult.Value.(error)
 	}
+	cwd := cwdResult.Value.(string)
 
 	cli.Print(cliLabelValueFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.stop.stopping"))
 
@@ -257,13 +258,14 @@ func addPHPStatusCommand(c *core.Core, prefix string) {
 }
 
 func runPHPStatus() error { // Result boundary
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
+	cwdResult := core.Getwd()
+	if !cwdResult.OK {
+		return cwdResult.Value.(error)
 	}
+	cwd := cwdResult.Value.(string)
 
 	if !IsLaravelProject(cwd) {
-		return errors.New(phpT("cmd.php.error.not_laravel_short"))
+		return core.E("php", phpT("cmd.php.error.not_laravel_short"), nil)
 	}
 
 	appName := GetLaravelAppName(cwd)
@@ -314,10 +316,11 @@ func addPHPSSLCommand(c *core.Core, prefix string) {
 }
 
 func runPHPSSL(domain string) error { // Result boundary
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
+	cwdResult := core.Getwd()
+	if !cwdResult.OK {
+		return cwdResult.Value.(error)
 	}
+	cwd := cwdResult.Value.(string)
 
 	// Get domain from APP_URL if not specified
 	if domain == "" {
@@ -336,7 +339,7 @@ func runPHPSSL(domain string) error { // Result boundary
 		cli.Print(cliSingleLineFormat, phpT("common.hint.install_with"))
 		cli.Print("  %s\n", phpT("cmd.php.ssl.install_macos"))
 		cli.Print("  %s\n", phpT("cmd.php.ssl.install_linux"))
-		return errors.New(phpT("cmd.php.error.mkcert_not_installed"))
+		return core.E("php", phpT("cmd.php.error.mkcert_not_installed"), nil)
 	}
 
 	cli.Print(cliLabelValueFormat, dimStyle.Render("SSL:"), phpT("cmd.php.ssl.setting_up", map[string]interface{}{"Domain": domain}))
@@ -397,26 +400,26 @@ func printColoredLog(line string) {
 	var style *cli.AnsiStyle
 	serviceName := ""
 
-	if strings.HasPrefix(line, "[FrankenPHP]") {
+	if core.HasPrefix(line, "[FrankenPHP]") {
 		style = phpFrankenPHPStyle
 		serviceName = "FrankenPHP"
-		line = strings.TrimPrefix(line, "[FrankenPHP] ")
-	} else if strings.HasPrefix(line, "[Vite]") {
+		line = core.TrimPrefix(line, "[FrankenPHP] ")
+	} else if core.HasPrefix(line, "[Vite]") {
 		style = phpViteStyle
 		serviceName = "Vite"
-		line = strings.TrimPrefix(line, "[Vite] ")
-	} else if strings.HasPrefix(line, "[Horizon]") {
+		line = core.TrimPrefix(line, "[Vite] ")
+	} else if core.HasPrefix(line, "[Horizon]") {
 		style = phpHorizonStyle
 		serviceName = "Horizon"
-		line = strings.TrimPrefix(line, "[Horizon] ")
-	} else if strings.HasPrefix(line, "[Reverb]") {
+		line = core.TrimPrefix(line, "[Horizon] ")
+	} else if core.HasPrefix(line, "[Reverb]") {
 		style = phpReverbStyle
 		serviceName = "Reverb"
-		line = strings.TrimPrefix(line, "[Reverb] ")
-	} else if strings.HasPrefix(line, "[Redis]") {
+		line = core.TrimPrefix(line, "[Reverb] ")
+	} else if core.HasPrefix(line, "[Redis]") {
 		style = phpRedisStyle
 		serviceName = "Redis"
-		line = strings.TrimPrefix(line, "[Redis] ")
+		line = core.TrimPrefix(line, "[Redis] ")
 	} else {
 		// Unknown service, print as-is
 		cli.Print(cliLabelValueFormat, dimStyle.Render(timestamp), line)
@@ -431,7 +434,7 @@ func printColoredLog(line string) {
 }
 
 func getServiceStyle(name string) *cli.AnsiStyle {
-	switch strings.ToLower(name) {
+	switch core.Lower(name) {
 	case "frankenphp":
 		return phpFrankenPHPStyle
 	case "vite":
