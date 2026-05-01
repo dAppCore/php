@@ -280,11 +280,8 @@ class SecurityHeaderTester
     {
         $headers = [];
 
-        if ($response instanceof TestResponse) {
-            $headerBag = $response->headers;
-        } else {
-            $headerBag = $response->headers;
-        }
+        // Both TestResponse and Response expose `->headers` with the same shape.
+        $headerBag = $response->headers;
 
         foreach ($headerBag->all() as $name => $values) {
             $headers[strtolower($name)] = is_array($values) ? ($values[0] ?? '') : $values;
