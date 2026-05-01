@@ -1,9 +1,7 @@
 package php
 
 import (
-	`encoding/json`
-	`path/filepath`
-	`strings`
+	core "dappco.re/go"
 )
 
 // DetectedService represents a service that was detected in a Laravel project.
@@ -29,13 +27,13 @@ func IsLaravelProject(dir string) bool {
 	m := getMedium()
 
 	// Check for artisan file
-	artisanPath := filepath.Join(dir, "artisan")
+	artisanPath := core.PathJoin(dir, "artisan")
 	if !m.Exists(artisanPath) {
 		return false
 	}
 
 	// Check composer.json for laravel/framework
-	composerPath := filepath.Join(dir, composerJSONFile)
+	composerPath := core.PathJoin(dir, composerJSONFile)
 	data, err := m.Read(composerPath)
 	if err != nil {
 		return false
@@ -46,7 +44,7 @@ func IsLaravelProject(dir string) bool {
 		RequireDev map[string]string `json:"require-dev"`
 	}
 
-	if err := json.Unmarshal([]byte(data), &composer); err != nil {
+	if r := core.JSONUnmarshal([]byte(data), &composer); !r.OK {
 		return false
 	}
 
@@ -69,7 +67,7 @@ func IsFrankenPHPProject(dir string) bool {
 	m := getMedium()
 
 	// Check composer.json for laravel/octane
-	composerPath := filepath.Join(dir, composerJSONFile)
+	composerPath := core.PathJoin(dir, composerJSONFile)
 	data, err := m.Read(composerPath)
 	if err != nil {
 		return false
@@ -79,7 +77,7 @@ func IsFrankenPHPProject(dir string) bool {
 		Require map[string]string `json:"require"`
 	}
 
-	if err := json.Unmarshal([]byte(data), &composer); err != nil {
+	if r := core.JSONUnmarshal([]byte(data), &composer); !r.OK {
 		return false
 	}
 
@@ -88,7 +86,7 @@ func IsFrankenPHPProject(dir string) bool {
 	}
 
 	// Check octane config for frankenphp
-	configPath := filepath.Join(dir, "config", "octane.php")
+	configPath := core.PathJoin(dir, "config", "octane.php")
 	if !m.Exists(configPath) {
 		// If no config exists but octane is installed, assume frankenphp
 		return true
@@ -100,7 +98,7 @@ func IsFrankenPHPProject(dir string) bool {
 	}
 
 	// Look for frankenphp in the config
-	return strings.Contains(configData, "frankenphp")
+	return core.Contains(configData, "frankenphp")
 }
 
 // DetectServices detects which services are needed based on project files.
@@ -146,7 +144,7 @@ func hasVite(dir string) bool {
 	}
 
 	for _, config := range viteConfigs {
-		if m.Exists(filepath.Join(dir, config)) {
+		if m.Exists(core.PathJoin(dir, config)) {
 			return true
 		}
 	}
@@ -156,29 +154,29 @@ func hasVite(dir string) bool {
 
 // hasHorizon checks if Laravel Horizon is configured.
 func hasHorizon(dir string) bool {
-	horizonConfig := filepath.Join(dir, "config", "horizon.php")
+	horizonConfig := core.PathJoin(dir, "config", "horizon.php")
 	return getMedium().Exists(horizonConfig)
 }
 
 // hasReverb checks if Laravel Reverb is configured.
 func hasReverb(dir string) bool {
-	reverbConfig := filepath.Join(dir, "config", "reverb.php")
+	reverbConfig := core.PathJoin(dir, "config", "reverb.php")
 	return getMedium().Exists(reverbConfig)
 }
 
 // needsRedis checks if the project uses Redis based on .env configuration.
 func needsRedis(dir string) bool {
 	m := getMedium()
-	envPath := filepath.Join(dir, ".env")
+	envPath := core.PathJoin(dir, ".env")
 	content, err := m.Read(envPath)
 	if err != nil {
 		return false
 	}
 
-	lines := strings.Split(content, "\n")
+	lines := core.Split(content, "\n")
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "#") {
+		line = core.Trim(line)
+		if core.HasPrefix(line, "#") {
 			continue
 		}
 
@@ -192,9 +190,9 @@ func needsRedis(dir string) bool {
 		}
 
 		for _, indicator := range redisIndicators {
-			if strings.HasPrefix(line, indicator) {
+			if core.HasPrefix(line, indicator) {
 				// Check if it's set to localhost or 127.0.0.1
-				if strings.Contains(line, "127.0.0.1") || strings.Contains(line, "localhost") ||
+				if core.Contains(line, "127.0.0.1") || core.Contains(line, "localhost") ||
 					indicator != "REDIS_HOST=" {
 					return true
 				}
@@ -221,7 +219,7 @@ func DetectPackageManager(dir string) string {
 	}
 
 	for _, lf := range lockFiles {
-		if m.Exists(filepath.Join(dir, lf.file)) {
+		if m.Exists(core.PathJoin(dir, lf.file)) {
 			return lf.manager
 		}
 	}
@@ -233,19 +231,19 @@ func DetectPackageManager(dir string) string {
 // GetLaravelAppName extracts the application name from Laravel's .env file.
 func GetLaravelAppName(dir string) string {
 	m := getMedium()
-	envPath := filepath.Join(dir, ".env")
+	envPath := core.PathJoin(dir, ".env")
 	content, err := m.Read(envPath)
 	if err != nil {
 		return ""
 	}
 
-	lines := strings.Split(content, "\n")
+	lines := core.Split(content, "\n")
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "APP_NAME=") {
-			value := strings.TrimPrefix(line, "APP_NAME=")
+		line = core.Trim(line)
+		if core.HasPrefix(line, "APP_NAME=") {
+			value := core.TrimPrefix(line, "APP_NAME=")
 			// Remove quotes if present
-			value = strings.Trim(value, `"'`)
+			value = trimQuotes(value)
 			return value
 		}
 	}
@@ -256,19 +254,19 @@ func GetLaravelAppName(dir string) string {
 // GetLaravelAppURL extracts the application URL from Laravel's .env file.
 func GetLaravelAppURL(dir string) string {
 	m := getMedium()
-	envPath := filepath.Join(dir, ".env")
+	envPath := core.PathJoin(dir, ".env")
 	content, err := m.Read(envPath)
 	if err != nil {
 		return ""
 	}
 
-	lines := strings.Split(content, "\n")
+	lines := core.Split(content, "\n")
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "APP_URL=") {
-			value := strings.TrimPrefix(line, "APP_URL=")
+		line = core.Trim(line)
+		if core.HasPrefix(line, "APP_URL=") {
+			value := core.TrimPrefix(line, "APP_URL=")
 			// Remove quotes if present
-			value = strings.Trim(value, `"'`)
+			value = trimQuotes(value)
 			return value
 		}
 	}
@@ -276,20 +274,33 @@ func GetLaravelAppURL(dir string) string {
 	return ""
 }
 
+// trimQuotes strips matching surrounding `"` or `'` characters from s. Equivalent
+// of strings.Trim(s, `"'`) without importing strings; the cutset variant of
+// core.Trim is not yet published in this repo's pinned core/go release.
+func trimQuotes(s string) string {
+	for len(s) > 0 && (s[0] == '"' || s[0] == '\'') {
+		s = s[1:]
+	}
+	for len(s) > 0 && (s[len(s)-1] == '"' || s[len(s)-1] == '\'') {
+		s = s[:len(s)-1]
+	}
+	return s
+}
+
 // ExtractDomainFromURL extracts the domain from a URL string.
 func ExtractDomainFromURL(url string) string {
 	// Remove protocol
-	domain := strings.TrimPrefix(url, "https://")
-	domain = strings.TrimPrefix(domain, "http://")
+	domain := core.TrimPrefix(url, "https://")
+	domain = core.TrimPrefix(domain, "http://")
 
 	// Remove port if present
-	if idx := strings.Index(domain, ":"); idx != -1 {
-		domain = domain[:idx]
+	if parts := core.SplitN(domain, ":", 2); len(parts) > 1 {
+		domain = parts[0]
 	}
 
 	// Remove path if present
-	if idx := strings.Index(domain, "/"); idx != -1 {
-		domain = domain[:idx]
+	if parts := core.SplitN(domain, "/", 2); len(parts) > 1 {
+		domain = parts[0]
 	}
 
 	return domain
