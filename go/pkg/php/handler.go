@@ -7,13 +7,9 @@
 package php
 
 import (
-	`fmt`
-	`log`
 	"net/http"
-	`os`
-	`path/filepath`
-	`strings`
 
+	core "dappco.re/go"
 	"github.com/dunglas/frankenphp"
 )
 
@@ -53,27 +49,27 @@ func NewHandler(laravelRoot string, cfg HandlerConfig) (*Handler, func(), error)
 		}
 	}
 
-	docRoot := filepath.Join(laravelRoot, "public")
+	docRoot := core.PathJoin(laravelRoot, "public")
 
-	log.Printf("go-php: Laravel root: %s", laravelRoot)
-	log.Printf("go-php: Document root: %s", docRoot)
+	core.Println(core.Sprintf("go-php: Laravel root: %s", laravelRoot))
+	core.Println(core.Sprintf("go-php: Document root: %s", docRoot))
 
 	// Try Octane worker mode first, fall back to standard mode.
 	// Worker mode keeps Laravel booted in memory — sub-ms response times.
-	workerScript := filepath.Join(laravelRoot, "vendor", "laravel", "octane", "bin", "frankenphp-worker.php")
+	workerScript := core.PathJoin(laravelRoot, "vendor", "laravel", "octane", "bin", "frankenphp-worker.php")
 	workerEnv := map[string]string{
 		"APP_BASE_PATH":     laravelRoot,
 		"FRANKENPHP_WORKER": "1",
 	}
 
 	workerMode := false
-	if _, err := os.Stat(workerScript); err == nil {
+	if r := core.Stat(workerScript); r.OK {
 		if err := frankenphp.Init(
 			frankenphp.WithNumThreads(cfg.NumThreads),
 			frankenphp.WithWorkers("laravel", workerScript, cfg.NumWorkers, workerEnv, nil),
 			frankenphp.WithPhpIni(cfg.PHPIni),
 		); err != nil {
-			log.Printf("go-php: worker mode init failed (%v), falling back to standard mode", err)
+			core.Println(core.Sprintf("go-php: worker mode init failed (%v), falling back to standard mode", err))
 		} else {
 			workerMode = true
 		}
@@ -84,14 +80,14 @@ func NewHandler(laravelRoot string, cfg HandlerConfig) (*Handler, func(), error)
 			frankenphp.WithNumThreads(cfg.NumThreads),
 			frankenphp.WithPhpIni(cfg.PHPIni),
 		); err != nil {
-			return nil, nil, fmt.Errorf("init FrankenPHP: %w", err)
+			return nil, nil, core.E("php.NewHandler", "init FrankenPHP", err)
 		}
 	}
 
 	if workerMode {
-		log.Printf("go-php: FrankenPHP initialised (Octane worker mode, %d workers)", cfg.NumWorkers)
+		core.Println(core.Sprintf("go-php: FrankenPHP initialised (Octane worker mode, %d workers)", cfg.NumWorkers))
 	} else {
-		log.Printf("go-php: FrankenPHP initialised (standard mode, %d threads)", cfg.NumThreads)
+		core.Println(core.Sprintf("go-php: FrankenPHP initialised (standard mode, %d threads)", cfg.NumThreads))
 	}
 
 	cleanup := func() {
@@ -118,21 +114,23 @@ func (h *Handler) DocRoot() string {
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	urlPath := r.URL.Path
-	filePath := filepath.Join(h.docRoot, filepath.Clean(urlPath))
+	filePath := core.PathJoin(h.docRoot, core.CleanPath(urlPath, "/"))
 
-	info, err := os.Stat(filePath)
-	if err == nil && info.IsDir() {
-		// Directory → try index.php inside it
-		urlPath = strings.TrimRight(urlPath, "/") + "/index.php"
-	} else if err != nil && !strings.HasSuffix(urlPath, ".php") {
+	statR := core.Stat(filePath)
+	if statR.OK {
+		if statR.Value.(core.FsFileInfo).IsDir() {
+			// Directory → try index.php inside it
+			urlPath = trimTrailingSlash(urlPath) + "/index.php"
+		}
+	} else if !core.HasSuffix(urlPath, ".php") {
 		// File not found and not a .php request → front controller
 		urlPath = "/index.php"
 	}
 
 	// Serve static assets directly (CSS, JS, images)
-	if !strings.HasSuffix(urlPath, ".php") {
-		staticPath := filepath.Join(h.docRoot, filepath.Clean(urlPath))
-		if info, err := os.Stat(staticPath); err == nil && !info.IsDir() {
+	if !core.HasSuffix(urlPath, ".php") {
+		staticPath := core.PathJoin(h.docRoot, core.CleanPath(urlPath, "/"))
+		if staticR := core.Stat(staticPath); staticR.OK && !staticR.Value.(core.FsFileInfo).IsDir() {
 			http.ServeFile(w, r, staticPath)
 			return
 		}
@@ -145,11 +143,22 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		frankenphp.WithRequestDocumentRoot(h.docRoot, false),
 	)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("FrankenPHP request error: %v", err), http.StatusInternalServerError)
+		http.Error(w, core.Sprintf("FrankenPHP request error: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	if err := frankenphp.ServeHTTP(w, req); err != nil {
-		http.Error(w, fmt.Sprintf("FrankenPHP serve error: %v", err), http.StatusInternalServerError)
+		http.Error(w, core.Sprintf("FrankenPHP serve error: %v", err), http.StatusInternalServerError)
 	}
+}
+
+// trimTrailingSlash strips a single trailing "/" from s, if present. Equivalent
+// of strings.TrimRight(s, "/") for single-rune trim without importing strings;
+// the cutset variant of core.Trim is not yet published in this repo's pinned
+// core/go release.
+func trimTrailingSlash(s string) string {
+	for len(s) > 0 && s[len(s)-1] == '/' {
+		s = s[:len(s)-1]
+	}
+	return s
 }
