@@ -5,13 +5,12 @@ import (
 	"bufio"
 	"context"
 	"io"
-	`os`
-	`os/exec`
-	`path/filepath`
-	`strings`
+	"os"
+	"os/exec"
 	"sync"
 	"time"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
 
@@ -110,12 +109,12 @@ func (s *baseService) startProcess(ctx context.Context, cmdName string, args []s
 
 	// Create log file
 	m := getMedium()
-	logDir := filepath.Join(s.dir, ".core", "logs")
+	logDir := core.PathJoin(s.dir, ".core", "logs")
 	if err := m.EnsureDir(logDir); err != nil {
 		return phpWrapAction(err, "create", "log directory")
 	}
 
-	s.logPath = filepath.Join(logDir, cli.Sprintf("%s.log", strings.ToLower(s.name)))
+	s.logPath = core.PathJoin(logDir, cli.Sprintf("%s.log", core.Lower(s.name)))
 	logWriter, err := m.Create(s.logPath)
 	if err != nil {
 		return phpWrapAction(err, "create", "log file")
