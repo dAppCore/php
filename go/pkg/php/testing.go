@@ -3,9 +3,9 @@ package php
 import (
 	"context"
 	"io"
-	`os`
-	`os/exec`
-	`path/filepath`
+	"os/exec"
+
+	core "dappco.re/go"
 )
 
 // TestOptions configures PHP test execution.
@@ -50,7 +50,7 @@ const (
 // Returns Pest if tests/Pest.php exists, otherwise PHPUnit.
 func DetectTestRunner(dir string) TestRunner {
 	// Check for Pest
-	pestFile := filepath.Join(dir, "tests", "Pest.php")
+	pestFile := core.PathJoin(dir, "tests", "Pest.php")
 	if getMedium().IsFile(pestFile) {
 		return TestRunnerPest
 	}
@@ -61,15 +61,15 @@ func DetectTestRunner(dir string) TestRunner {
 // RunTests runs PHPUnit or Pest tests.
 func RunTests(ctx context.Context, opts TestOptions) error { // Result boundary
 	if opts.Dir == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return phpWrapAction(err, "get", workingDirectorySubject)
+		cwdR := core.Getwd()
+		if !cwdR.OK {
+			return phpWrapAction(cwdR.Value.(error), "get", workingDirectorySubject)
 		}
-		opts.Dir = cwd
+		opts.Dir = cwdR.Value.(string)
 	}
 
 	if opts.Output == nil {
-		opts.Output = os.Stdout
+		opts.Output = core.Stdout()
 	}
 
 	// Detect test runner
@@ -90,10 +90,10 @@ func RunTests(ctx context.Context, opts TestOptions) error { // Result boundary
 	cmd.Dir = opts.Dir
 	cmd.Stdout = opts.Output
 	cmd.Stderr = opts.Output
-	cmd.Stdin = os.Stdin
+	cmd.Stdin = core.Stdin()
 
 	// Set XDEBUG_MODE=coverage to avoid PHPUnit 11 warning
-	cmd.Env = append(os.Environ(), "XDEBUG_MODE=coverage")
+	cmd.Env = append(core.Environ(), "XDEBUG_MODE=coverage")
 
 	return cmd.Run()
 }
@@ -108,7 +108,7 @@ func RunParallel(ctx context.Context, opts TestOptions) error { // Result bounda
 func buildPestCommand(opts TestOptions) (string, []string) {
 	m := getMedium()
 	// Check for vendor binary first
-	vendorBin := filepath.Join(opts.Dir, "vendor", "bin", "pest")
+	vendorBin := core.PathJoin(opts.Dir, "vendor", "bin", "pest")
 	cmdName := "pest"
 	if m.IsFile(vendorBin) {
 		cmdName = vendorBin
@@ -150,7 +150,7 @@ func buildPestCommand(opts TestOptions) (string, []string) {
 func buildPHPUnitCommand(opts TestOptions) (string, []string) {
 	m := getMedium()
 	// Check for vendor binary first
-	vendorBin := filepath.Join(opts.Dir, "vendor", "bin", "phpunit")
+	vendorBin := core.PathJoin(opts.Dir, "vendor", "bin", "phpunit")
 	cmdName := "phpunit"
 	if m.IsFile(vendorBin) {
 		cmdName = vendorBin
@@ -164,7 +164,7 @@ func buildPHPUnitCommand(opts TestOptions) (string, []string) {
 
 	if opts.Parallel {
 		// PHPUnit uses paratest for parallel execution
-		paratestBin := filepath.Join(opts.Dir, "vendor", "bin", "paratest")
+		paratestBin := core.PathJoin(opts.Dir, "vendor", "bin", "paratest")
 		if m.IsFile(paratestBin) {
 			cmdName = paratestBin
 		}

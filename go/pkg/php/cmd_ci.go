@@ -12,13 +12,8 @@ package php
 
 import (
 	"context"
-	`encoding/json`
-	`errors`
-	`fmt`
-	`os`
-	`os/exec`
-	`path/filepath`
-	`strings`
+	"encoding/json"
+	"os/exec"
 	"time"
 
 	core "dappco.re/go"
@@ -85,13 +80,14 @@ func addPHPCICommand(c *core.Core, prefix string) {
 }
 
 func runPHPCI() error { // Result boundary
-	cwd, err := os.Getwd()
-	if err != nil {
-		return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
+	cwdR := core.Getwd()
+	if !cwdR.OK {
+		return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), cwdR.Value.(error))
 	}
+	cwd := cwdR.Value.(string)
 
 	if !IsPHPProject(cwd) {
-		return errors.New(phpT("cmd.php.error.not_php"))
+		return core.E("php.runCI", phpT("cmd.php.error.not_php"), nil)
 	}
 
 	startTime := time.Now()
@@ -132,7 +128,7 @@ func printCIHeader() {
 	}
 
 	cli.Print(cliSingleLineFormat, cli.BoldStyle.Render("core php ci - QA Pipeline"))
-	cli.Print("%s\n\n", strings.Repeat("─", 40))
+	cli.Print("%s\n\n", repeat("─", 40))
 }
 
 func runCIChecks(ctx context.Context, cwd string, checks []ciCheckDefinition, result *CIResult) []string {
@@ -198,7 +194,7 @@ func appendCIArtifact(ctx context.Context, cwd string, check ciCheckDefinition, 
 		return artifacts
 	}
 
-	sarifFile := filepath.Join(cwd, check.name+".sarif")
+	sarifFile := core.PathJoin(cwd, check.name+".sarif")
 	if generateSARIF(ctx, cwd, check.name, sarifFile) == nil {
 		return append(artifacts, sarifFile)
 	}
@@ -248,7 +244,7 @@ func outputCISummaryResult(result CIResult) error { // Result boundary
 }
 
 func outputCIDefault(ctx context.Context, cwd string, result CIResult, artifacts []string) error { // Result boundary
-	cli.Print(cliSingleLineFormat, strings.Repeat("─", 40))
+	cli.Print(cliSingleLineFormat, repeat("─", 40))
 
 	if result.Passed {
 		cli.Print(cliLabelValueFormat, successStyle.Render("✓ CI PASSED"), dimStyle.Render(result.Duration))
@@ -259,7 +255,7 @@ func outputCIDefault(ctx context.Context, cwd string, result CIResult, artifacts
 	if len(artifacts) > 0 {
 		cli.Print(cliSingleLineFormat, dimStyle.Render("Artifacts:"))
 		for _, a := range artifacts {
-			cli.Print("  → %s\n", filepath.Base(a))
+			cli.Print("  → %s\n", core.PathBase(a))
 		}
 	}
 
@@ -280,9 +276,9 @@ func uploadCIArtifacts(ctx context.Context, artifacts []string) {
 	cli.Blank()
 	for _, sarifFile := range artifacts {
 		if err := uploadSARIFToGitHub(ctx, sarifFile); err != nil {
-			cli.Print("  %s %s: %s\n", errorStyle.Render("✗"), filepath.Base(sarifFile), err)
+			cli.Print("  %s %s: %s\n", errorStyle.Render("✗"), core.PathBase(sarifFile), err)
 		} else {
-			cli.Print("  %s %s uploaded\n", successStyle.Render("✓"), filepath.Base(sarifFile))
+			cli.Print("  %s %s uploaded\n", successStyle.Render("✓"), core.PathBase(sarifFile))
 		}
 	}
 }
@@ -416,7 +412,7 @@ func runCIAudit(ctx context.Context, dir string) (CICheckResult, error) { // Res
 
 	if totalVulns > 0 {
 		result.Status = "failed"
-		result.Details = fmt.Sprintf("%d vulnerabilities", totalVulns)
+		result.Details = core.Sprintf("%d vulnerabilities", totalVulns)
 		result.Issues = totalVulns
 	} else {
 		result.Details = "no vulnerabilities"
@@ -444,11 +440,11 @@ func runCISecurity(ctx context.Context, dir string) (CICheckResult, error) { // 
 
 	if secResult.Summary.Critical > 0 || secResult.Summary.High > 0 {
 		result.Status = "failed"
-		result.Details = fmt.Sprintf("%d critical, %d high", secResult.Summary.Critical, secResult.Summary.High)
+		result.Details = core.Sprintf("%d critical, %d high", secResult.Summary.Critical, secResult.Summary.High)
 		result.Issues = secResult.Summary.Critical + secResult.Summary.High
 	} else if secResult.Summary.Medium > 0 {
 		result.Status = "warning"
-		result.Details = fmt.Sprintf("%d medium issues", secResult.Summary.Medium)
+		result.Details = core.Sprintf("%d medium issues", secResult.Summary.Medium)
 		result.Warnings = secResult.Summary.Medium
 	} else {
 		result.Details = "no issues"
@@ -494,13 +490,13 @@ func outputCIJSON(result CIResult) error { // Result boundary
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(data))
+	core.Println(string(data))
 	return nil
 }
 
 // outputCISummary outputs a markdown summary
 func outputCISummary(result CIResult) error { // Result boundary
-	var sb strings.Builder
+	var sb stringBuilder
 
 	sb.WriteString("## CI Pipeline Results\n\n")
 
@@ -523,12 +519,12 @@ func outputCISummary(result CIResult) error { // Result boundary
 		case "skipped":
 			icon = "⏭️"
 		}
-		fmt.Fprintf(&sb, "| %s | %s | %s |\n", check.Name, icon, check.Details)
+		sb.WriteString(core.Sprintf("| %s | %s | %s |\n", check.Name, icon, check.Details))
 	}
 
-	fmt.Fprintf(&sb, "\n**Duration:** %s\n", result.Duration)
+	sb.WriteString(core.Sprintf("\n**Duration:** %s\n", result.Duration))
 
-	fmt.Print(sb.String())
+	core.Println(sb.String())
 	return nil
 }
 
@@ -542,7 +538,7 @@ func generateSARIF(ctx context.Context, dir, checkName, outputFile string) error
 	case "psalm":
 		args = []string{"vendor/bin/psalm", "--output-format=sarif"}
 	default:
-		return fmt.Errorf("SARIF not supported for %s", checkName)
+		return core.E("php.SARIF", core.Sprintf("SARIF not supported for %s", checkName), nil)
 	}
 
 	cmd := exec.CommandContext(ctx, "php", args...)
@@ -553,15 +549,15 @@ func generateSARIF(ctx context.Context, dir, checkName, outputFile string) error
 	output, err := cmd.CombinedOutput()
 	if len(output) == 0 {
 		if err != nil {
-			return fmt.Errorf("failed to generate SARIF: %w", err)
+			return core.E("php.SARIF", "failed to generate SARIF", err)
 		}
-		return fmt.Errorf("no SARIF output generated")
+		return core.E("php.SARIF", "no SARIF output generated", nil)
 	}
 
 	// Validate output is valid JSON
 	var js json.RawMessage
 	if err := json.Unmarshal(output, &js); err != nil {
-		return fmt.Errorf("invalid SARIF output: %w", err)
+		return core.E("php.SARIF", "invalid SARIF output", err)
 	}
 
 	return getMedium().Write(outputFile, string(output))
@@ -572,7 +568,7 @@ func uploadSARIFToGitHub(ctx context.Context, sarifFile string) error { // Resul
 	// Validate commit SHA before calling API
 	sha := getGitSHA()
 	if sha == "" {
-		return errors.New("cannot upload SARIF: git commit SHA not available (ensure you're in a git repository)")
+		return core.E("php.SARIF", "cannot upload SARIF: git commit SHA not available (ensure you're in a git repository)", nil)
 	}
 
 	// Use gh CLI to upload
@@ -585,7 +581,7 @@ func uploadSARIFToGitHub(ctx context.Context, sarifFile string) error { // Resul
 	)
 
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("%s: %s", err, string(output))
+		return core.E("php.SARIF", core.Sprintf("%s: %s", err, string(output)), nil)
 	}
 	return nil
 }
@@ -597,7 +593,7 @@ func getGitRef() string {
 	if err != nil {
 		return "refs/heads/main"
 	}
-	return strings.TrimSpace(string(output))
+	return core.Trim(string(output))
 }
 
 // getGitSHA returns the current git commit SHA
@@ -607,5 +603,5 @@ func getGitSHA() string {
 	if err != nil {
 		return ""
 	}
-	return strings.TrimSpace(string(output))
+	return core.Trim(string(output))
 }

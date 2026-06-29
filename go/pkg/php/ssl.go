@@ -1,10 +1,9 @@
 package php
 
 import (
-	`os`
-	`os/exec`
-	`path/filepath`
+	"os/exec"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
 
@@ -25,11 +24,11 @@ func GetSSLDir(opts SSLOptions) (string, error) { // Result boundary
 	m := getMedium()
 	dir := opts.Dir
 	if dir == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", phpWrapAction(err, "get", "home directory")
+		homeR := core.UserHomeDir()
+		if !homeR.OK {
+			return "", phpWrapAction(homeR.Value.(error), "get", "home directory")
 		}
-		dir = filepath.Join(home, DefaultSSLDir)
+		dir = core.PathJoin(homeR.Value.(string), DefaultSSLDir)
 	}
 
 	if err := m.EnsureDir(dir); err != nil {
@@ -46,8 +45,8 @@ func CertPaths(domain string, opts SSLOptions) (certFile, keyFile string, err er
 		return "", "", err
 	}
 
-	certFile = filepath.Join(dir, cli.Sprintf("%s.pem", domain))
-	keyFile = filepath.Join(dir, cli.Sprintf("%s-key.pem", domain))
+	certFile = core.PathJoin(dir, cli.Sprintf("%s.pem", domain))
+	keyFile = core.PathJoin(dir, cli.Sprintf("%s-key.pem", domain))
 
 	return certFile, keyFile, nil
 }
@@ -92,8 +91,8 @@ func SetupSSL(domain string, opts SSLOptions) error { // Result boundary
 	}
 
 	// Generate certificates
-	certFile := filepath.Join(dir, cli.Sprintf("%s.pem", domain))
-	keyFile := filepath.Join(dir, cli.Sprintf("%s-key.pem", domain))
+	certFile := core.PathJoin(dir, cli.Sprintf("%s.pem", domain))
+	keyFile := core.PathJoin(dir, cli.Sprintf("%s-key.pem", domain))
 
 	// mkcert generates cert and key with specific naming
 	genCmd := exec.Command("mkcert",
@@ -161,5 +160,5 @@ func GetMkcertCARoot() (string, error) { // Result boundary
 		return "", phpWrapAction(err, "get", "mkcert CA root")
 	}
 
-	return filepath.Clean(string(output)), nil
+	return core.Trim(string(output)), nil
 }

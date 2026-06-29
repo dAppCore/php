@@ -2,7 +2,6 @@ package php
 
 import (
 	"context"
-	`os`
 	"time"
 
 	core "dappco.re/go"
@@ -34,10 +33,12 @@ func addPHPDeployCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "deploy")
 	phpFailureorCommand(c, path, phpT("cmd.php.deploy.short"), func(options core.Options) error {
 		line := phpCommandLineFor(path, options)
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		env := EnvProduction
 		if line.Bool("staging") {
@@ -80,10 +81,12 @@ func addPHPDeployStatusCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "deploy:status")
 	phpFailureorCommand(c, path, phpT("cmd.php.deploy_status.short"), func(options core.Options) error {
 		line := phpCommandLineFor(path, options)
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		env := EnvProduction
 		if line.Bool("staging") {
@@ -115,10 +118,12 @@ func addPHPDeployRollbackCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "deploy:rollback")
 	phpFailureorCommand(c, path, phpT("cmd.php.deploy_rollback.short"), func(options core.Options) error {
 		line := phpCommandLineFor(path, options)
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		env := EnvProduction
 		if line.Bool("staging") {
@@ -161,10 +166,12 @@ func addPHPDeployListCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "deploy:list")
 	phpFailureorCommand(c, path, phpT("cmd.php.deploy_list.short"), func(options core.Options) error {
 		line := phpCommandLineFor(path, options)
-		cwd, err := os.Getwd()
-		if err != nil {
+		cwdResult := core.Getwd()
+		if !cwdResult.OK {
+			err, _ := cwdResult.Value.(error)
 			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
 		}
+		cwd, _ := cwdResult.Value.(string)
 
 		env := EnvProduction
 		if line.Bool("staging") {

@@ -1,13 +1,54 @@
 package php
 
 import (
-	`encoding/json`
-	`path/filepath`
 	"sort"
-	`strings`
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
+
+// dockerfileBuilder accumulates Dockerfile content as a string slice that's
+// joined at the end. Equivalent to strings.Builder for our write-heavy use
+// without importing strings — core.Builder is not yet in the pinned
+// dappco.re/go v0.9.0 release.
+type dockerfileBuilder []string
+
+func (b *dockerfileBuilder) WriteString(s string) {
+	*b = append(*b, s)
+}
+
+func (b *dockerfileBuilder) String() string {
+	return core.Join("", *b...)
+}
+
+// trimCutsetLeft strips runes from the start of s that appear in cutset.
+// Equivalent of strings.TrimLeft(s, cutset) without importing strings;
+// the cutset variant of core.Trim is not yet published in this repo's
+// pinned core/go release.
+func trimCutsetLeft(s, cutset string) string {
+	for len(s) > 0 && containsRune(cutset, s[0]) {
+		s = s[1:]
+	}
+	return s
+}
+
+// trimCutsetRight strips runes from the end of s that appear in cutset.
+// Equivalent of strings.TrimRight(s, cutset).
+func trimCutsetRight(s, cutset string) string {
+	for len(s) > 0 && containsRune(cutset, s[len(s)-1]) {
+		s = s[:len(s)-1]
+	}
+	return s
+}
+
+func containsRune(s string, b byte) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] == b {
+			return true
+		}
+	}
+	return false
+}
 
 // DockerfileConfig holds configuration for generating a Dockerfile.
 type DockerfileConfig struct {
@@ -57,15 +98,15 @@ func DetectDockerfileConfig(dir string) (*DockerfileConfig, error) { // Result b
 	}
 
 	// Read composer.json
-	composerPath := filepath.Join(dir, composerJSONFile)
+	composerPath := core.PathJoin(dir, composerJSONFile)
 	composerContent, err := m.Read(composerPath)
 	if err != nil {
 		return nil, phpWrapAction(err, "read", composerJSONFile)
 	}
 
 	var composer ComposerJSON
-	if err := json.Unmarshal([]byte(composerContent), &composer); err != nil {
-		return nil, phpWrapAction(err, "parse", composerJSONFile)
+	if r := core.JSONUnmarshal([]byte(composerContent), &composer); !r.OK {
+		return nil, phpWrapAction(r.Value.(error), "parse", composerJSONFile)
 	}
 
 	// Detect PHP version from composer.json
@@ -97,7 +138,7 @@ func DetectDockerfileConfig(dir string) (*DockerfileConfig, error) { // Result b
 
 // GenerateDockerfileFromConfig generates a Dockerfile from the given configuration.
 func GenerateDockerfileFromConfig(config *DockerfileConfig) string {
-	var sb strings.Builder
+	var sb dockerfileBuilder
 
 	// Base image
 	baseTag := cli.Sprintf("latest-php%s", config.PHPVersion)
@@ -160,7 +201,7 @@ func GenerateDockerfileFromConfig(config *DockerfileConfig) string {
 	// Install PHP extensions if needed
 	if len(config.PHPExtensions) > 0 {
 		sb.WriteString("# Install PHP extensions\n")
-		sb.WriteString(cli.Sprintf("RUN install-php-extensions %s\n\n", strings.Join(config.PHPExtensions, " ")))
+		sb.WriteString(cli.Sprintf("RUN install-php-extensions %s\n\n", core.Join(" ", config.PHPExtensions...)))
 	}
 
 	// Copy composer files first for better caching
@@ -274,8 +315,8 @@ func detectPHPExtensions(composer ComposerJSON) []string {
 		}
 
 		// Check for direct ext- requirements
-		if strings.HasPrefix(pkg, "ext-") {
-			ext := strings.TrimPrefix(pkg, "ext-")
+		if core.HasPrefix(pkg, "ext-") {
+			ext := core.TrimPrefix(pkg, "ext-")
 			// Skip extensions that are built into PHP
 			builtIn := map[string]bool{
 				`json`: true, "ctype": true, "iconv": true,
@@ -301,11 +342,11 @@ func detectPHPExtensions(composer ComposerJSON) []string {
 // extractPHPVersion extracts a clean PHP version from a composer constraint.
 func extractPHPVersion(constraint string) string {
 	// Handle common formats: ^8.2, >=8.2, 8.2.*, ~8.2
-	constraint = strings.TrimLeft(constraint, "^>=~")
-	constraint = strings.TrimRight(constraint, ".*")
+	constraint = trimCutsetLeft(constraint, "^>=~")
+	constraint = trimCutsetRight(constraint, ".*")
 
 	// Extract major.minor
-	parts := strings.Split(constraint, ".")
+	parts := core.Split(constraint, ".")
 	if len(parts) >= 2 {
 		return parts[0] + "." + parts[1]
 	}
@@ -319,7 +360,7 @@ func extractPHPVersion(constraint string) string {
 // hasNodeAssets checks if the project has frontend assets.
 func hasNodeAssets(dir string) bool {
 	m := getMedium()
-	packageJSON := filepath.Join(dir, packageJSONFile)
+	packageJSON := core.PathJoin(dir, packageJSONFile)
 	if !m.IsFile(packageJSON) {
 		return false
 	}
@@ -334,7 +375,7 @@ func hasNodeAssets(dir string) bool {
 		Scripts map[string]string `json:"scripts"`
 	}
 
-	if err := json.Unmarshal([]byte(content), &pkg); err != nil {
+	if r := core.JSONUnmarshal([]byte(content), &pkg); !r.OK {
 		return false
 	}
 
@@ -345,7 +386,7 @@ func hasNodeAssets(dir string) bool {
 
 // GenerateDockerignore generates a .dockerignore file content for PHP projects.
 func GenerateDockerignore(dir string) string {
-	var sb strings.Builder
+	var sb dockerfileBuilder
 
 	sb.WriteString("# Git\n")
 	sb.WriteString(".git\n")

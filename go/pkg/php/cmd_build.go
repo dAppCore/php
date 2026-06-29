@@ -2,9 +2,6 @@ package php
 
 import (
 	"context"
-	`errors`
-	`os`
-	`strings`
 
 	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
@@ -14,14 +11,15 @@ func addPHPBuildCommand(c *core.Core, prefix string) {
 	path := phpCommandPath(prefix, "build")
 	phpFailureorCommand(c, path, phpT("cmd.php.build.short"), func(opts core.Options) error {
 		line := phpCommandLineFor(path, opts)
-		cwd, err := os.Getwd()
-		if err != nil {
-			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), err)
+		cwdR := core.Getwd()
+		if !cwdR.OK {
+			return core.E("php", phpT(i18nFailGetKey, workingDirectorySubject), cwdR.Value.(error))
 		}
+		cwd := cwdR.Value.(string)
 
 		ctx := context.Background()
 
-		switch strings.ToLower(line.String("type", "")) {
+		switch core.Lower(line.String("type", "")) {
 		case "linuxkit":
 			return runPHPBuildLinuxKit(ctx, cwd, linuxKitBuildOptions{
 				OutputPath: line.String("output", ""),
@@ -56,7 +54,7 @@ type linuxKitBuildOptions struct {
 
 func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildOptions) error { // Result boundary
 	if !IsPHPProject(projectDir) {
-		return errors.New(phpT("cmd.php.error.not_php"))
+		return core.E("php.runPHPBuildDocker", phpT("cmd.php.error.not_php"), nil)
 	}
 
 	cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.build.building_docker"))
@@ -72,7 +70,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 	cli.Print(cliLabelBoolFormat, dimStyle.Render(phpT("cmd.php.build.octane")), config.HasOctane)
 	cli.Print(cliLabelBoolFormat, dimStyle.Render(phpT("cmd.php.build.frontend")), config.HasAssets)
 	if len(config.PHPExtensions) > 0 {
-		cli.Print(cliLabelValueFormat, dimStyle.Render(phpT("cmd.php.build.extensions")), strings.Join(config.PHPExtensions, ", "))
+		cli.Print(cliLabelValueFormat, dimStyle.Render(phpT("cmd.php.build.extensions")), core.Join(", ", config.PHPExtensions...))
 	}
 	cli.Blank()
 
@@ -84,7 +82,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 		Platform:     opts.Platform,
 		Dockerfile:   opts.Dockerfile,
 		NoBuildCache: opts.NoCache,
-		Output:       os.Stdout,
+		Output:       core.Stdout(),
 	}
 
 	if buildOpts.ImageName == "" {
@@ -93,7 +91,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 			buildOpts.ImageName = "php-app"
 		}
 		// Sanitize for Docker
-		buildOpts.ImageName = strings.ToLower(strings.ReplaceAll(buildOpts.ImageName, " ", "-"))
+		buildOpts.ImageName = core.Lower(core.Replace(buildOpts.ImageName, " ", "-"))
 	}
 
 	if buildOpts.Tag == "" {
@@ -120,7 +118,7 @@ func runPHPBuildDocker(ctx context.Context, projectDir string, opts dockerBuildO
 
 func runPHPBuildLinuxKit(ctx context.Context, projectDir string, opts linuxKitBuildOptions) error { // Result boundary
 	if !IsPHPProject(projectDir) {
-		return errors.New(phpT("cmd.php.error.not_php"))
+		return core.E("php.runPHPBuildLinuxKit", phpT("cmd.php.error.not_php"), nil)
 	}
 
 	cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpT("cmd.php.build.building_linuxkit"))
@@ -130,7 +128,7 @@ func runPHPBuildLinuxKit(ctx context.Context, projectDir string, opts linuxKitBu
 		OutputPath: opts.OutputPath,
 		Format:     opts.Format,
 		Template:   opts.Template,
-		Output:     os.Stdout,
+		Output:     core.Stdout(),
 	}
 
 	if buildOpts.Format == "" {
@@ -175,7 +173,7 @@ func addPHPServeCommand(c *core.Core, prefix string) {
 			HTTPSPort:     serveHTTPSPort,
 			Detach:        serveDetach,
 			EnvFile:       line.String("env-file", ""),
-			Output:        os.Stdout,
+			Output:        core.Stdout(),
 		}
 
 		cli.Print(cliLabelValueBlankFormat, dimStyle.Render(phpT(cmdPHPLabelKey)), phpProgressSubject("run", "production container"))
@@ -203,14 +201,13 @@ func resolveServeImageName(imageName string) (string, error) { // Result boundar
 		return imageName, nil
 	}
 
-	cwd, err := os.Getwd()
-	if err == nil {
-		if appName := GetLaravelAppName(cwd); appName != "" {
-			return strings.ToLower(strings.ReplaceAll(appName, " ", "-")), nil
+	if cwdR := core.Getwd(); cwdR.OK {
+		if appName := GetLaravelAppName(cwdR.Value.(string)); appName != "" {
+			return core.Lower(core.Replace(appName, " ", "-")), nil
 		}
 	}
 
-	return "", errors.New(phpT("cmd.php.serve.name_required"))
+	return "", core.E("php.resolveServeImageName", phpT("cmd.php.serve.name_required"), nil)
 }
 
 func displayServeTag(tag string) string {

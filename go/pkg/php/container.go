@@ -3,11 +3,10 @@ package php
 import (
 	"context"
 	"io"
-	`os`
-	`os/exec`
-	`path/filepath`
-	`strings`
+	"os"
+	"os/exec"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
 
@@ -119,11 +118,11 @@ func BuildDocker(ctx context.Context, opts DockerBuildOptions) error { // Result
 
 func normalizeDockerBuildOptions(opts DockerBuildOptions) (DockerBuildOptions, error) { // Result boundary
 	if opts.ProjectDir == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return opts, phpWrapAction(err, "get", workingDirectorySubject)
+		cwdR := core.Getwd()
+		if !cwdR.OK {
+			return opts, phpWrapAction(cwdR.Value.(error), "get", workingDirectorySubject)
 		}
-		opts.ProjectDir = cwd
+		opts.ProjectDir = cwdR.Value.(string)
 	}
 
 	// Validate project directory
@@ -133,7 +132,7 @@ func normalizeDockerBuildOptions(opts DockerBuildOptions) (DockerBuildOptions, e
 
 	// Set defaults
 	if opts.ImageName == "" {
-		opts.ImageName = filepath.Base(opts.ProjectDir)
+		opts.ImageName = core.PathBase(opts.ProjectDir)
 	}
 	if opts.Tag == "" {
 		opts.Tag = "latest"
@@ -156,7 +155,7 @@ func resolveDockerfilePath(opts DockerBuildOptions) (string, func(), error) { //
 	}
 
 	m := getMedium()
-	tempDockerfile := filepath.Join(opts.ProjectDir, "Dockerfile.core-generated")
+	tempDockerfile := core.PathJoin(opts.ProjectDir, "Dockerfile.core-generated")
 	if err := m.Write(tempDockerfile, content); err != nil {
 		return "", nil, phpWrapAction(err, "write", "Dockerfile")
 	}
@@ -188,11 +187,11 @@ func dockerBuildArgs(opts DockerBuildOptions, dockerfilePath string) []string {
 // BuildLinuxKit builds a LinuxKit image for the PHP project.
 func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error { // Result boundary
 	if opts.ProjectDir == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return phpWrapAction(err, "get", workingDirectorySubject)
+		cwdR := core.Getwd()
+		if !cwdR.OK {
+			return phpWrapAction(cwdR.Value.(error), "get", workingDirectorySubject)
 		}
-		opts.ProjectDir = cwd
+		opts.ProjectDir = cwdR.Value.(string)
 	}
 
 	// Validate project directory
@@ -208,7 +207,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error { // Re
 		opts.Format = "qcow2"
 	}
 	if opts.OutputPath == "" {
-		opts.OutputPath = filepath.Join(opts.ProjectDir, "dist", filepath.Base(opts.ProjectDir))
+		opts.OutputPath = core.PathJoin(opts.ProjectDir, "dist", core.PathBase(opts.ProjectDir))
 	}
 	if opts.Output == nil {
 		opts.Output = os.Stdout
@@ -216,7 +215,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error { // Re
 
 	// Ensure output directory exists
 	m := getMedium()
-	outputDir := filepath.Dir(opts.OutputPath)
+	outputDir := core.PathDir(opts.OutputPath)
 	if err := m.EnsureDir(outputDir); err != nil {
 		return phpWrapAction(err, "create", "output directory")
 	}
@@ -239,7 +238,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error { // Re
 	}
 	// Add project-specific variables
 	opts.Variables["PROJECT_DIR"] = opts.ProjectDir
-	opts.Variables["PROJECT_NAME"] = filepath.Base(opts.ProjectDir)
+	opts.Variables["PROJECT_NAME"] = core.PathBase(opts.ProjectDir)
 
 	content, err := applyTemplateVariables(templateContent, opts.Variables)
 	if err != nil {
@@ -247,7 +246,7 @@ func BuildLinuxKit(ctx context.Context, opts LinuxKitBuildOptions) error { // Re
 	}
 
 	// Write template to temp file
-	tempYAML := filepath.Join(opts.ProjectDir, ".core-linuxkit.yml")
+	tempYAML := core.PathJoin(opts.ProjectDir, ".core-linuxkit.yml")
 	if err := m.Write(tempYAML, content); err != nil {
 		return phpWrapAction(err, "write", "template")
 	}
@@ -331,7 +330,7 @@ func ServeProduction(ctx context.Context, opts ServeOptions) error { // Result b
 		if err != nil {
 			return phpWrapAction(err, "start", "container")
 		}
-		containerID := strings.TrimSpace(string(output))
+		containerID := core.Trim(string(output))
 		cli.Print("Container started: %s\n", containerID[:12])
 		return nil
 	}
@@ -363,7 +362,7 @@ func Shell(ctx context.Context, containerID string) error { // Result boundary
 
 // IsPHPProject checks if the given directory is a PHP project.
 func IsPHPProject(dir string) bool {
-	composerPath := filepath.Join(dir, composerJSONFile)
+	composerPath := core.PathJoin(dir, composerJSONFile)
 	return getMedium().IsFile(composerPath)
 }
 
@@ -407,7 +406,7 @@ func applyTemplateVariables(content string, vars map[string]string) (string, err
 	result := content
 	for key, value := range vars {
 		placeholder := "${" + key + "}"
-		result = strings.ReplaceAll(result, placeholder, value)
+		result = core.Replace(result, placeholder, value)
 	}
 	return result, nil
 }
@@ -420,11 +419,11 @@ func resolveDockerContainerID(ctx context.Context, partialID string) (string, er
 		return "", phpWrapAction(err, "list", "containers")
 	}
 
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	lines := core.Split(core.Trim(string(output)), "\n")
 	var matches []string
 
 	for _, line := range lines {
-		if strings.HasPrefix(line, partialID) {
+		if core.HasPrefix(line, partialID) {
 			matches = append(matches, line)
 		}
 	}

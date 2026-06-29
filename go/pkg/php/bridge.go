@@ -2,11 +2,12 @@ package php
 
 import (
 	"context"
-	`encoding/json`
-	`fmt`
-	`log`
+	"encoding/json"
+	"io"
 	"net"
 	"net/http"
+
+	core "dappco.re/go"
 )
 
 // BridgeHandler is the interface that the host application implements to
@@ -45,8 +46,13 @@ func NewBridge(handler BridgeHandler) (*Bridge, error) { // Result boundary
 			Args   json.RawMessage `json:"args"`
 		}
 		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if r := core.JSONUnmarshal(body, &req); !r.OK {
+			http.Error(w, r.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -61,7 +67,7 @@ func NewBridge(handler BridgeHandler) (*Bridge, error) { // Result boundary
 	// Listen on a random available port (localhost only)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return nil, fmt.Errorf("listen: %w", err)
+		return nil, core.E("php.NewBridge", "listen", err)
 	}
 
 	bridge.port = listener.Addr().(*net.TCPAddr).Port
@@ -69,11 +75,11 @@ func NewBridge(handler BridgeHandler) (*Bridge, error) { // Result boundary
 
 	go func() {
 		if err := bridge.server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("go-php: bridge error: %v", err)
+			core.Println(core.Sprintf("go-php: bridge error: %v", err))
 		}
 	}()
 
-	log.Printf("go-php: bridge listening on http://127.0.0.1:%d", bridge.port)
+	core.Println(core.Sprintf("go-php: bridge listening on http://127.0.0.1:%d", bridge.port))
 	return bridge, nil
 }
 
@@ -84,7 +90,7 @@ func (b *Bridge) Port() int {
 
 // URL returns the full base URL of the bridge.
 func (b *Bridge) URL() string {
-	return fmt.Sprintf("http://127.0.0.1:%d", b.port)
+	return core.Sprintf("http://127.0.0.1:%d", b.port)
 }
 
 // Shutdown gracefully stops the bridge server.
@@ -94,7 +100,12 @@ func (b *Bridge) Shutdown(ctx context.Context) error { // Result boundary
 
 func bridgeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(v); err != nil {
-		log.Printf("go-php: bridge encode error: %v", err)
+	r := core.JSONMarshal(v)
+	if !r.OK {
+		core.Println(core.Sprintf("go-php: bridge encode error: %v", r.Error()))
+		return
+	}
+	if _, err := w.Write(r.Value.([]byte)); err != nil {
+		core.Println(core.Sprintf("go-php: bridge write error: %v", err))
 	}
 }

@@ -3,12 +3,13 @@
 package php
 
 import (
-	`os/exec`
 	"syscall"
+
+	core "dappco.re/go"
 )
 
 // setSysProcAttr sets Unix-specific process attributes for clean process group handling.
-func setSysProcAttr(cmd *exec.Cmd) {
+func setSysProcAttr(cmd *core.Cmd) {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
@@ -16,7 +17,7 @@ func setSysProcAttr(cmd *exec.Cmd) {
 
 // signalProcessGroup sends a signal to the process group.
 // On Unix, this uses negative PID to signal the entire group.
-func signalProcessGroup(cmd *exec.Cmd, sig syscall.Signal) error { // Result boundary
+func signalProcessGroup(cmd *core.Cmd, sig syscall.Signal) error { // Result boundary
 	if cmd.Process == nil {
 		return nil
 	}

@@ -4,10 +4,8 @@ package php
 
 import (
 	"context"
-	`fmt`
-	`log`
 	"net/http"
-	`os`
+	"os"
 	"os/signal"
 	"syscall"
 
@@ -38,29 +36,31 @@ func runFrankenPHPServe(line phpCommandLine) error { // Result boundary
 		NumWorkers: line.Int("workers", 2),
 	})
 	if err != nil {
-		return fmt.Errorf("init FrankenPHP: %w", err)
+		return core.E("php.runFrankenPHPServe", "init FrankenPHP", err)
 	}
 	defer cleanup()
 
-	addr := fmt.Sprintf(":%d", line.Int("port", 8000))
+	addr := core.Sprintf(":%d", line.Int("port", 8000))
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
 	}
 
-	// Graceful shutdown
+	// Graceful shutdown — os.Interrupt + signal.NotifyContext require
+	// chan os.Signal; no core wrapper exists in dappco.re/go v0.9.0.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
-		log.Printf("core-php: serving on http://localhost%s (doc root: %s)", addr, handler.DocRoot())
+		core.Println(core.Sprintf("core-php: serving on http://localhost%s (doc root: %s)", addr, handler.DocRoot()))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("core-php: server error: %v", err)
+			core.Println(core.Sprintf("core-php: server error: %v", err))
+			core.Exit(1)
 		}
 	}()
 
 	<-ctx.Done()
-	log.Println("core-php: shutting down...")
+	core.Println("core-php: shutting down...")
 	return srv.Shutdown(context.Background())
 }
 
@@ -75,7 +75,7 @@ func runFrankenPHPExec(line phpCommandLine) error { // Result boundary
 		NumWorkers: 0,
 	})
 	if err != nil {
-		return fmt.Errorf("init FrankenPHP: %w", err)
+		return core.E("php.runFrankenPHPExec", "init FrankenPHP", err)
 	}
 	defer cleanup()
 
@@ -85,7 +85,7 @@ func runFrankenPHPExec(line phpCommandLine) error { // Result boundary
 		artisanArgs += " " + a
 	}
 
-	log.Printf("core-php: exec %s (root: %s)", artisanArgs, handler.LaravelRoot())
+	core.Println(core.Sprintf("core-php: exec %s (root: %s)", artisanArgs, handler.LaravelRoot()))
 
 	// Execute via internal HTTP request to FrankenPHP
 	// This routes through the PHP runtime as if it were a CLI call
@@ -94,7 +94,9 @@ func runFrankenPHPExec(line phpCommandLine) error { // Result boundary
 		return err
 	}
 
-	// For now, use the handler directly
+	// For now, use the handler directly. os.Stdout is *os.File and the
+	// execResponseWriter writes to it; core.Stdout() returns Writer
+	// (interface) which doesn't expose .Write([]byte) on a typed *os.File.
 	w := &execResponseWriter{os.Stdout}
 	handler.ServeHTTP(w, req)
 
@@ -103,7 +105,7 @@ func runFrankenPHPExec(line phpCommandLine) error { // Result boundary
 
 // execResponseWriter writes HTTP response body directly to stdout.
 type execResponseWriter struct {
-	out *os.File
+	out *core.OSFile
 }
 
 func (w *execResponseWriter) Header() http.Header         { return http.Header{} }

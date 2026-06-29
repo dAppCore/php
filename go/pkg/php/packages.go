@@ -1,10 +1,8 @@
 package php
 
 import (
-	`encoding/json`
-	`os`
-	`os/exec`
-	`path/filepath`
+	"os"
+	"os/exec"
 
 	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
@@ -25,31 +23,32 @@ type composerRepository struct {
 }
 
 // readComposerJSON reads and parses composer.json from the given directory.
-func readComposerJSON(dir string) (map[string]json.RawMessage, error) { // Result boundary
+func readComposerJSON(dir string) (map[string][]byte, error) { // Result boundary
 	m := getMedium()
-	composerPath := filepath.Join(dir, composerJSONFile)
+	composerPath := core.PathJoin(dir, composerJSONFile)
 	content, err := m.Read(composerPath)
 	if err != nil {
 		return nil, phpWrapAction(err, "read", composerJSONFile)
 	}
 
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal([]byte(content), &raw); err != nil {
-		return nil, phpWrapAction(err, "parse", composerJSONFile)
+	var raw map[string][]byte
+	if r := core.JSONUnmarshal([]byte(content), &raw); !r.OK {
+		return nil, phpWrapAction(r.Value.(error), "parse", composerJSONFile)
 	}
 
 	return raw, nil
 }
 
 // writeComposerJSON writes the composer.json to the given directory.
-func writeComposerJSON(dir string, raw map[string]json.RawMessage) error { // Result boundary
+func writeComposerJSON(dir string, raw map[string][]byte) error { // Result boundary
 	m := getMedium()
-	composerPath := filepath.Join(dir, composerJSONFile)
+	composerPath := core.PathJoin(dir, composerJSONFile)
 
-	data, err := json.MarshalIndent(raw, "", "    ")
-	if err != nil {
-		return phpWrapAction(err, "marshal", composerJSONFile)
+	r := core.JSONMarshalIndent(raw, "", "    ")
+	if !r.OK {
+		return phpWrapAction(r.Value.(error), "marshal", composerJSONFile)
 	}
+	data := r.Value.([]byte)
 
 	// Add trailing newline
 	content := string(data) + "\n"
@@ -62,40 +61,40 @@ func writeComposerJSON(dir string, raw map[string]json.RawMessage) error { // Re
 }
 
 // getRepositories extracts repositories from raw composer.json.
-func getRepositories(raw map[string]json.RawMessage) ([]composerRepository, error) { // Result boundary
+func getRepositories(raw map[string][]byte) ([]composerRepository, error) { // Result boundary
 	reposRaw, ok := raw["repositories"]
 	if !ok {
 		return []composerRepository{}, nil
 	}
 
 	var repos []composerRepository
-	if err := json.Unmarshal(reposRaw, &repos); err != nil {
-		return nil, phpWrapAction(err, "parse", "repositories")
+	if r := core.JSONUnmarshal(reposRaw, &repos); !r.OK {
+		return nil, phpWrapAction(r.Value.(error), "parse", "repositories")
 	}
 
 	return repos, nil
 }
 
 // setRepositories sets repositories in raw composer.json.
-func setRepositories(raw map[string]json.RawMessage, repos []composerRepository) error { // Result boundary
+func setRepositories(raw map[string][]byte, repos []composerRepository) error { // Result boundary
 	if len(repos) == 0 {
 		delete(raw, "repositories")
 		return nil
 	}
 
-	reposData, err := json.Marshal(repos)
-	if err != nil {
-		return phpWrapAction(err, "marshal", "repositories")
+	r := core.JSONMarshal(repos)
+	if !r.OK {
+		return phpWrapAction(r.Value.(error), "marshal", "repositories")
 	}
 
-	raw["repositories"] = reposData
+	raw["repositories"] = r.Value.([]byte)
 	return nil
 }
 
 // getPackageInfo reads package name and version from a composer.json in the given path.
 func getPackageInfo(packagePath string) (name, version string, err error) { // Result boundary
 	m := getMedium()
-	composerPath := filepath.Join(packagePath, composerJSONFile)
+	composerPath := core.PathJoin(packagePath, composerJSONFile)
 	content, err := m.Read(composerPath)
 	if err != nil {
 		return "", "", phpWrapAction(err, "read", "package composer.json")
@@ -106,8 +105,8 @@ func getPackageInfo(packagePath string) (name, version string, err error) { // R
 		Version string `json:"version"`
 	}
 
-	if err := json.Unmarshal([]byte(content), &pkg); err != nil {
-		return "", "", phpWrapAction(err, "parse", "package composer.json")
+	if r := core.JSONUnmarshal([]byte(content), &pkg); !r.OK {
+		return "", "", phpWrapAction(r.Value.(error), "parse", "package composer.json")
 	}
 
 	if pkg.Name == "" {
@@ -155,10 +154,11 @@ func LinkPackages(dir string, packages []string) error { // Result boundary
 }
 
 func validateLinkPackage(packagePath string) (string, string, error) { // Result boundary
-	absPath, err := filepath.Abs(packagePath)
-	if err != nil {
-		return "", "", core.E("php", core.Sprintf("failed to resolve path %s", packagePath), err)
+	absR := core.PathAbs(packagePath)
+	if !absR.OK {
+		return "", "", core.E("php", core.Sprintf("failed to resolve path %s", packagePath), absR.Value.(error))
 	}
+	absPath := absR.Value.(string)
 
 	if !IsPHPProject(absPath) {
 		return "", "", phpFailure("not a PHP package (missing composer.json): %s", absPath)
@@ -243,7 +243,7 @@ func shouldUnlinkRepository(repo composerRepository, toUnlink map[string]bool) b
 	}
 
 	for pkg := range toUnlink {
-		if repo.URL == pkg || filepath.Base(repo.URL) == pkg {
+		if repo.URL == pkg || core.PathBase(repo.URL) == pkg {
 			shouldUnlink = true
 			cli.Print("Unlinked: %s\n", repo.URL)
 			break
@@ -306,7 +306,7 @@ func ListLinkedPackages(dir string) ([]LinkedPackage, error) { // Result boundar
 		}
 
 		if pkg.Name == "" {
-			pkg.Name = filepath.Base(repo.URL)
+			pkg.Name = core.PathBase(repo.URL)
 		}
 
 		linked = append(linked, pkg)

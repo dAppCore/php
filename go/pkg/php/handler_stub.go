@@ -3,9 +3,9 @@
 package php
 
 import (
-	`fmt`
 	"net/http"
-	`path/filepath`
+
+	core "dappco.re/go"
 )
 
 // Handler implements http.Handler when the embedded FrankenPHP runtime is not built.
@@ -31,13 +31,13 @@ func NewHandler(laravelRoot string, cfg HandlerConfig) (*Handler, func(), error)
 	}
 
 	handler := &Handler{
-		docRoot:     filepath.Join(laravelRoot, "public"),
+		docRoot:     core.PathJoin(laravelRoot, "public"),
 		laravelRoot: laravelRoot,
 	}
 	cleanup := func() {
 		// No resources are allocated when embedded FrankenPHP is not built.
 	}
-	return handler, cleanup, fmt.Errorf("embedded FrankenPHP support is not built; rebuild with -tags frankenphp")
+	return handler, cleanup, core.Errorf("embedded FrankenPHP support is not built; rebuild with -tags frankenphp")
 }
 
 // LaravelRoot returns the path to the extracted Laravel application.

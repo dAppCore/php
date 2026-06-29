@@ -1,18 +1,36 @@
 package php
 
 import (
-	`bytes`
 	"context"
-	`encoding/json`
 	"io"
 	"net/http"
-	`os`
-	`path/filepath`
-	`strings`
 	"time"
 
+	core "dappco.re/go"
 	"dappco.re/go/cli/pkg/cli"
 )
+
+// bytesReaderForHTTP wraps a []byte as an io.Reader for HTTP request
+// bodies. Equivalent to bytes.NewReader without importing bytes;
+// core.NewBufferReader is not yet in this repo's pinned dappco.re/go
+// release.
+type bytesReaderForHTTP struct {
+	data []byte
+	pos  int
+}
+
+func (b *bytesReaderForHTTP) Read(p []byte) (int, error) {
+	if b.pos >= len(b.data) {
+		return 0, io.EOF
+	}
+	n := copy(p, b.data[b.pos:])
+	b.pos += n
+	return n, nil
+}
+
+func newBytesReader(data []byte) *bytesReaderForHTTP {
+	return &bytesReaderForHTTP{data: data}
+}
 
 // CoolifyClient is an HTTP client for the Coolify API.
 type CoolifyClient struct {
@@ -56,7 +74,7 @@ type CoolifyApp struct {
 // NewCoolifyClient creates a new Coolify API client.
 func NewCoolifyClient(baseURL, token string) *CoolifyClient {
 	// Ensure baseURL doesn't have trailing slash
-	baseURL = strings.TrimRight(baseURL, "/")
+	baseURL = trimTrailingSlash(baseURL)
 
 	return &CoolifyClient{
 		BaseURL: baseURL,
@@ -69,7 +87,7 @@ func NewCoolifyClient(baseURL, token string) *CoolifyClient {
 
 // LoadCoolifyConfig loads Coolify configuration from .env file in the given directory.
 func LoadCoolifyConfig(dir string) (*CoolifyConfig, error) { // Result boundary
-	envPath := filepath.Join(dir, ".env")
+	envPath := core.PathJoin(dir, ".env")
 	return LoadCoolifyConfigFromFile(envPath)
 }
 
@@ -95,15 +113,15 @@ func LoadCoolifyConfigFromFile(path string) (*CoolifyConfig, error) { // Result 
 
 func coolifyConfigFromEnv() *CoolifyConfig {
 	return &CoolifyConfig{
-		URL:          os.Getenv("COOLIFY_URL"),
-		Token:        os.Getenv("COOLIFY_TOKEN"),
-		AppID:        os.Getenv("COOLIFY_APP_ID"),
-		StagingAppID: os.Getenv("COOLIFY_STAGING_APP_ID"),
+		URL:          core.Getenv("COOLIFY_URL"),
+		Token:        core.Getenv("COOLIFY_TOKEN"),
+		AppID:        core.Getenv("COOLIFY_APP_ID"),
+		StagingAppID: core.Getenv("COOLIFY_STAGING_APP_ID"),
 	}
 }
 
 func applyCoolifyEnvFile(config *CoolifyConfig, content string) {
-	for _, line := range strings.Split(content, "\n") {
+	for _, line := range core.Split(content, "\n") {
 		key, value, ok := parseCoolifyEnvLine(line)
 		if !ok {
 			continue
@@ -113,18 +131,18 @@ func applyCoolifyEnvFile(config *CoolifyConfig, content string) {
 }
 
 func parseCoolifyEnvLine(line string) (string, string, bool) {
-	line = strings.TrimSpace(line)
-	if line == "" || strings.HasPrefix(line, "#") {
+	line = core.Trim(line)
+	if line == "" || core.HasPrefix(line, "#") {
 		return "", "", false
 	}
 
-	parts := strings.SplitN(line, "=", 2)
+	parts := core.SplitN(line, "=", 2)
 	if len(parts) != 2 {
 		return "", "", false
 	}
 
-	key := strings.TrimSpace(parts[0])
-	value := strings.Trim(strings.TrimSpace(parts[1]), `"'`)
+	key := core.Trim(parts[0])
+	value := trimQuotes(core.Trim(parts[1]))
 	return key, value, true
 }
 
@@ -169,12 +187,13 @@ func (c *CoolifyClient) TriggerDeploy(ctx context.Context, appID string, force b
 		payload["force"] = true
 	}
 
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, phpWrapAction(err, "marshal", "request")
+	bodyR := core.JSONMarshal(payload)
+	if !bodyR.OK {
+		return nil, phpWrapAction(bodyR.Value.(error), "marshal", "request")
 	}
+	body := bodyR.Value.([]byte)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, newBytesReader(body))
 	if err != nil {
 		return nil, phpWrapAction(err, "create", "request")
 	}
@@ -191,8 +210,9 @@ func (c *CoolifyClient) TriggerDeploy(ctx context.Context, appID string, force b
 		return nil, c.parseError(resp)
 	}
 
+	respBody, _ := io.ReadAll(resp.Body)
 	var deployment CoolifyDeployment
-	if err := json.NewDecoder(resp.Body).Decode(&deployment); err != nil {
+	if r := core.JSONUnmarshal(respBody, &deployment); !r.OK {
 		// Some Coolify versions return minimal response
 		return &CoolifyDeployment{
 			Status:    "queued",
@@ -224,9 +244,10 @@ func (c *CoolifyClient) GetDeployment(ctx context.Context, appID, deploymentID s
 		return nil, c.parseError(resp)
 	}
 
+	respBody, _ := io.ReadAll(resp.Body)
 	var deployment CoolifyDeployment
-	if err := json.NewDecoder(resp.Body).Decode(&deployment); err != nil {
-		return nil, phpWrapAction(err, "decode", "response")
+	if r := core.JSONUnmarshal(respBody, &deployment); !r.OK {
+		return nil, phpWrapAction(r.Value.(error), "decode", "response")
 	}
 
 	return &deployment, nil
@@ -256,9 +277,10 @@ func (c *CoolifyClient) ListDeployments(ctx context.Context, appID string, limit
 		return nil, c.parseError(resp)
 	}
 
+	respBody, _ := io.ReadAll(resp.Body)
 	var deployments []CoolifyDeployment
-	if err := json.NewDecoder(resp.Body).Decode(&deployments); err != nil {
-		return nil, phpWrapAction(err, "decode", "response")
+	if r := core.JSONUnmarshal(respBody, &deployments); !r.OK {
+		return nil, phpWrapAction(r.Value.(error), "decode", "response")
 	}
 
 	return deployments, nil
@@ -272,12 +294,13 @@ func (c *CoolifyClient) Rollback(ctx context.Context, appID, deploymentID string
 		"deployment_id": deploymentID,
 	}
 
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, phpWrapAction(err, "marshal", "request")
+	bodyR := core.JSONMarshal(payload)
+	if !bodyR.OK {
+		return nil, phpWrapAction(bodyR.Value.(error), "marshal", "request")
 	}
+	body := bodyR.Value.([]byte)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, newBytesReader(body))
 	if err != nil {
 		return nil, phpWrapAction(err, "create", "request")
 	}
@@ -294,8 +317,9 @@ func (c *CoolifyClient) Rollback(ctx context.Context, appID, deploymentID string
 		return nil, c.parseError(resp)
 	}
 
+	respBody, _ := io.ReadAll(resp.Body)
 	var deployment CoolifyDeployment
-	if err := json.NewDecoder(resp.Body).Decode(&deployment); err != nil {
+	if r := core.JSONUnmarshal(respBody, &deployment); !r.OK {
 		return &CoolifyDeployment{
 			Status:    "rolling_back",
 			CreatedAt: time.Now(),
@@ -326,9 +350,10 @@ func (c *CoolifyClient) GetApp(ctx context.Context, appID string) (*CoolifyApp, 
 		return nil, c.parseError(resp)
 	}
 
+	respBody, _ := io.ReadAll(resp.Body)
 	var app CoolifyApp
-	if err := json.NewDecoder(resp.Body).Decode(&app); err != nil {
-		return nil, phpWrapAction(err, "decode", "response")
+	if r := core.JSONUnmarshal(respBody, &app); !r.OK {
+		return nil, phpWrapAction(r.Value.(error), "decode", "response")
 	}
 
 	return &app, nil
@@ -350,7 +375,7 @@ func (c *CoolifyClient) parseError(resp *http.Response) error { // Result bounda
 		Error   string `json:"error"`
 	}
 
-	if err := json.Unmarshal(body, &errResp); err == nil {
+	if r := core.JSONUnmarshal(body, &errResp); r.OK {
 		if errResp.Message != "" {
 			return phpFailure(apiErrorFormat, resp.StatusCode, errResp.Message)
 		}

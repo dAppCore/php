@@ -3,19 +3,20 @@
 package php
 
 import (
-	`os`
-	`os/exec`
+	"syscall"
+
+	core "dappco.re/go"
 )
 
 // setSysProcAttr sets Windows-specific process attributes.
 // Windows doesn't support Setpgid, so this is a no-op.
-func setSysProcAttr(cmd *exec.Cmd) {
+func setSysProcAttr(cmd *core.Cmd) {
 	// No-op on Windows - process groups work differently
 }
 
 // signalProcessGroup sends a termination signal to the process.
 // On Windows, we can only signal the main process, not a group.
-func signalProcessGroup(cmd *exec.Cmd, sig os.Signal) error { // Result boundary
+func signalProcessGroup(cmd *core.Cmd, sig syscall.Signal) error { // Result boundary
 	if cmd.Process == nil {
 		return nil
 	}
@@ -23,12 +24,12 @@ func signalProcessGroup(cmd *exec.Cmd, sig os.Signal) error { // Result boundary
 	return cmd.Process.Signal(sig)
 }
 
-// termSignal returns os.Interrupt for Windows (closest to SIGTERM).
-func termSignal() os.Signal {
-	return os.Interrupt
+// termSignal returns SIGINT for Windows (closest to SIGTERM).
+func termSignal() syscall.Signal {
+	return syscall.SIGINT
 }
 
-// killSignal returns os.Kill for Windows.
-func killSignal() os.Signal {
-	return os.Kill
+// killSignal returns SIGKILL for Windows.
+func killSignal() syscall.Signal {
+	return syscall.SIGKILL
 }

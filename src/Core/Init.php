@@ -37,7 +37,7 @@ class Init
         // Maintenance mode check (before anything else)
         $maintenance = dirname(__DIR__, 4).'/storage/framework/maintenance.php';
         if (file_exists($maintenance)) {
-            require $maintenance;
+            require_once $maintenance;
         }
 
         // Capture and filter input - WAF layer
