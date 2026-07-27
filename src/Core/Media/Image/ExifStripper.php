@@ -229,7 +229,7 @@ class ExifStripper
      */
     protected function stripContentWithImagick(string $content): ?string
     {
-        $imagick = new \Imagick;
+        $imagick = new \Imagick();
         $imagick->readImageBlob($content);
         $imagick->stripImage();
 

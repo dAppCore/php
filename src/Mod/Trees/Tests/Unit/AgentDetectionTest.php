@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 describe('AgentDetection Service', function () {
     beforeEach(function () {
-        $this->service = new AgentDetection;
+        $this->service = new AgentDetection();
     });
 
     describe('provider detection from User-Agent', function () {

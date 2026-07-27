@@ -36,7 +36,8 @@ class HexRule implements ValidationRule
      */
     public function __construct(
         protected bool $forceFull = false
-    ) {}
+    ) {
+    }
 
     /**
      * Run the validation rule.

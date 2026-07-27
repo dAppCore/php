@@ -41,7 +41,8 @@ class WebsiteRedirectSeeder extends Seeder
 
     public function __construct(
         protected RedirectService $service,
-    ) {}
+    ) {
+    }
 
     public function run(): void
     {

@@ -19,7 +19,8 @@ class OptimizationResult
         public readonly int $percentageSaved,
         public readonly string $path,
         public readonly string $driver,
-    ) {}
+    ) {
+    }
 
     /**
      * Check if optimization was successful (saved space).

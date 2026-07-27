@@ -35,7 +35,8 @@ class LoginRateLimiter
 
     public function __construct(
         protected readonly RateLimiter $limiter
-    ) {}
+    ) {
+    }
 
     /**
      * Get number of login attempts for this request.

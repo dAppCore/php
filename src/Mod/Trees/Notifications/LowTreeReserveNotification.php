@@ -24,7 +24,8 @@ class LowTreeReserveNotification extends Notification implements ShouldQueue
     public function __construct(
         public string $level,
         public int $remaining
-    ) {}
+    ) {
+    }
 
     /**
      * Get the notification's delivery channels.
@@ -47,7 +48,7 @@ class LowTreeReserveNotification extends Notification implements ShouldQueue
             default => 'Tree Reserve Running Low - Plan Next Donation',
         };
 
-        $message = (new MailMessage)
+        $message = (new MailMessage())
             ->subject($subject)
             ->greeting($this->getGreeting())
             ->line($this->getMainMessage())

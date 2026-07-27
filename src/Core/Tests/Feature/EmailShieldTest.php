@@ -25,7 +25,7 @@ beforeEach(function () {
     Cache::forget('email_shield:disposable_domains');
 
     // Create a fresh instance after clearing cache
-    $this->emailShield = new EmailShield;
+    $this->emailShield = new EmailShield();
 });
 
 // EmailValidationResult Value Object Tests
@@ -135,11 +135,11 @@ describe('EmailShield Service', function () {
 
     it('caches disposable domains', function () {
         // First call - loads from file
-        $shield1 = new EmailShield;
+        $shield1 = new EmailShield();
         $count1 = $shield1->getDisposableDomainsCount();
 
         // Second call - should load from cache
-        $shield2 = new EmailShield;
+        $shield2 = new EmailShield();
         $count2 = $shield2->getDisposableDomainsCount();
 
         expect($count1)->toBe($count2)
@@ -147,7 +147,7 @@ describe('EmailShield Service', function () {
     });
 
     it('can refresh cache', function () {
-        $shield = new EmailShield;
+        $shield = new EmailShield();
         $count1 = $shield->getDisposableDomainsCount();
 
         Cache::put('email_shield:disposable_domains', ['fake.com' => true], 86400);
@@ -307,7 +307,7 @@ describe('ValidatedEmail Validation Rule', function () {
     it('passes for valid email', function () {
         $validator = Validator::make(
             ['email' => 'user@example.com'],
-            ['email' => [new ValidatedEmail]]
+            ['email' => [new ValidatedEmail()]]
         );
 
         expect($validator->passes())->toBeTrue();
@@ -316,7 +316,7 @@ describe('ValidatedEmail Validation Rule', function () {
     it('fails for invalid email format', function () {
         $validator = Validator::make(
             ['email' => 'not-an-email'],
-            ['email' => [new ValidatedEmail]]
+            ['email' => [new ValidatedEmail()]]
         );
 
         expect($validator->fails())->toBeTrue()
@@ -326,7 +326,7 @@ describe('ValidatedEmail Validation Rule', function () {
     it('blocks disposable email by default', function () {
         $validator = Validator::make(
             ['email' => 'user@tempmail.com'],
-            ['email' => [new ValidatedEmail]]
+            ['email' => [new ValidatedEmail()]]
         );
 
         expect($validator->fails())->toBeTrue()
@@ -345,7 +345,7 @@ describe('ValidatedEmail Validation Rule', function () {
     it('fails for non-string values', function () {
         $validator = Validator::make(
             ['email' => 12345],
-            ['email' => [new ValidatedEmail]]
+            ['email' => [new ValidatedEmail()]]
         );
 
         expect($validator->fails())->toBeTrue();
@@ -354,7 +354,7 @@ describe('ValidatedEmail Validation Rule', function () {
     it('can be combined with other validation rules', function () {
         $validator = Validator::make(
             ['email' => 'user@example.com'],
-            ['email' => ['required', 'email', new ValidatedEmail]]
+            ['email' => ['required', 'email', new ValidatedEmail()]]
         );
 
         expect($validator->passes())->toBeTrue();
@@ -363,7 +363,7 @@ describe('ValidatedEmail Validation Rule', function () {
     it('fails when required and empty', function () {
         $validator = Validator::make(
             ['email' => ''],
-            ['email' => ['required', new ValidatedEmail]]
+            ['email' => ['required', new ValidatedEmail()]]
         );
 
         expect($validator->fails())->toBeTrue();

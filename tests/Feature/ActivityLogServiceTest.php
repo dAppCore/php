@@ -26,7 +26,7 @@ class ActivityLogServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new ActivityLogService;
+        $this->service = new ActivityLogService();
     }
 
     protected function defineEnvironment($app): void

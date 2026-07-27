@@ -23,7 +23,8 @@ class ActivityFeed extends Component
         public array $items = [],
         public string $empty = 'No recent activity',
         public string $emptyIcon = 'clock',
-    ) {}
+    ) {
+    }
 
     public function itemIcon(array $item): string
     {

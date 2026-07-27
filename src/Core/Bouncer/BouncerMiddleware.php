@@ -30,7 +30,8 @@ class BouncerMiddleware
     public function __construct(
         protected BlocklistService $blocklist,
         protected RedirectService $redirects,
-    ) {}
+    ) {
+    }
 
     public function handle(Request $request, Closure $next): Response
     {

@@ -194,7 +194,7 @@ class LogsActivityTraitTest extends TestCase
 
     public function test_get_activity_log_options_returns_log_options(): void
     {
-        $model = new TestActivityModel;
+        $model = new TestActivityModel();
         $options = $model->getActivitylogOptions();
 
         $this->assertInstanceOf(LogOptions::class, $options);

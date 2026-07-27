@@ -27,7 +27,7 @@ class Boot extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(Registry::class, function () {
-            $registry = new Registry;
+            $registry = new Registry();
             $registry->discover();
 
             return $registry;

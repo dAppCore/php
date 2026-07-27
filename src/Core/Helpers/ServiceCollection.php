@@ -28,7 +28,8 @@ class ServiceCollection
      */
     public function __construct(
         public readonly array $services
-    ) {}
+    ) {
+    }
 
     /**
      * Filter services by group (social, AI, media, miscellaneous).

@@ -44,7 +44,7 @@ class Boot extends ServiceProvider
 
     protected function fireConsoleBooting(): void
     {
-        $event = new ConsoleBooting;
+        $event = new ConsoleBooting();
         event($event);
 
         // Process commands

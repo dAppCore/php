@@ -18,7 +18,7 @@ class ModuleScannerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->scanner = new ModuleScanner;
+        $this->scanner = new ModuleScanner();
     }
 
     public function test_scan_returns_empty_array_for_nonexistent_path(): void
@@ -131,9 +131,10 @@ PHP);
 
     public function test_extract_listens_returns_empty_for_class_without_property(): void
     {
-        $class = new class
-        {
-            public function handle(): void {}
+        $class = new class () {
+            public function handle(): void
+            {
+            }
         };
 
         $result = $this->scanner->extractListens($class::class);

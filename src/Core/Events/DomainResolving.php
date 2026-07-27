@@ -60,7 +60,8 @@ class DomainResolving
      */
     public function __construct(
         public readonly string $host
-    ) {}
+    ) {
+    }
 
     /**
      * Check if the incoming host matches a regex pattern.

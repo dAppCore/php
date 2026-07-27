@@ -68,7 +68,9 @@ describe('LazyModuleListener', function () {
 
 class TestEvent
 {
-    public function __construct(public string $data) {}
+    public function __construct(public string $data)
+    {
+    }
 }
 
 class TestLazyModule

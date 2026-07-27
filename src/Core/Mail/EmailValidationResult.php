@@ -31,7 +31,8 @@ class EmailValidationResult
         public readonly bool $isDisposable,
         public readonly ?string $domain = null,
         public readonly ?string $reason = null
-    ) {}
+    ) {
+    }
 
     /**
      * Create a valid email result.

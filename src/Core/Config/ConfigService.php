@@ -116,7 +116,8 @@ class ConfigService
 
     public function __construct(
         protected ConfigResolver $resolver,
-    ) {}
+    ) {
+    }
 
     /**
      * Set the current context (called by middleware).

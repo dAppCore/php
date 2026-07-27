@@ -34,7 +34,8 @@ class ValidatedEmail implements ValidationRule
      */
     public function __construct(
         public bool $blockDisposable = true
-    ) {}
+    ) {
+    }
 
     /**
      * Run the validation rule.

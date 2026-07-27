@@ -23,7 +23,8 @@ class ActivityLog extends Component
         public ?Paginator $pagination = null,
         public string $empty = 'No activity recorded yet.',
         public string $emptyIcon = 'clock',
-    ) {}
+    ) {
+    }
 
     public function eventColor(string $event): string
     {

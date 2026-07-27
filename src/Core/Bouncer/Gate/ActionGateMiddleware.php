@@ -44,7 +44,8 @@ class ActionGateMiddleware
 {
     public function __construct(
         protected ActionGateService $gateService,
-    ) {}
+    ) {
+    }
 
     public function handle(Request $request, Closure $next): Response
     {

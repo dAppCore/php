@@ -168,7 +168,7 @@ class CoreDatabaseSeeder extends Seeder
     protected function getRegistry(): SeederRegistry
     {
         if ($this->registry === null) {
-            $this->registry = new SeederRegistry;
+            $this->registry = new SeederRegistry();
             $this->registerSeeders($this->registry);
         }
 

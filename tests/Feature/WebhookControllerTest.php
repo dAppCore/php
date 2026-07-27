@@ -90,8 +90,7 @@ class WebhookControllerTest extends TestCase
 
     public function test_signature_verified_when_verifier_registered(): void
     {
-        $verifier = new class implements WebhookVerifier
-        {
+        $verifier = new class () implements WebhookVerifier {
             public function verify(Request $request, string $secret): bool
             {
                 return $request->header('webhook-signature') === 'valid';
@@ -110,8 +109,7 @@ class WebhookControllerTest extends TestCase
 
     public function test_signature_invalid_still_stores_call(): void
     {
-        $verifier = new class implements WebhookVerifier
-        {
+        $verifier = new class () implements WebhookVerifier {
             public function verify(Request $request, string $secret): bool
             {
                 return false;

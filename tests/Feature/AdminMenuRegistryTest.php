@@ -269,11 +269,12 @@ class AdminMenuRegistryTest extends TestCase
 
     protected function createMockProvider(array $items): AdminMenuProvider
     {
-        return new class($items) implements AdminMenuProvider
-        {
+        return new class ($items) implements AdminMenuProvider {
             use HasMenuPermissions;
 
-            public function __construct(private array $items) {}
+            public function __construct(private array $items)
+            {
+            }
 
             public function adminMenuItems(): array
             {

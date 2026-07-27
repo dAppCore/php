@@ -72,7 +72,7 @@ class StorageUrlResolver
     public function __construct(BunnyStorageService $bunnyStorage, ?CdnUrlBuilder $urlBuilder = null)
     {
         $this->bunnyStorage = $bunnyStorage;
-        $this->urlBuilder = $urlBuilder ?? new CdnUrlBuilder;
+        $this->urlBuilder = $urlBuilder ?? new CdnUrlBuilder();
     }
 
     /**

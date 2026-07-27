@@ -242,7 +242,7 @@ class LifecycleEventProvider extends ServiceProvider
 
         // Framework booted event fires after all providers have booted
         $this->app->booted(function () {
-            event(new FrameworkBooted);
+            event(new FrameworkBooted());
         });
     }
 
@@ -351,7 +351,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireWebRoutes(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -383,7 +383,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireAdminBooting(): void
     {
-        $event = new AdminPanelBooting;
+        $event = new AdminPanelBooting();
         event($event);
 
         static::processMiddleware($event);
@@ -416,7 +416,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireClientRoutes(): void
     {
-        $event = new ClientRoutesRegistering;
+        $event = new ClientRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -442,7 +442,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireApiRoutes(): void
     {
-        $event = new ApiRoutesRegistering;
+        $event = new ApiRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -466,7 +466,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireMcpRoutes(): void
     {
-        $event = new McpRoutesRegistering;
+        $event = new McpRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -490,7 +490,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireMcpTools(): array
     {
-        $event = new McpToolsRegistering;
+        $event = new McpToolsRegistering();
         event($event);
 
         return $event->handlers();
@@ -504,7 +504,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     protected function fireConsoleBooting(): void
     {
-        $event = new ConsoleBooting;
+        $event = new ConsoleBooting();
         event($event);
 
         static::processMiddleware($event);
@@ -523,7 +523,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     protected function fireQueueWorkerBooting(): void
     {
-        $event = new QueueWorkerBooting;
+        $event = new QueueWorkerBooting();
         event($event);
 
         // Job registration handled by Laravel's queue system

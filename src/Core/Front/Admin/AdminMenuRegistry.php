@@ -121,7 +121,7 @@ class AdminMenuRegistry
             $this->entitlements = $entitlements;
         }
 
-        $this->iconValidator = $iconValidator ?? new IconValidator;
+        $this->iconValidator = $iconValidator ?? new IconValidator();
         $this->cacheTtl = (int) config('core.admin_menu.cache_ttl', self::DEFAULT_CACHE_TTL);
         $this->cachingEnabled = (bool) config('core.admin_menu.cache_enabled', true);
         $this->validateIcons = (bool) config('core.admin_menu.validate_icons', true);

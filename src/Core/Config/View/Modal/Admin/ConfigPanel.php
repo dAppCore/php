@@ -85,7 +85,7 @@ class ConfigPanel extends Component
     public function workspaces(): Collection
     {
         if (! class_exists(Workspace::class)) {
-            return new Collection;
+            return new Collection();
         }
 
         return Workspace::orderBy('name')->get();

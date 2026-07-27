@@ -77,17 +77,17 @@ class CacheResilienceProvider extends ServiceProvider
 
         // Register CacheWarmer as singleton
         $this->app->singleton(CacheWarmer::class, function () {
-            return new CacheWarmer;
+            return new CacheWarmer();
         });
 
         // Register StorageMetrics as singleton
         $this->app->singleton(StorageMetrics::class, function () {
-            return new StorageMetrics;
+            return new StorageMetrics();
         });
 
         // Register TieredCacheStore as singleton
         $this->app->singleton(TieredCacheStore::class, function () {
-            return new TieredCacheStore;
+            return new TieredCacheStore();
         });
     }
 
@@ -196,7 +196,7 @@ class CacheResilienceProvider extends ServiceProvider
     protected function checkPhpRedis(string $host, int $port, ?string $password, float $timeout): bool
     {
         try {
-            $redis = new \Redis;
+            $redis = new \Redis();
 
             if (! @$redis->connect($host, $port, $timeout)) {
                 return false;

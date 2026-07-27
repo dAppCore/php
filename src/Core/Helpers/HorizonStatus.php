@@ -22,7 +22,8 @@ class HorizonStatus
 {
     public function __construct(
         private readonly ?MasterSupervisorRepository $masterSupervisorRepository = null
-    ) {}
+    ) {
+    }
 
     /**
      * Get current Horizon status.

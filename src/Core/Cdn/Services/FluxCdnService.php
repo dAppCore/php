@@ -43,7 +43,7 @@ class FluxCdnService
 
     public function __construct(?CdnUrlBuilder $urlBuilder = null)
     {
-        $this->urlBuilder = $urlBuilder ?? new CdnUrlBuilder;
+        $this->urlBuilder = $urlBuilder ?? new CdnUrlBuilder();
     }
 
     /**

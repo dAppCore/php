@@ -23,7 +23,7 @@ class ActionGateServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new ActionGateService;
+        $this->service = new ActionGateService();
     }
 
     // =========================================================================

@@ -50,7 +50,9 @@ use Illuminate\Queue\SerializesModels;
  */
 class ConversionProgress
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     /**
      * Progress stage: Conversion started.
@@ -89,7 +91,8 @@ class ConversionProgress
         public readonly int $percent = 0,
         public readonly ?string $message = null,
         public readonly array $context = [],
-    ) {}
+    ) {
+    }
 
     /**
      * Create a "started" progress event.

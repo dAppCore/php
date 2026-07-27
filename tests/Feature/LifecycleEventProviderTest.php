@@ -47,7 +47,7 @@ class LifecycleEventProviderTest extends TestCase
 
     public function test_provider_registers_modules(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([$this->getFixturePath('Mod')]);
 
         $this->assertTrue($registry->isRegistered());

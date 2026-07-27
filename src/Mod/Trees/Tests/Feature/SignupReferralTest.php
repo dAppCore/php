@@ -29,7 +29,7 @@ describe('Signup with Agent Referral', function () {
             $this->app->make('session.store')
         );
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         // Check that a TreePlanting was created
@@ -53,7 +53,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();
@@ -71,7 +71,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();
@@ -98,7 +98,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();
@@ -116,7 +116,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         // Referral should be cleared
@@ -133,7 +133,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();

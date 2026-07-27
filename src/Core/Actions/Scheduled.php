@@ -42,5 +42,6 @@ class Scheduled
         public ?string $timezone = null,
         public bool $withoutOverlapping = true,
         public bool $runInBackground = true,
-    ) {}
+    ) {
+    }
 }

@@ -26,7 +26,8 @@ class RateLimit
         private readonly string $key,
         private readonly int $limit,
         private readonly int $timeframeInMinutes,
-    ) {}
+    ) {
+    }
 
     /**
      * Check if rate limit has been exceeded.

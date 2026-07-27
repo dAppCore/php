@@ -234,7 +234,7 @@ class ConfigVersioning
      */
     protected function computeDiff(array $oldValues, array $newValues): VersionDiff
     {
-        $diff = new VersionDiff;
+        $diff = new VersionDiff();
 
         // Index by key
         $oldByKey = collect($oldValues)->keyBy('key');

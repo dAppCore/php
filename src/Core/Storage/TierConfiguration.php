@@ -70,7 +70,8 @@ class TierConfiguration
         public readonly bool $promoteOnHit = true,
         public readonly bool $enabled = true,
         public readonly int $priority = 50,
-    ) {}
+    ) {
+    }
 
     /**
      * Create a memory (array) tier configuration.

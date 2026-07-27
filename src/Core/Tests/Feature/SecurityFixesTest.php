@@ -64,7 +64,7 @@ describe('Checkout Authorization Fixes', function () {
             ]);
 
             // Test authorization via component mount logic
-            $component = new CheckoutSuccess;
+            $component = new CheckoutSuccess();
 
             // Use reflection to call protected authorizeOrder
             Auth::login($this->user);
@@ -90,7 +90,7 @@ describe('Checkout Authorization Fixes', function () {
             ]);
 
             // Test authorization via component logic
-            $component = new CheckoutSuccess;
+            $component = new CheckoutSuccess();
 
             Auth::login($this->user);
             $reflection = new ReflectionClass($component);
@@ -119,7 +119,7 @@ describe('Checkout Authorization Fixes', function () {
             ]);
 
             // Test authorization via component logic
-            $component = new CheckoutCancel;
+            $component = new CheckoutCancel();
 
             Auth::login($this->user);
             $reflection = new ReflectionClass($component);
@@ -334,7 +334,7 @@ describe('BTCPay Gateway Return Type', function () {
             'commerce.gateways.btcpay.webhook_secret' => 'test_webhook_secret',
         ]);
 
-        $gateway = new BTCPayGateway;
+        $gateway = new BTCPayGateway();
 
         // Mock HTTP to fail so we test the error path
         Http::fake([
@@ -369,7 +369,7 @@ describe('BTCPay Gateway Return Type', function () {
             'commerce.gateways.btcpay.webhook_secret' => 'test_webhook_secret',
         ]);
 
-        $gateway = new BTCPayGateway;
+        $gateway = new BTCPayGateway();
 
         // Mock HTTP to succeed
         Http::fake([
@@ -407,7 +407,7 @@ describe('SocialPost Controller User Type Check', function () {
 describe('LIKE Wildcard Injection Fix', function () {
     it('escapes LIKE wildcards in MediaPicker search', function () {
         // Test the escapeLikeWildcards helper directly
-        $component = new MediaPicker;
+        $component = new MediaPicker();
 
         $reflection = new ReflectionClass($component);
         $method = $reflection->getMethod('escapeLikeWildcards');
@@ -423,7 +423,7 @@ describe('LIKE Wildcard Injection Fix', function () {
     });
 
     it('does not affect normal search terms', function () {
-        $component = new MediaPicker;
+        $component = new MediaPicker();
 
         $reflection = new ReflectionClass($component);
         $method = $reflection->getMethod('escapeLikeWildcards');
@@ -515,7 +515,7 @@ describe('Checkout Edge Cases', function () {
             'currency' => 'GBP',
         ]);
 
-        $component = new CheckoutSuccess;
+        $component = new CheckoutSuccess();
         Auth::login($freshUser);
 
         $reflection = new ReflectionClass($component);
@@ -541,7 +541,7 @@ describe('Checkout Edge Cases', function () {
             'currency' => 'GBP',
         ]);
 
-        $component = new CheckoutCancel;
+        $component = new CheckoutCancel();
         Auth::login($freshUser);
 
         $reflection = new ReflectionClass($component);

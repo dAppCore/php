@@ -34,7 +34,10 @@ use Illuminate\Support\Facades\Log;
  */
 class GenerateThumbnail implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * The number of times the job may be attempted.
@@ -59,7 +62,8 @@ class GenerateThumbnail implements ShouldQueue
         public int $width,
         public int $height,
         public array $options = []
-    ) {}
+    ) {
+    }
 
     /**
      * Execute the job.

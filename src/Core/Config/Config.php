@@ -29,7 +29,9 @@ abstract class Config
     /**
      * Create a new config instance.
      */
-    public function __construct(public readonly ?Request $request = null) {}
+    public function __construct(public readonly ?Request $request = null)
+    {
+    }
 
     /**
      * Save configuration data from request or provided array.

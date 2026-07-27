@@ -41,34 +41,13 @@ gate:
   script:
     # Every PHP file parses.
     - find src tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
-    # House style, on what this change touched. Applying it to the whole tree
-    # would bury every real diff in reformatting noise.
-    - |
-      # pint with no path argument scans the entire tree, so an empty or
-      # whitespace-only file list silently turns a changed-files check into a
-      # whole-repo one — which fails on 29 pre-existing issues that predate
-      # the standard. Write the list to a file and count lines, so "no files"
-      # is distinguishable from "some files" and can never reach pint bare.
-      # CI_MERGE_REQUEST_DIFF_BASE_SHA goes stale the moment a branch is
-      # force-pushed, and diffing against a point that is not an ancestor
-      # reports almost the whole repo as changed (148 files for a 13-file
-      # diff). Fetch the target branch and compute a real merge base.
-      TARGET="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-main}"
-      git fetch --quiet --depth=50 origin "$TARGET" 2>/dev/null || true
-      BASE="$(git merge-base FETCH_HEAD HEAD 2>/dev/null || true)"
-      if [ -z "$BASE" ]; then BASE="$(git rev-parse HEAD~1 2>/dev/null || true)"; fi
-      : > /tmp/pint-changed.txt
-      if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-        git diff --name-only --diff-filter=d "$BASE"...HEAD -- '*.php' \
-          | grep -v '\.blade\.php$' > /tmp/pint-changed.txt || true
-      else
-        echo "pint: base commit $BASE not in this clone — skipping the style check"
-      fi
-      COUNT="$(wc -l < /tmp/pint-changed.txt | tr -d ' ')"
-      echo "pint: $COUNT changed file(s)"
-      if [ "$COUNT" -gt 0 ]; then
-        ./vendor/bin/pint --test $(tr '\n' ' ' < /tmp/pint-changed.txt)
-      fi
+    # House style, whole tree. The tree was formatted in one pass so this
+    # needs no changed-files logic — which is the point: computing "what did
+    # this change touch" in CI went wrong three separate ways (a stale
+    # merge-request diff base after a force-push, a shallow clone with no real
+    # merge base, and a whitespace-only file list that made pint silently scan
+    # everything). None of that can happen to `pint --test`.
+    - ./vendor/bin/pint --test
     # The package-level suite. This one is green and must stay green.
     - ./vendor/bin/pest --testsuite=Feature,Unit --no-coverage
 

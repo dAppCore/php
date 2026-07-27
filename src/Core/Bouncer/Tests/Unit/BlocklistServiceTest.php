@@ -28,7 +28,7 @@ class BlocklistServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new BlocklistService;
+        $this->service = new BlocklistService();
     }
 
     protected function defineDatabaseMigrations(): void

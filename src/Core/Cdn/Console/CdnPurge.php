@@ -46,7 +46,7 @@ class CdnPurge extends Command
         parent::__construct();
 
         if (class_exists(Purge::class)) {
-            $this->purger = new Purge;
+            $this->purger = new Purge();
         }
     }
 

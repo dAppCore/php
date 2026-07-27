@@ -137,8 +137,7 @@ class SeederRegistry
     public function getOrdered(): array
     {
         // Use SeederDiscovery's sorting logic by creating a temporary instance
-        $discovery = new class extends SeederDiscovery
-        {
+        $discovery = new class () extends SeederDiscovery {
             /**
              * @param  array<string, array{priority: int, after: array<string>, before: array<string>}>  $seeders
              */

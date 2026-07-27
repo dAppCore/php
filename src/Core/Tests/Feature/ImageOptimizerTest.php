@@ -40,7 +40,7 @@ beforeEach(function () {
 
 describe('ImageOptimizer service', function () {
     it('can be instantiated', function () {
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
 
         expect($optimizer)->toBeInstanceOf(ImageOptimizer::class);
     });
@@ -49,7 +49,7 @@ describe('ImageOptimizer service', function () {
         // Create a test JPEG image
         $testImage = createTestJpegImage(800, 600);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         expect($result)->toBeInstanceOf(OptimizationResult::class);
@@ -66,7 +66,7 @@ describe('ImageOptimizer service', function () {
         // Create a test PNG image
         $testImage = createTestPngImage(400, 300);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         expect($result)->toBeInstanceOf(OptimizationResult::class);
@@ -82,7 +82,7 @@ describe('ImageOptimizer service', function () {
         // Create a tiny image (less than 10KB)
         $testImage = createTestJpegImage(50, 50);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         // Should return no-op result (no optimization)
@@ -98,7 +98,7 @@ describe('ImageOptimizer service', function () {
 
         $testImage = createTestJpegImage(800, 600);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         // Should return no-op result
@@ -109,7 +109,7 @@ describe('ImageOptimizer service', function () {
     });
 
     it('throws exception for non-existent file', function () {
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
 
         $optimizer->optimize('/path/to/nonexistent/file.jpg');
     })->throws(InvalidArgumentException::class, 'File not found');
@@ -119,7 +119,7 @@ describe('ImageOptimizer service', function () {
         $testFile = sys_get_temp_dir().'/test_invalid.jpg';
         file_put_contents($testFile, 'This is not an image');
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
 
         $result = $optimizer->optimize($testFile);
 
@@ -134,7 +134,7 @@ describe('ImageOptimizer service', function () {
         $testImage1 = createTestJpegImage(800, 600);
         $testImage2 = createTestJpegImage(800, 600);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
 
         // High quality (less compression)
         $result1 = $optimizer->optimize($testImage1, ['quality' => 95]);
@@ -158,7 +158,7 @@ describe('ImageOptimizer service', function () {
 
         $testImage = createTestWebpImage(400, 300);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         expect($result)->toBeInstanceOf(OptimizationResult::class);
@@ -173,7 +173,7 @@ describe('ImageOptimizer service', function () {
 
         $testImage = createTestJpegImage(800, 600);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         // Should return no-op result
@@ -193,7 +193,7 @@ describe('Uploaded file optimization', function () {
         // Simulate UploadedFile
         $uploadedFile = new UploadedFile($tempPath, 'test.jpg', 'image/jpeg', null, true);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimizeUploadedFile($uploadedFile);
 
         expect($result)->toBeInstanceOf(OptimizationResult::class);
@@ -380,7 +380,7 @@ describe('Statistics tracking', function () {
     it('records optimization in database via service', function () {
         $testImage = createTestJpegImage(800, 600);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
 
         // Record the optimization
@@ -400,7 +400,7 @@ describe('Statistics tracking', function () {
     it('retrieves workspace stats via service', function () {
         $testImage = createTestJpegImage(800, 600);
 
-        $optimizer = new ImageOptimizer;
+        $optimizer = new ImageOptimizer();
         $result = $optimizer->optimize($testImage);
         $optimizer->recordOptimization($result, $this->workspace);
 

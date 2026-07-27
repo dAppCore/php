@@ -273,7 +273,7 @@ class SeoMetadata extends Model
      */
     public function validateOgImage(bool $fetchRemote = true): array
     {
-        $validator = new Validation\OgImageValidator;
+        $validator = new Validation\OgImageValidator();
 
         return $validator->validateOgData($this->og_data);
     }
@@ -311,7 +311,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $validator = new Validation\CanonicalUrlValidator;
+        $validator = new Validation\CanonicalUrlValidator();
 
         return $validator->validateUrl($this->canonical_url);
     }
@@ -331,7 +331,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $validator = new Validation\CanonicalUrlValidator;
+        $validator = new Validation\CanonicalUrlValidator();
         $result = $validator->checkUrl($this->canonical_url);
 
         // Exclude self from conflict check
@@ -463,7 +463,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $tester = new Validation\StructuredDataTester;
+        $tester = new Validation\StructuredDataTester();
 
         return $tester->test($this->schema_markup);
     }
@@ -493,7 +493,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $tester = new Validation\StructuredDataTester;
+        $tester = new Validation\StructuredDataTester();
 
         return $tester->generateReport($this->schema_markup);
     }
@@ -509,7 +509,7 @@ class SeoMetadata extends Model
             return [];
         }
 
-        $tester = new Validation\StructuredDataTester;
+        $tester = new Validation\StructuredDataTester();
 
         return $tester->checkRichResultsEligibility($this->schema_markup);
     }

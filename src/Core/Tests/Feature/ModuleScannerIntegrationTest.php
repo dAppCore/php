@@ -19,7 +19,7 @@ use Illuminate\Support\ServiceProvider;
 
 describe('ModuleScanner integration', function () {
     it('scans the Mod directory and finds modules', function () {
-        $scanner = new ModuleScanner;
+        $scanner = new ModuleScanner();
         $result = $scanner->scan([app_path('Mod')]);
 
         // Should find multiple events with listeners
@@ -38,7 +38,7 @@ describe('ModuleScanner integration', function () {
     });
 
     it('returns event => [module => method] structure', function () {
-        $scanner = new ModuleScanner;
+        $scanner = new ModuleScanner();
         $result = $scanner->scan([app_path('Mod')]);
 
         foreach ($result as $event => $listeners) {
@@ -52,7 +52,7 @@ describe('ModuleScanner integration', function () {
     });
 
     it('finds at least 10 modules with listeners', function () {
-        $scanner = new ModuleScanner;
+        $scanner = new ModuleScanner();
         $result = $scanner->scan([app_path('Mod')]);
 
         // Collect unique modules
@@ -77,7 +77,7 @@ describe('LazyModuleListener integration', function () {
         TestIntegrationServiceProvider::$called = false;
         TestIntegrationServiceProvider::$hadApp = false;
 
-        $event = new AdminPanelBooting;
+        $event = new AdminPanelBooting();
         $listener($event);
 
         expect(TestIntegrationServiceProvider::$called)->toBeTrue();
@@ -86,7 +86,7 @@ describe('LazyModuleListener integration', function () {
 
     it('can invoke real module methods', function () {
         // Pick a real module
-        $scanner = new ModuleScanner;
+        $scanner = new ModuleScanner();
         $result = $scanner->scan([app_path('Mod')]);
 
         // Find a module that listens to AdminPanelBooting
@@ -100,7 +100,7 @@ describe('LazyModuleListener integration', function () {
         $listener = new LazyModuleListener($moduleClass, $method);
 
         // Should not throw - the real module should handle the event
-        $event = new AdminPanelBooting;
+        $event = new AdminPanelBooting();
         $listener($event);
 
         // If we get here without exception, the listener worked

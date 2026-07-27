@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Core\Mod\Trees\View\Modal\Web\Index as TreesIndex;
 use Core\Tenant\Controllers\ReferralController;
 use Illuminate\Support\Facades\Route;

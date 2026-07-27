@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 
 describe('ResilientSession Middleware', function () {
     it('passes through normal requests without issues', function () {
-        $middleware = new ResilientSession;
+        $middleware = new ResilientSession();
         $request = Request::create('/test');
 
         $response = $middleware->handle($request, fn ($req) => response('OK'));
@@ -27,7 +27,7 @@ describe('ResilientSession Middleware', function () {
     it('handles DecryptException by redirecting', function () {
         // This test verifies the exception handler in bootstrap/app.php
         // The middleware catches these exceptions and clears cookies
-        $middleware = new ResilientSession;
+        $middleware = new ResilientSession();
         $request = Request::create('/test');
 
         // Simulate a request that would throw DecryptException
@@ -41,7 +41,7 @@ describe('ResilientSession Middleware', function () {
     });
 
     it('returns 419 for AJAX requests with session errors', function () {
-        $middleware = new ResilientSession;
+        $middleware = new ResilientSession();
         $request = Request::create('/api/test');
         $request->headers->set('Accept', 'application/json');
 

@@ -12,7 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TreePlanting extends Model
 {
-    use BelongsToWorkspace, HasFactory;
+    use BelongsToWorkspace;
+    use HasFactory;
 
     /**
      * Source constants.

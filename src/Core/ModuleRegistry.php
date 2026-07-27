@@ -90,7 +90,8 @@ class ModuleRegistry
      */
     public function __construct(
         private ModuleScanner $scanner
-    ) {}
+    ) {
+    }
 
     /**
      * Scan paths and register lazy listeners for all declared events.

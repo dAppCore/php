@@ -28,7 +28,8 @@ class IncludeAgentContext
 {
     public function __construct(
         protected AgentDetection $agentDetection
-    ) {}
+    ) {
+    }
 
     /**
      * Handle an incoming request.

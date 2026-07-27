@@ -94,7 +94,8 @@ class ConfigExporter
 
     public function __construct(
         protected ConfigService $config,
-    ) {}
+    ) {
+    }
 
     /**
      * Export config to JSON format.
@@ -295,7 +296,7 @@ class ConfigExporter
      */
     protected function importData(array $data, ?object $workspace, bool $dryRun): ImportResult
     {
-        $result = new ImportResult;
+        $result = new ImportResult();
 
         // Validate version
         $version = $data['version'] ?? '1.0';
@@ -422,7 +423,7 @@ class ConfigExporter
                 } else {
                     // Create new value
                     if (! $dryRun) {
-                        $value = new ConfigValue;
+                        $value = new ConfigValue();
                         $value->profile_id = $profile->id;
                         $value->key_id = $key->id;
                         $value->channel_id = $channelId;

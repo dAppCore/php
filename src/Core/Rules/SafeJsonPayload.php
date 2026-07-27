@@ -34,7 +34,8 @@ class SafeJsonPayload implements ValidationRule
         protected int $maxDepth = 3,
         protected int $maxKeys = 50,
         protected int $maxStringLength = 1000
-    ) {}
+    ) {
+    }
 
     /**
      * Run the validation rule.
@@ -124,7 +125,7 @@ class SafeJsonPayload implements ValidationRule
      */
     public static function default(): self
     {
-        return new self;
+        return new self();
     }
 
     /**
