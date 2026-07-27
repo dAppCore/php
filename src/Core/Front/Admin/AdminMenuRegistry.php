@@ -171,6 +171,13 @@ class AdminMenuRegistry
      */
     public function build(?object $workspace, bool $isAdmin = false, ?object $user = null): array
     {
+        // Fall back to the authenticated user. Every caller in the estate
+        // omitted this argument, so providers were being asked whether a null
+        // user may see each service — which they refuse. The visible effect was
+        // a fully entitled workspace still being shown the "choose your tools"
+        // page, because no service ever resolved.
+        $user ??= auth()->user();
+
         // Get static items (potentially cached)
         $staticItems = $this->getStaticItems($workspace, $isAdmin, $user);
 
@@ -625,6 +632,13 @@ class AdminMenuRegistry
      */
     public function getAllServiceItems(?object $workspace, bool $isAdmin = false, ?object $user = null): array
     {
+        // Fall back to the authenticated user. Every caller in the estate
+        // omitted this argument, so providers were being asked whether a null
+        // user may see each service — which they refuse. The visible effect was
+        // a fully entitled workspace still being shown the "choose your tools"
+        // page, because no service ever resolved.
+        $user ??= auth()->user();
+
         $services = [];
 
         foreach ($this->providers as $provider) {
@@ -691,6 +705,13 @@ class AdminMenuRegistry
      */
     public function getServiceItem(string $serviceKey, ?object $workspace, bool $isAdmin = false, ?object $user = null): ?array
     {
+        // Fall back to the authenticated user. Every caller in the estate
+        // omitted this argument, so providers were being asked whether a null
+        // user may see each service — which they refuse. The visible effect was
+        // a fully entitled workspace still being shown the "choose your tools"
+        // page, because no service ever resolved.
+        $user ??= auth()->user();
+
         foreach ($this->providers as $provider) {
             // Check provider-level permissions
             if (! $provider->canViewMenu($user, $workspace)) {
