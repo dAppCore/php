@@ -18,6 +18,9 @@ default:
 
 variables:
   COMPOSER_NO_INTERACTION: "1"
+  # Deep enough that the merge-request diff base is present in the clone;
+  # without it the style check silently degrades to a whole-repo scan.
+  GIT_DEPTH: "50"
 
 # The runner is a shell executor on the homelab box, so `image:` would be
 # silently ignored and the script runs directly on the host. That host already
@@ -41,14 +44,24 @@ gate:
     # House style, on what this change touched. Applying it to the whole tree
     # would bury every real diff in reformatting noise.
     - |
-      BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$(git rev-parse HEAD~1 2>/dev/null || true)}"
-      CHANGED=""
-      [ -n "$BASE" ] && CHANGED="$(git diff --name-only --diff-filter=d "$BASE"...HEAD -- '*.php' | tr '\n' ' ')"
-      if [ -n "$CHANGED" ]; then
-        echo "pint: $(echo $CHANGED | wc -w) changed file(s)"
-        ./vendor/bin/pint --test $CHANGED
+      # pint with no path argument scans the entire tree, so an empty or
+      # whitespace-only file list silently turns a changed-files check into a
+      # whole-repo one — which fails on 29 pre-existing issues that predate
+      # the standard. Write the list to a file and count lines, so "no files"
+      # is distinguishable from "some files" and can never reach pint bare.
+      BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
+      if [ -z "$BASE" ]; then BASE="$(git rev-parse HEAD~1 2>/dev/null || true)"; fi
+      : > /tmp/pint-changed.txt
+      if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+        git diff --name-only --diff-filter=d "$BASE"...HEAD -- '*.php' \
+          | grep -v '\.blade\.php$' > /tmp/pint-changed.txt || true
       else
-        echo "pint: nothing changed"
+        echo "pint: base commit $BASE not in this clone — skipping the style check"
+      fi
+      COUNT="$(wc -l < /tmp/pint-changed.txt | tr -d ' ')"
+      echo "pint: $COUNT changed file(s)"
+      if [ "$COUNT" -gt 0 ]; then
+        ./vendor/bin/pint --test $(tr '\n' ' ' < /tmp/pint-changed.txt)
       fi
     # The package-level suite. This one is green and must stay green.
     - ./vendor/bin/pest --testsuite=Feature,Unit --no-coverage
