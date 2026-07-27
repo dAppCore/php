@@ -65,8 +65,11 @@ class AdminMenuRegistry
         'agents' => [
             'standalone' => true,
         ],
+        // Labelled "Services", not "Workspaces": the workspace switcher lives
+        // in the top nav, so the left menu is about what is inside the
+        // workspace you are already in, not about choosing between them.
         'workspaces' => [
-            'label' => 'Workspaces',
+            'label' => 'Services',
             'icon' => 'layer-group',
             'color' => 'blue',
         ],
