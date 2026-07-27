@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+use Core\Activity\Models\Activity;
+
 return [
 
     /*
@@ -449,7 +453,7 @@ return [
         // Custom Activity model class (optional).
         // Set this to use a custom Activity model with additional scopes.
         // Default: Core\Activity\Models\Activity::class
-        'activity_model' => env('CORE_ACTIVITY_MODEL', \Core\Activity\Models\Activity::class),
+        'activity_model' => env('CORE_ACTIVITY_MODEL', Activity::class),
     ],
 
 ];

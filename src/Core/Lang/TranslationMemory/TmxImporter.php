@@ -46,7 +46,8 @@ class TmxImporter
      */
     public function __construct(
         protected TranslationMemoryRepository $repository,
-    ) {}
+    ) {
+    }
 
     /**
      * Import translation memory from a TMX file.
@@ -117,7 +118,7 @@ class TmxImporter
 
         // Parse XML
         libxml_use_internal_errors(true);
-        $dom = new DOMDocument;
+        $dom = new DOMDocument();
 
         if (! $dom->loadXML($content)) {
             $errors = libxml_get_errors();
@@ -460,7 +461,7 @@ class TmxImporter
         $content = File::get($filePath);
 
         libxml_use_internal_errors(true);
-        $dom = new DOMDocument;
+        $dom = new DOMDocument();
 
         if (! $dom->loadXML($content)) {
             $errors = libxml_get_errors();

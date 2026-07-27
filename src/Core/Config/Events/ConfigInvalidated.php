@@ -71,7 +71,8 @@ class ConfigInvalidated
         public readonly ?string $keyCode = null,
         public readonly ?int $workspaceId = null,
         public readonly ?int $channelId = null,
-    ) {}
+    ) {
+    }
 
     /**
      * Is this a full invalidation?

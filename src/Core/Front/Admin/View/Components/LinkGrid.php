@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Front\Admin\View\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class LinkGrid extends Component
@@ -44,7 +45,7 @@ class LinkGrid extends Component
         return $item['icon'] ?? 'arrow-right';
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.link-grid');
     }

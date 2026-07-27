@@ -302,7 +302,7 @@ class IconValidator
         $icon = preg_replace('/^(fas?|far|fab|fa-solid|fa-regular|fa-brands)\s+/', '', $icon);
 
         // Remove 'fa-' prefix
-        $icon = preg_replace('/^fa-/', '', $icon ?? $icon);
+        $icon = preg_replace('/^fa-/', '', $icon ?? '');
 
         return strtolower($icon ?? '');
     }

@@ -44,7 +44,8 @@ class SafeWebhookUrl implements ValidationRule
      */
     public function __construct(
         protected ?string $service = null
-    ) {}
+    ) {
+    }
 
     /**
      * Run the validation rule.

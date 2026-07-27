@@ -20,7 +20,7 @@ class Input
 {
     public static function capture(): Request
     {
-        $sanitiser = new Sanitiser;
+        $sanitiser = new Sanitiser();
 
         $_GET = $sanitiser->filter($_GET);
         $_POST = $sanitiser->filter($_POST);

@@ -6,6 +6,7 @@ namespace Core\Tests\Feature;
 
 use Core\Tests\TestCase;
 use Core\Webhook\WebhookCall;
+use Core\Webhook\WebhookController;
 use Core\Webhook\WebhookReceived;
 use Core\Webhook\WebhookVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,7 @@ class WebhookControllerTest extends TestCase
 
     protected function defineRoutes($router): void
     {
-        $router->post('/webhooks/{source}', [\Core\Webhook\WebhookController::class, 'handle'])
+        $router->post('/webhooks/{source}', [WebhookController::class, 'handle'])
             ->where('source', '[a-z0-9\-]+');
     }
 
@@ -89,8 +90,7 @@ class WebhookControllerTest extends TestCase
 
     public function test_signature_verified_when_verifier_registered(): void
     {
-        $verifier = new class implements WebhookVerifier
-        {
+        $verifier = new class () implements WebhookVerifier {
             public function verify(Request $request, string $secret): bool
             {
                 return $request->header('webhook-signature') === 'valid';
@@ -109,8 +109,7 @@ class WebhookControllerTest extends TestCase
 
     public function test_signature_invalid_still_stores_call(): void
     {
-        $verifier = new class implements WebhookVerifier
-        {
+        $verifier = new class () implements WebhookVerifier {
             public function verify(Request $request, string $secret): bool
             {
                 return false;

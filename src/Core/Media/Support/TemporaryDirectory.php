@@ -16,7 +16,9 @@ namespace Core\Media\Support;
  */
 class TemporaryDirectory
 {
-    public function __construct(protected string $path) {}
+    public function __construct(protected string $path)
+    {
+    }
 
     /**
      * Delete the temporary directory and all its contents.

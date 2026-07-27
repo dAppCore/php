@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Mod\Beta\Database\Seeders;
 
 use Core\Database\Seeders\Attributes\SeederAfter;

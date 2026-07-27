@@ -16,5 +16,6 @@ class WebhookReceived
     public function __construct(
         public readonly string $source,
         public readonly string $callId,
-    ) {}
+    ) {
+    }
 }

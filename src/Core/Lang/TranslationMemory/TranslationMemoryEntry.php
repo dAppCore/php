@@ -58,8 +58,8 @@ class TranslationMemoryEntry implements Arrayable, JsonSerializable
         protected array $metadata = [],
         protected int $usageCount = 0,
     ) {
-        $this->createdAt ??= new DateTimeImmutable;
-        $this->updatedAt ??= new DateTimeImmutable;
+        $this->createdAt ??= new DateTimeImmutable();
+        $this->updatedAt ??= new DateTimeImmutable();
         $this->quality = max(0.0, min(1.0, $quality));
     }
 
@@ -195,7 +195,7 @@ class TranslationMemoryEntry implements Arrayable, JsonSerializable
             target: $target,
             quality: $this->quality,
             createdAt: $this->createdAt,
-            updatedAt: new DateTimeImmutable,
+            updatedAt: new DateTimeImmutable(),
             metadata: $this->metadata,
             usageCount: $this->usageCount,
         );
@@ -214,7 +214,7 @@ class TranslationMemoryEntry implements Arrayable, JsonSerializable
             target: $this->target,
             quality: $quality,
             createdAt: $this->createdAt,
-            updatedAt: new DateTimeImmutable,
+            updatedAt: new DateTimeImmutable(),
             metadata: $this->metadata,
             usageCount: $this->usageCount,
         );
@@ -235,7 +235,7 @@ class TranslationMemoryEntry implements Arrayable, JsonSerializable
             target: $this->target,
             quality: $this->quality,
             createdAt: $this->createdAt,
-            updatedAt: new DateTimeImmutable,
+            updatedAt: new DateTimeImmutable(),
             metadata: array_merge($this->metadata, $metadata),
             usageCount: $this->usageCount,
         );

@@ -13,8 +13,10 @@ namespace Core\Config\Console;
 
 use Core\Config\ConfigExporter;
 use Core\Config\ConfigVersioning;
+use Core\Tenant\Models\Workspace;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Import config from JSON or YAML file.
@@ -53,13 +55,13 @@ class ConfigImportCommand extends Command
         // Resolve workspace
         $workspace = null;
         if ($workspaceSlug) {
-            if (! class_exists(\Core\Tenant\Models\Workspace::class)) {
+            if (! class_exists(Workspace::class)) {
                 $this->components->error('Tenant module not installed. Cannot import workspace config.');
 
                 return self::FAILURE;
             }
 
-            $workspace = \Core\Tenant\Models\Workspace::where('slug', $workspaceSlug)->first();
+            $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
                 $this->components->error("Workspace not found: {$workspaceSlug}");
@@ -174,11 +176,11 @@ class ConfigImportCommand extends Command
     /**
      * Get autocompletion suggestions.
      */
-    public function complete(CompletionInput $input, \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions): void
+    public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         if ($input->mustSuggestOptionValuesFor('workspace')) {
-            if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-                $suggestions->suggestValues(\Core\Tenant\Models\Workspace::pluck('slug')->toArray());
+            if (class_exists(Workspace::class)) {
+                $suggestions->suggestValues(Workspace::pluck('slug')->toArray());
             }
         }
     }

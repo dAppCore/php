@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 
@@ -56,7 +57,7 @@ class LogsActivityTraitTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return array_merge(parent::getPackageProviders($app), [
-            \Spatie\Activitylog\ActivitylogServiceProvider::class,
+            ActivitylogServiceProvider::class,
         ]);
     }
 
@@ -193,7 +194,7 @@ class LogsActivityTraitTest extends TestCase
 
     public function test_get_activity_log_options_returns_log_options(): void
     {
-        $model = new TestActivityModel;
+        $model = new TestActivityModel();
         $options = $model->getActivitylogOptions();
 
         $this->assertInstanceOf(LogOptions::class, $options);

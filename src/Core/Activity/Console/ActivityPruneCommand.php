@@ -13,6 +13,7 @@ namespace Core\Activity\Console;
 
 use Core\Activity\Services\ActivityLogService;
 use Illuminate\Console\Command;
+use Spatie\Activitylog\Models\Activity;
 
 /**
  * Command to prune old activity logs.
@@ -48,7 +49,7 @@ class ActivityPruneCommand extends Command
 
         if ($this->option('dry-run')) {
             // Count without deleting
-            $activityModel = config('core.activity.activity_model', \Spatie\Activitylog\Models\Activity::class);
+            $activityModel = config('core.activity.activity_model', Activity::class);
             $count = $activityModel::where('created_at', '<', $cutoffDate)->count();
 
             $this->info("Would delete {$count} activity records.");

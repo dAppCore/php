@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace Core\Cdn;
 
+use App\Facades\Cdn;
+use App\Http\Middleware\RewriteOffloadedUrls;
+use App\Jobs\PushAssetToCdn;
+use App\Traits\HasCdnUrls;
 use Core\Cdn\Console\CdnPurge;
 use Core\Cdn\Console\OffloadMigrateCommand;
 use Core\Cdn\Console\PushAssetsToCdn;
@@ -21,6 +25,9 @@ use Core\Cdn\Services\BunnyStorageService;
 use Core\Cdn\Services\FluxCdnService;
 use Core\Cdn\Services\StorageOffload;
 use Core\Cdn\Services\StorageUrlResolver;
+use Core\Crypt\LthnHash;
+use Core\Plug\Cdn\CdnManager;
+use Core\Plug\Storage\StorageManager;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -45,11 +52,11 @@ class Boot extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/offload.php', 'offload');
 
         // Register Plug managers as singletons (when available)
-        if (class_exists(\Core\Plug\Cdn\CdnManager::class)) {
-            $this->app->singleton(\Core\Plug\Cdn\CdnManager::class);
+        if (class_exists(CdnManager::class)) {
+            $this->app->singleton(CdnManager::class);
         }
-        if (class_exists(\Core\Plug\Storage\StorageManager::class)) {
-            $this->app->singleton(\Core\Plug\Storage\StorageManager::class);
+        if (class_exists(StorageManager::class)) {
+            $this->app->singleton(StorageManager::class);
         }
 
         // Register legacy services as singletons (for backward compatibility)
@@ -115,32 +122,32 @@ class Boot extends ServiceProvider
 
         // Crypt
         if (! class_exists(\App\Services\Crypt\LthnHash::class)) {
-            class_alias(\Core\Crypt\LthnHash::class, \App\Services\Crypt\LthnHash::class);
+            class_alias(LthnHash::class, \App\Services\Crypt\LthnHash::class);
         }
 
         // Models
         if (! class_exists(\App\Models\StorageOffload::class)) {
-            class_alias(\Core\Cdn\Models\StorageOffload::class, \App\Models\StorageOffload::class);
+            class_alias(Models\StorageOffload::class, \App\Models\StorageOffload::class);
         }
 
         // Facades
-        if (! class_exists(\App\Facades\Cdn::class)) {
-            class_alias(\Core\Cdn\Facades\Cdn::class, \App\Facades\Cdn::class);
+        if (! class_exists(Cdn::class)) {
+            class_alias(Facades\Cdn::class, Cdn::class);
         }
 
         // Traits
-        if (! trait_exists(\App\Traits\HasCdnUrls::class)) {
-            class_alias(\Core\Cdn\Traits\HasCdnUrls::class, \App\Traits\HasCdnUrls::class);
+        if (! trait_exists(HasCdnUrls::class)) {
+            class_alias(Traits\HasCdnUrls::class, HasCdnUrls::class);
         }
 
         // Middleware
-        if (! class_exists(\App\Http\Middleware\RewriteOffloadedUrls::class)) {
-            class_alias(\Core\Cdn\Middleware\RewriteOffloadedUrls::class, \App\Http\Middleware\RewriteOffloadedUrls::class);
+        if (! class_exists(RewriteOffloadedUrls::class)) {
+            class_alias(Middleware\RewriteOffloadedUrls::class, RewriteOffloadedUrls::class);
         }
 
         // Jobs
-        if (! class_exists(\App\Jobs\PushAssetToCdn::class)) {
-            class_alias(\Core\Cdn\Jobs\PushAssetToCdn::class, \App\Jobs\PushAssetToCdn::class);
+        if (! class_exists(PushAssetToCdn::class)) {
+            class_alias(Jobs\PushAssetToCdn::class, PushAssetToCdn::class);
         }
     }
 }

@@ -13,6 +13,7 @@ namespace Core\Front\Admin\View\Components;
 
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class ActivityLog extends Component
@@ -22,7 +23,8 @@ class ActivityLog extends Component
         public ?Paginator $pagination = null,
         public string $empty = 'No activity recorded yet.',
         public string $emptyIcon = 'clock',
-    ) {}
+    ) {
+    }
 
     public function eventColor(string $event): string
     {
@@ -57,7 +59,7 @@ class ActivityLog extends Component
         return is_array($value) ? json_encode($value) : (string) $value;
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.activity-log');
     }

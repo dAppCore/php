@@ -126,7 +126,8 @@ class BunnyStorageService implements HealthCheckable
 
     public function __construct(
         protected ConfigService $config,
-    ) {}
+    ) {
+    }
 
     /**
      * Get the public storage zone client.

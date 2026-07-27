@@ -67,7 +67,7 @@ class Boot extends ServiceProvider
 
         // Register LazyThumbnail as singleton
         $this->app->singleton(LazyThumbnail::class, function () {
-            return new LazyThumbnail;
+            return new LazyThumbnail();
         });
     }
 

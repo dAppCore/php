@@ -31,3 +31,9 @@ infection-summary.log
 # Worktrees
 .worktrees/
 .core/
+
+# committed build output — keep out of git
+/bin/core-php-cgo
+
+# Scratch/backup trees — never part of a change.
+.tmp/

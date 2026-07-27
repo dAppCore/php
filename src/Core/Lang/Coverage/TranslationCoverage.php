@@ -343,7 +343,7 @@ class TranslationCoverage
      */
     protected function generateReport(Collection $usedKeys, array $definedKeys, array $locales): TranslationCoverageReport
     {
-        $report = new TranslationCoverageReport;
+        $report = new TranslationCoverageReport();
 
         // Get all used key names
         $usedKeyNames = $usedKeys->keys()->all();

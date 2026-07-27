@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace Core\Search;
 
+use Core\Mod\Agentic\Models\AgentPlan;
+use Core\Mod\Uptelligence\Models\Asset;
+use Core\Mod\Uptelligence\Models\Pattern;
+use Core\Mod\Uptelligence\Models\UpstreamTodo;
 use Core\Search\Analytics\SearchAnalytics;
 use Core\Search\Suggestions\SearchSuggestions;
 use Illuminate\Support\Collection;
@@ -410,14 +414,14 @@ class Unified
      */
     protected function searchPatterns(string $query): Collection
     {
-        if (! class_exists(\Core\Mod\Uptelligence\Models\Pattern::class)) {
+        if (! class_exists(Pattern::class)) {
             return collect();
         }
 
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return \Core\Mod\Uptelligence\Models\Pattern::where('name', 'like', "%{$escaped}%")
+            return Pattern::where('name', 'like', "%{$escaped}%")
                 ->orWhere('description', 'like', "%{$escaped}%")
                 ->orWhere('category', 'like', "%{$escaped}%")
                 ->limit(20)
@@ -448,14 +452,14 @@ class Unified
      */
     protected function searchAssets(string $query): Collection
     {
-        if (! class_exists(\Core\Mod\Uptelligence\Models\Asset::class)) {
+        if (! class_exists(Asset::class)) {
             return collect();
         }
 
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return \Core\Mod\Uptelligence\Models\Asset::where('name', 'like', "%{$escaped}%")
+            return Asset::where('name', 'like', "%{$escaped}%")
                 ->orWhere('slug', 'like', "%{$escaped}%")
                 ->orWhere('description', 'like', "%{$escaped}%")
                 ->limit(20)
@@ -487,14 +491,14 @@ class Unified
      */
     protected function searchTodos(string $query): Collection
     {
-        if (! class_exists(\Core\Mod\Uptelligence\Models\UpstreamTodo::class)) {
+        if (! class_exists(UpstreamTodo::class)) {
             return collect();
         }
 
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return \Core\Mod\Uptelligence\Models\UpstreamTodo::where('title', 'like', "%{$escaped}%")
+            return UpstreamTodo::where('title', 'like', "%{$escaped}%")
                 ->orWhere('description', 'like', "%{$escaped}%")
                 ->limit(20)
                 ->get()
@@ -525,14 +529,14 @@ class Unified
      */
     protected function searchPlans(string $query): Collection
     {
-        if (! class_exists(\Core\Mod\Agentic\Models\AgentPlan::class)) {
+        if (! class_exists(AgentPlan::class)) {
             return collect();
         }
 
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return \Core\Mod\Agentic\Models\AgentPlan::where('title', 'like', "%{$escaped}%")
+            return AgentPlan::where('title', 'like', "%{$escaped}%")
                 ->orWhere('slug', 'like', "%{$escaped}%")
                 ->orWhere('description', 'like', "%{$escaped}%")
                 ->limit(20)

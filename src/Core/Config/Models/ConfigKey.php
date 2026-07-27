@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Core\Config\Models;
 
+use Carbon\Carbon;
 use Core\Config\Enums\ConfigType;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,8 +32,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $description
  * @property mixed $default_value
  * @property bool $is_sensitive
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ConfigKey extends Model
 {
@@ -108,9 +110,9 @@ class ConfigKey extends Model
     /**
      * Get all keys for a category.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forCategory(string $category): \Illuminate\Database\Eloquent\Collection
+    public static function forCategory(string $category): Collection
     {
         return static::where('category', $category)->get();
     }

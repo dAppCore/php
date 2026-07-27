@@ -290,13 +290,15 @@ class SecurityHeaders
     {
         $baseDomain = config('core.domain.base', 'core.test');
         $cdnSubdomain = config('core.cdn.subdomain', 'cdn');
-        $cdnUrl = "https://{$cdnSubdomain}.{$baseDomain}";
 
-        $cdnConfig = $config['external']['cdn'] ?? [];
+        if ($cdnSubdomain !== '' && $cdnSubdomain !== null) {
+            $cdnUrl = "https://{$cdnSubdomain}.{$baseDomain}";
+            $cdnConfig = $config['external']['cdn'] ?? [];
 
-        foreach ($cdnConfig as $directive => $enabled) {
-            if ($enabled && isset($directives[$directive])) {
-                $directives[$directive][] = $cdnUrl;
+            foreach ($cdnConfig as $directive => $enabled) {
+                if ($enabled && isset($directives[$directive])) {
+                    $directives[$directive][] = $cdnUrl;
+                }
             }
         }
 

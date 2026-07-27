@@ -57,5 +57,6 @@ class SeederPriority
      */
     public function __construct(
         public readonly int $priority
-    ) {}
+    ) {
+    }
 }

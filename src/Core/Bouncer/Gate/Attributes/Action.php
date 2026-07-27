@@ -59,5 +59,6 @@ class Action
     public function __construct(
         public readonly string $name,
         public readonly ?string $scope = null,
-    ) {}
+    ) {
+    }
 }

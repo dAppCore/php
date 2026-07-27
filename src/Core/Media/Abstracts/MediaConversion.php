@@ -15,6 +15,7 @@ use Core\Media\Events\ConversionProgress;
 use Core\Media\Jobs\ProcessMediaConversion;
 use Core\Media\Support\ConversionProgressReporter;
 use Core\Media\Support\MediaConversionData;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -463,7 +464,7 @@ abstract class MediaConversion
     /**
      * Get a filesystem instance for the given disk.
      */
-    protected function filesystem(string $disk): \Illuminate\Contracts\Filesystem\Filesystem
+    protected function filesystem(string $disk): Filesystem
     {
         return Storage::disk($disk);
     }

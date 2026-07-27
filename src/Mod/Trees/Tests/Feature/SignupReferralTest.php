@@ -7,8 +7,9 @@ use Core\Mod\Trees\Models\TreePlanting;
 use Core\Mod\Trees\Models\TreeReserve;
 use Core\Tenant\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     // Ensure tree reserve has trees available
@@ -28,7 +29,7 @@ describe('Signup with Agent Referral', function () {
             $this->app->make('session.store')
         );
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         // Check that a TreePlanting was created
@@ -52,7 +53,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();
@@ -70,7 +71,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();
@@ -97,7 +98,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();
@@ -115,7 +116,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         // Referral should be cleared
@@ -132,7 +133,7 @@ describe('Signup with Agent Referral', function () {
 
         $user = User::factory()->create();
 
-        $listener = new PlantTreeForAgentReferral;
+        $listener = new PlantTreeForAgentReferral();
         $listener->handle(new Registered($user));
 
         $planting = TreePlanting::where('user_id', $user->id)->first();

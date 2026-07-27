@@ -13,6 +13,8 @@ namespace Core\Seo;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * SEO metadata for any model.
@@ -31,8 +33,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int|null $seo_score
  * @property array<string>|null $seo_issues
  * @property array<string>|null $seo_suggestions
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class SeoMetadata extends Model
 {
@@ -271,7 +273,7 @@ class SeoMetadata extends Model
      */
     public function validateOgImage(bool $fetchRemote = true): array
     {
-        $validator = new Validation\OgImageValidator;
+        $validator = new Validation\OgImageValidator();
 
         return $validator->validateOgData($this->og_data);
     }
@@ -309,7 +311,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $validator = new Validation\CanonicalUrlValidator;
+        $validator = new Validation\CanonicalUrlValidator();
 
         return $validator->validateUrl($this->canonical_url);
     }
@@ -317,7 +319,7 @@ class SeoMetadata extends Model
     /**
      * Check if this canonical URL conflicts with other records.
      *
-     * @return array{has_conflict: bool, count: int, records: \Illuminate\Support\Collection}
+     * @return array{has_conflict: bool, count: int, records: Collection}
      */
     public function checkCanonicalConflict(): array
     {
@@ -329,7 +331,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $validator = new Validation\CanonicalUrlValidator;
+        $validator = new Validation\CanonicalUrlValidator();
         $result = $validator->checkUrl($this->canonical_url);
 
         // Exclude self from conflict check
@@ -370,9 +372,9 @@ class SeoMetadata extends Model
      * Get score history for this metadata.
      *
      * @param  int  $limit  Maximum records to return
-     * @return \Illuminate\Support\Collection<int, Models\SeoScoreHistory>
+     * @return Collection<int, Models\SeoScoreHistory>
      */
-    public function getScoreHistory(int $limit = 100): \Illuminate\Support\Collection
+    public function getScoreHistory(int $limit = 100): Collection
     {
         $trend = app(Analytics\SeoScoreTrend::class);
 
@@ -383,9 +385,9 @@ class SeoMetadata extends Model
      * Get daily score trend for this metadata.
      *
      * @param  int  $days  Days to look back
-     * @return \Illuminate\Support\Collection<int, object>
+     * @return Collection<int, object>
      */
-    public function getDailyScoreTrend(int $days = 30): \Illuminate\Support\Collection
+    public function getDailyScoreTrend(int $days = 30): Collection
     {
         $trend = app(Analytics\SeoScoreTrend::class);
 
@@ -396,9 +398,9 @@ class SeoMetadata extends Model
      * Get weekly score trend for this metadata.
      *
      * @param  int  $weeks  Weeks to look back
-     * @return \Illuminate\Support\Collection<int, object>
+     * @return Collection<int, object>
      */
-    public function getWeeklyScoreTrend(int $weeks = 12): \Illuminate\Support\Collection
+    public function getWeeklyScoreTrend(int $weeks = 12): Collection
     {
         $trend = app(Analytics\SeoScoreTrend::class);
 
@@ -461,7 +463,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $tester = new Validation\StructuredDataTester;
+        $tester = new Validation\StructuredDataTester();
 
         return $tester->test($this->schema_markup);
     }
@@ -491,7 +493,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $tester = new Validation\StructuredDataTester;
+        $tester = new Validation\StructuredDataTester();
 
         return $tester->generateReport($this->schema_markup);
     }
@@ -507,7 +509,7 @@ class SeoMetadata extends Model
             return [];
         }
 
-        $tester = new Validation\StructuredDataTester;
+        $tester = new Validation\StructuredDataTester();
 
         return $tester->checkRichResultsEligibility($this->schema_markup);
     }

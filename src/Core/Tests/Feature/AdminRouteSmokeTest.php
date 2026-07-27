@@ -53,7 +53,7 @@ describe('Admin Route Discovery', function () {
 
             try {
                 $response = $this->actingAs($this->hadesUser)->get('/'.$uri);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $failures[] = [
                     'uri' => $uri,
                     'status' => 500,
@@ -338,7 +338,7 @@ describe('Hub Route Architecture', function () {
  * Uses middleware detection to find admin routes, not URL patterns.
  * This catches all routes with 'admin' middleware regardless of URL structure.
  *
- * @return array<\Illuminate\Routing\Route>
+ * @return array<Illuminate\Routing\Route>
  */
 function discoverAdminRoutes(): array
 {
@@ -383,7 +383,7 @@ function discoverAdminRoutes(): array
 /**
  * Discover all hub GET routes (hub/*) from Laravel's route registrar.
  *
- * @return array<\Illuminate\Routing\Route>
+ * @return array<Illuminate\Routing\Route>
  */
 function discoverHubRoutes(): array
 {

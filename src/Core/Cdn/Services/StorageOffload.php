@@ -13,6 +13,7 @@ namespace Core\Cdn\Services;
 
 use Core\Cdn\Models\StorageOffload as OffloadModel;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -305,7 +306,7 @@ class StorageOffload
     /**
      * Get all offloaded files for a category.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<OffloadModel>
+     * @return Collection<OffloadModel>
      */
     public function getByCategory(string $category)
     {

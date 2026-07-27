@@ -30,7 +30,10 @@ use Illuminate\Support\Facades\Log;
  */
 class ProcessMediaConversion implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * The number of times the job may be attempted.
@@ -51,7 +54,8 @@ class ProcessMediaConversion implements ShouldQueue
     public function __construct(
         public string $conversionClass,
         public array $conversionConfig
-    ) {}
+    ) {
+    }
 
     /**
      * Execute the job.
@@ -71,7 +75,7 @@ class ProcessMediaConversion implements ShouldQueue
             }
 
             /** @var MediaConversion $conversion */
-            $conversion = new $this->conversionClass;
+            $conversion = new $this->conversionClass();
 
             // Apply configuration
             if (isset($this->conversionConfig['filepath'])) {
@@ -136,7 +140,7 @@ class ProcessMediaConversion implements ShouldQueue
             // Try to get engine name from the conversion class
             if (class_exists($this->conversionClass)) {
                 try {
-                    $tempConversion = new $this->conversionClass;
+                    $tempConversion = new $this->conversionClass();
                     $engineName = $tempConversion->getEngineName();
                 } catch (\Throwable) {
                     $engineName = class_basename($this->conversionClass);

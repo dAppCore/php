@@ -81,7 +81,8 @@ class LazyModuleListener
     public function __construct(
         private string $moduleClass,
         private string $method
-    ) {}
+    ) {
+    }
 
     /**
      * Handle the event by instantiating the module and calling its method.

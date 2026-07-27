@@ -13,6 +13,7 @@ namespace Core\Front\Web\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,7 +44,7 @@ class ResilientSession
             return $next($request);
         } catch (DecryptException $e) {
             return $this->handleSessionError($request, $e, 'decrypt');
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Only catch session-related query exceptions
             if ($this->isSessionError($e)) {
                 return $this->handleSessionError($request, $e, 'database');

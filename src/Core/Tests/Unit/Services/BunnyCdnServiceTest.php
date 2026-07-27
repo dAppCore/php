@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * Core PHP Framework
  *
@@ -9,10 +11,12 @@
 
 use Core\Cdn\Services\BunnyCdnService;
 use Core\Config\ConfigService;
+use Core\Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-uses(\Tests\TestCase::class);
+// TestCase binding is declared centrally in tests/Pest.php — declaring it
+// here as well makes Pest refuse the whole run.
 
 function createMockedService(bool $configured = true): BunnyCdnService
 {

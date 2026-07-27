@@ -13,6 +13,7 @@ namespace Core\Bouncer\Gate\Tests\Feature;
 
 use Core\Bouncer\Gate\ActionGateService;
 use Core\Bouncer\Gate\Attributes\Action;
+use Core\Bouncer\Gate\Boot;
 use Core\Bouncer\Gate\Models\ActionPermission;
 use Core\Bouncer\Gate\Models\ActionRequest;
 use Core\Bouncer\Gate\RouteActionMacro;
@@ -40,7 +41,7 @@ class ActionGateTest extends TestCase
     protected function getPackageProviders($app): array
     {
         return [
-            \Core\Bouncer\Gate\Boot::class,
+            Boot::class,
         ];
     }
 
@@ -224,7 +225,7 @@ class ActionGateTest extends TestCase
     {
         ActionPermission::train('product.index', 'web');
 
-        $service = new ActionGateService;
+        $service = new ActionGateService();
         $route = $this->createMockRoute('ProductController@index', 'web');
         $request = $this->createMockRequest($route);
 
@@ -237,7 +238,7 @@ class ActionGateTest extends TestCase
     {
         config(['core.bouncer.training_mode' => false]);
 
-        $service = new ActionGateService;
+        $service = new ActionGateService();
         $route = $this->createMockRoute('ProductController@store', 'web');
         $request = $this->createMockRequest($route);
 
@@ -250,7 +251,7 @@ class ActionGateTest extends TestCase
     {
         config(['core.bouncer.training_mode' => true]);
 
-        $service = new ActionGateService;
+        $service = new ActionGateService();
         $route = $this->createMockRoute('OrderController@refund', 'web');
         $request = $this->createMockRequest($route);
 
@@ -263,7 +264,7 @@ class ActionGateTest extends TestCase
     {
         ActionPermission::train('product.show', 'web');
 
-        $service = new ActionGateService;
+        $service = new ActionGateService();
         $route = $this->createMockRoute('ProductController@show', 'web');
         $request = $this->createMockRequest($route);
 
@@ -281,7 +282,7 @@ class ActionGateTest extends TestCase
 
     public function test_resolves_action_from_route_action(): void
     {
-        $service = new ActionGateService;
+        $service = new ActionGateService();
 
         $route = new Route(['GET'], '/products', ['uses' => 'ProductController@index']);
         $route->setAction(array_merge($route->getAction(), [
@@ -297,7 +298,7 @@ class ActionGateTest extends TestCase
 
     public function test_auto_resolves_action_from_controller_method(): void
     {
-        $service = new ActionGateService;
+        $service = new ActionGateService();
 
         $route = new Route(['POST'], '/products', ['uses' => 'ProductController@store']);
 
@@ -308,7 +309,7 @@ class ActionGateTest extends TestCase
 
     public function test_auto_resolves_namespaced_controller(): void
     {
-        $service = new ActionGateService;
+        $service = new ActionGateService();
 
         $route = new Route(['GET'], '/admin/users', ['uses' => 'Admin\\UserController@index']);
 

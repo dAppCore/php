@@ -9,6 +9,7 @@ use Core\Events\WebRoutesRegistering;
 use Core\LazyModuleListener;
 use Core\Tests\TestCase;
 use Illuminate\Support\ServiceProvider;
+use Mod\ServiceProviderModule\Boot;
 
 class LazyModuleListenerTest extends TestCase
 {
@@ -47,8 +48,7 @@ class LazyModuleListenerTest extends TestCase
     public function test_listener_invokes_module_method(): void
     {
         // Create a test module class
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public bool $called = false;
 
             public function onWebRoutes(WebRoutesRegistering $event): void
@@ -65,7 +65,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener($event);
 
         $this->assertTrue($moduleClass->called);
@@ -73,8 +73,7 @@ class LazyModuleListenerTest extends TestCase
 
     public function test_handle_is_alias_for_invoke(): void
     {
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public int $callCount = 0;
 
             public function onWebRoutes(WebRoutesRegistering $event): void
@@ -90,7 +89,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener->handle($event);
 
         $this->assertEquals(1, $moduleClass->callCount);
@@ -98,8 +97,7 @@ class LazyModuleListenerTest extends TestCase
 
     public function test_listener_caches_module_instance(): void
     {
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public int $callCount = 0;
 
             public function onWebRoutes(WebRoutesRegistering $event): void
@@ -115,7 +113,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener($event);
         $listener($event);
 
@@ -129,11 +127,11 @@ class LazyModuleListenerTest extends TestCase
         require_once $this->getFixturePath('Mod/ServiceProviderModule/Boot.php');
 
         $listener = new LazyModuleListener(
-            \Mod\ServiceProviderModule\Boot::class,
+            Boot::class,
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener($event);
 
         // The ServiceProvider should have been resolved via resolveProvider
@@ -143,8 +141,7 @@ class LazyModuleListenerTest extends TestCase
 
     public function test_listener_works_with_plain_classes(): void
     {
-        $plainClass = new class
-        {
+        $plainClass = new class () {
             public bool $invoked = false;
 
             public function handle(WebRoutesRegistering $event): void
@@ -160,7 +157,7 @@ class LazyModuleListenerTest extends TestCase
             'handle'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener($event);
 
         $this->assertTrue($plainClass->invoked);
@@ -168,8 +165,7 @@ class LazyModuleListenerTest extends TestCase
 
     public function test_listener_can_modify_event(): void
     {
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public function onWebRoutes(WebRoutesRegistering $event): void
             {
                 $event->views('test-namespace', '/test/path');
@@ -183,7 +179,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener($event);
 
         $this->assertCount(1, $event->viewRequests());
@@ -193,8 +189,7 @@ class LazyModuleListenerTest extends TestCase
     {
         EventAuditLog::enable();
 
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public function onWebRoutes(WebRoutesRegistering $event): void
             {
                 // Handler executes successfully
@@ -208,7 +203,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         $listener($event);
 
         $entries = EventAuditLog::entries();
@@ -223,8 +218,7 @@ class LazyModuleListenerTest extends TestCase
     {
         EventAuditLog::enable();
 
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public function onWebRoutes(WebRoutesRegistering $event): void
             {
                 throw new \RuntimeException('Handler failed');
@@ -238,7 +232,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         try {
             $listener($event);
@@ -256,8 +250,7 @@ class LazyModuleListenerTest extends TestCase
     {
         EventAuditLog::enable();
 
-        $moduleClass = new class
-        {
+        $moduleClass = new class () {
             public function onWebRoutes(WebRoutesRegistering $event): void
             {
                 throw new \RuntimeException('Handler failed');
@@ -271,7 +264,7 @@ class LazyModuleListenerTest extends TestCase
             'onWebRoutes'
         );
 
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Handler failed');

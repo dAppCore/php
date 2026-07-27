@@ -47,7 +47,8 @@ class TmxExporter
      */
     public function __construct(
         protected TranslationMemoryRepository $repository,
-    ) {}
+    ) {
+    }
 
     /**
      * Export translation memory to a TMX file.
@@ -235,7 +236,7 @@ class TmxExporter
         $header->setAttribute('adminlang', 'en');
         $header->setAttribute('srclang', $this->formatLocale($sourceLocale));
         $header->setAttribute('datatype', 'plaintext');
-        $header->setAttribute('creationdate', (new DateTimeImmutable)->format('Ymd\THis\Z'));
+        $header->setAttribute('creationdate', (new DateTimeImmutable())->format('Ymd\THis\Z'));
 
         if (! empty($creator)) {
             $header->setAttribute('creationid', $creator);

@@ -1,0 +1,59 @@
+name: core-lint pilot
+
+on:
+  push:
+    branches: [main, develop, dev]
+  pull_request:
+    branches: [main, develop, dev]
+
+# Pilot workflow that runs the core-lint orchestrator (PHPStan + Psalm via the
+# code/core/lint adapters) ALONGSIDE the existing native phpstan/psalm jobs in
+# .github/workflows/static-analysis.yml. Both must continue to run for at least
+# one merge cycle so the parity between native and core-lint outputs can be
+# diffed before native jobs are removed.
+#
+# Spec: plans/code/core/lint/RFC.md  §5 (Adapter), §5.4 (Built-in Adapters)
+
+jobs:
+  core-lint:
+    name: core-lint (pilot)
+    runs-on: ubuntu-latest
+    continue-on-error: true # Pilot — failures here MUST NOT block PRs.
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Install core-lint
+        run: |
+          go install dappco.re/go/lint/cmd/core-lint@latest || \
+            go install github.com/dappcore/lint/cmd/core-lint@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Run core-lint (PHP, JSON for diffing)
+        run: |
+          core-lint run --lang php --ci --output json > core-lint-report.json || true
+          core-lint run --lang php --output text || true
+
+      - name: Upload core-lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-lint-report
+          path: core-lint-report.json
+          if-no-files-found: ignore

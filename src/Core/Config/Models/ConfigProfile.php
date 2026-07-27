@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Core\Config\Models;
 
+use Carbon\Carbon;
 use Core\Config\Enums\ScopeType;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -29,9 +31,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $scope_id
  * @property int|null $parent_profile_id
  * @property int $priority
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 class ConfigProfile extends Model
 {
@@ -90,9 +92,9 @@ class ConfigProfile extends Model
     /**
      * Get profiles for a scope.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forScope(ScopeType $type, ?int $scopeId = null): \Illuminate\Database\Eloquent\Collection
+    public static function forScope(ScopeType $type, ?int $scopeId = null): Collection
     {
         return static::where('scope_type', $type)
             ->where('scope_id', $scopeId)

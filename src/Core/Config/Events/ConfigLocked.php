@@ -31,5 +31,6 @@ class ConfigLocked
         public readonly string $keyCode,
         public readonly ConfigProfile $profile,
         public readonly ?int $channelId = null,
-    ) {}
+    ) {
+    }
 }

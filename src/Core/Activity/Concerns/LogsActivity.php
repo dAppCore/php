@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Activity\Concerns;
 
+use Spatie\Activitylog\Contracts\Activity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity as SpatieLogsActivity;
 
@@ -77,7 +78,7 @@ trait LogsActivity
     /**
      * Tap into the activity before it's saved to add workspace_id.
      */
-    public function tapActivity(\Spatie\Activitylog\Contracts\Activity $activity, string $eventName): void
+    public function tapActivity(Activity $activity, string $eventName): void
     {
         if ($this->shouldIncludeWorkspace()) {
             $workspaceId = $this->getActivityWorkspaceId();

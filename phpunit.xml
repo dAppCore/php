@@ -11,11 +11,23 @@
          failOnRisky="true"
          failOnWarning="true">
     <testsuites>
+        <!--
+            Package-level tests. These have always run.
+        -->
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
+        </testsuite>
+        <!--
+            Tests that live beside the code they cover, under src/**/Tests.
+            These were written but never executed: the suites above did not
+            reach them, so 46 files sat dark. Included here so the code that
+            ships is the code that is tested.
+        -->
+        <testsuite name="Module">
+            <directory suffix="Test.php">src</directory>
         </testsuite>
     </testsuites>
     <source>

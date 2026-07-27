@@ -302,7 +302,8 @@ class TranslationCoverageReport implements Arrayable
         foreach ($this->getLocales() as $locale) {
             $stats = $this->getStats($locale);
             $output[] = sprintf('## Locale: %s', $locale);
-            $output[] = sprintf('  Defined: %d, Used: %d, Coverage: %.1f%%',
+            $output[] = sprintf(
+                '  Defined: %d, Used: %d, Coverage: %.1f%%',
                 $stats['total_defined'],
                 $stats['total_used'],
                 $stats['coverage']
@@ -317,7 +318,8 @@ class TranslationCoverageReport implements Arrayable
                     $output[] = sprintf('    - %s', $key);
                     if ($verbose && ! empty($usages)) {
                         foreach ($usages as $usage) {
-                            $output[] = sprintf('      Used in: %s:%d',
+                            $output[] = sprintf(
+                                '      Used in: %s:%d',
                                 $this->shortenPath($usage['file']),
                                 $usage['line']
                             );

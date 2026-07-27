@@ -19,7 +19,8 @@ final class Response
         private readonly array $context = [],
         private readonly bool $rateLimitApproaching = false,
         private readonly int $retryAfter = 0
-    ) {}
+    ) {
+    }
 
     /**
      * Magic getter for context values.

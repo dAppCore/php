@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Core\Config\Models;
 
+use Carbon\Carbon;
+use Core\Tenant\Models\Workspace;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,8 +37,8 @@ use Illuminate\Support\Facades\Log;
  * @property int|null $parent_id
  * @property int|null $workspace_id
  * @property array|null $metadata
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class Channel extends Model
 {
@@ -77,8 +79,8 @@ class Channel extends Model
      */
     public function workspace(): BelongsTo
     {
-        if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-            return $this->belongsTo(\Core\Tenant\Models\Workspace::class);
+        if (class_exists(Workspace::class)) {
+            return $this->belongsTo(Workspace::class);
         }
 
         // Return a null relationship when Tenant module is not installed

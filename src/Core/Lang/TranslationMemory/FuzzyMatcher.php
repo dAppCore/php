@@ -64,7 +64,8 @@ class FuzzyMatcher
      */
     public function __construct(
         protected TranslationMemoryRepository $repository,
-    ) {}
+    ) {
+    }
 
     /**
      * Find similar translations using fuzzy matching.

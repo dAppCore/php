@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Front\Admin\View\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class CardGrid extends Component
@@ -52,7 +53,7 @@ class CardGrid extends Component
         };
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.card-grid');
     }

@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Core\Seo\Models;
 
+use Carbon\Carbon;
+use Core\Seo\SeoMetadata;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -42,8 +44,8 @@ use Illuminate\Support\Collection;
  * @property array<string>|null $issues
  * @property array<string>|null $suggestions
  * @property array<string, mixed>|null $snapshot
- * @property \Carbon\Carbon $recorded_at
- * @property \Carbon\Carbon $created_at
+ * @property Carbon $recorded_at
+ * @property Carbon $created_at
  */
 class SeoScoreHistory extends Model
 {
@@ -100,7 +102,7 @@ class SeoScoreHistory extends Model
      */
     public function seoMetadata(): BelongsTo
     {
-        return $this->belongsTo(\Core\Seo\SeoMetadata::class, 'seo_metadata_id');
+        return $this->belongsTo(SeoMetadata::class, 'seo_metadata_id');
     }
 
     /**
@@ -224,11 +226,11 @@ class SeoScoreHistory extends Model
     /**
      * Get scores recorded within a date range.
      *
-     * @param  \Carbon\Carbon  $from  Start date
-     * @param  \Carbon\Carbon  $to  End date
+     * @param  Carbon  $from  Start date
+     * @param  Carbon  $to  End date
      * @return Collection<int, static>
      */
-    public static function inDateRange(\Carbon\Carbon $from, \Carbon\Carbon $to): Collection
+    public static function inDateRange(Carbon $from, Carbon $to): Collection
     {
         return static::whereBetween('recorded_at', [$from, $to])
             ->orderByDesc('recorded_at')

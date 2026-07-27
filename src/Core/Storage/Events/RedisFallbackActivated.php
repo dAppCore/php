@@ -23,5 +23,6 @@ class RedisFallbackActivated
         public readonly string $context,
         public readonly string $errorMessage,
         public readonly string $fallbackDriver = 'database',
-    ) {}
+    ) {
+    }
 }

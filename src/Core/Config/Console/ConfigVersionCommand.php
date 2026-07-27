@@ -13,8 +13,11 @@ namespace Core\Config\Console;
 
 use Core\Config\ConfigVersioning;
 use Core\Config\Models\ConfigVersion;
+use Core\Config\VersionDiff;
+use Core\Tenant\Models\Workspace;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Manage config versions.
@@ -50,13 +53,13 @@ class ConfigVersionCommand extends Command
         // Resolve workspace
         $workspace = null;
         if ($workspaceSlug) {
-            if (! class_exists(\Core\Tenant\Models\Workspace::class)) {
+            if (! class_exists(Workspace::class)) {
                 $this->components->error('Tenant module not installed. Cannot manage workspace versions.');
 
                 return self::FAILURE;
             }
 
-            $workspace = \Core\Tenant\Models\Workspace::where('slug', $workspaceSlug)->first();
+            $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
                 $this->components->error("Workspace not found: {$workspaceSlug}");
@@ -282,7 +285,7 @@ class ConfigVersionCommand extends Command
     /**
      * Display a diff.
      */
-    protected function displayDiff(\Core\Config\VersionDiff $diff): void
+    protected function displayDiff(VersionDiff $diff): void
     {
         $this->components->info("Summary: {$diff->getSummary()}");
         $this->newLine();
@@ -402,15 +405,15 @@ class ConfigVersionCommand extends Command
     /**
      * Get autocompletion suggestions.
      */
-    public function complete(CompletionInput $input, \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions): void
+    public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         if ($input->mustSuggestArgumentValuesFor('action')) {
             $suggestions->suggestValues(['list', 'create', 'show', 'rollback', 'compare', 'diff', 'delete']);
         }
 
         if ($input->mustSuggestOptionValuesFor('workspace')) {
-            if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-                $suggestions->suggestValues(\Core\Tenant\Models\Workspace::pluck('slug')->toArray());
+            if (class_exists(Workspace::class)) {
+                $suggestions->suggestValues(Workspace::pluck('slug')->toArray());
             }
         }
     }

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Headers\Livewire;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Config;
 use Livewire\Component;
 
@@ -451,7 +452,7 @@ class HeaderConfigurationManager extends Component
     /**
      * Render the component.
      */
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('core::headers.livewire.header-configuration-manager');
     }

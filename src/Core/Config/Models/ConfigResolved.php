@@ -11,8 +11,11 @@ declare(strict_types=1);
 
 namespace Core\Config\Models;
 
+use Carbon\Carbon;
 use Core\Config\ConfigResult;
 use Core\Config\Enums\ConfigType;
+use Core\Tenant\Models\Workspace;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -36,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $source_profile_id
  * @property int|null $source_channel_id
  * @property bool $virtual
- * @property \Carbon\Carbon $computed_at
+ * @property Carbon $computed_at
  */
 class ConfigResolved extends Model
 {
@@ -71,8 +74,8 @@ class ConfigResolved extends Model
      */
     public function workspace(): BelongsTo
     {
-        if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-            return $this->belongsTo(\Core\Tenant\Models\Workspace::class);
+        if (class_exists(Workspace::class)) {
+            return $this->belongsTo(Workspace::class);
         }
 
         // Return a null relationship when Tenant module is not installed
@@ -155,9 +158,9 @@ class ConfigResolved extends Model
     /**
      * Get all resolved config for a scope.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forScope(?int $workspaceId = null, ?int $channelId = null): \Illuminate\Database\Eloquent\Collection
+    public static function forScope(?int $workspaceId = null, ?int $channelId = null): Collection
     {
         return static::where('workspace_id', $workspaceId)
             ->where('channel_id', $channelId)

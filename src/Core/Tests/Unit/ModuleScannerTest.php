@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Core\ModuleScanner;
 
 beforeEach(function () {
-    $this->scanner = new ModuleScanner;
+    $this->scanner = new ModuleScanner();
 });
 
 describe('extractListens', function () {
@@ -69,7 +69,9 @@ class TestModuleWithListens
 
 class TestModuleWithoutListens
 {
-    public function boot(): void {}
+    public function boot(): void
+    {
+    }
 }
 
 class TestModuleWithPrivateListens

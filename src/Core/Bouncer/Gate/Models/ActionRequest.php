@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Core\Bouncer\Gate\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -30,8 +32,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $ip_address Client IP
  * @property string $status Result: 'allowed', 'denied', 'pending'
  * @property bool $was_trained Whether this request triggered training
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ActionRequest extends Model
 {
@@ -103,9 +105,9 @@ class ActionRequest extends Model
     /**
      * Get pending requests (for training review).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function pending(): \Illuminate\Database\Eloquent\Collection
+    public static function pending(): Collection
     {
         return static::where('status', self::STATUS_PENDING)
             ->orderBy('created_at', 'desc')
@@ -115,9 +117,9 @@ class ActionRequest extends Model
     /**
      * Get denied requests for an action.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function deniedFor(string $action): \Illuminate\Database\Eloquent\Collection
+    public static function deniedFor(string $action): Collection
     {
         return static::where('action', $action)
             ->where('status', self::STATUS_DENIED)
@@ -128,9 +130,9 @@ class ActionRequest extends Model
     /**
      * Get requests by user.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
-    public static function forUser(int $userId): \Illuminate\Database\Eloquent\Collection
+    public static function forUser(int $userId): Collection
     {
         return static::where('user_id', $userId)
             ->orderBy('created_at', 'desc')

@@ -20,7 +20,8 @@ class CommandResult
         public readonly string $output,
         public readonly int $exitCode = 0,
         public readonly ?string $error = null
-    ) {}
+    ) {
+    }
 
     /**
      * Check if the command was successful.

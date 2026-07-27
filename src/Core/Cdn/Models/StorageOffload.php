@@ -13,6 +13,7 @@ namespace Core\Cdn\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Tracks files that have been offloaded to remote storage.
@@ -26,9 +27,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $mime_type MIME type
  * @property string|null $category Category for path prefixing
  * @property array|null $metadata Additional metadata
- * @property \Illuminate\Support\Carbon|null $offloaded_at When file was offloaded
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $offloaded_at When file was offloaded
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class StorageOffload extends Model
 {

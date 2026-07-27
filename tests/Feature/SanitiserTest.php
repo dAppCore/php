@@ -16,7 +16,7 @@ class SanitiserTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->sanitiser = new Sanitiser;
+        $this->sanitiser = new Sanitiser();
     }
 
     public function test_filter_returns_empty_array_for_empty_input(): void
@@ -154,7 +154,7 @@ class SanitiserTest extends TestCase
 
     public function test_with_schema_returns_new_instance(): void
     {
-        $original = new Sanitiser;
+        $original = new Sanitiser();
         $withSchema = $original->withSchema(['email' => ['filters' => [FILTER_SANITIZE_EMAIL]]]);
 
         $this->assertNotSame($original, $withSchema);
@@ -219,7 +219,7 @@ class SanitiserTest extends TestCase
             $this->markTestSkipped('intl extension not available');
         }
 
-        $sanitiser = new Sanitiser;
+        $sanitiser = new Sanitiser();
 
         // NFD: e + combining acute accent (two code points)
         $nfd = "cafe\xCC\x81"; // 'cafe' + combining acute accent
@@ -239,7 +239,7 @@ class SanitiserTest extends TestCase
             $this->markTestSkipped('intl extension not available');
         }
 
-        $sanitiser = (new Sanitiser)->withNormalization(false);
+        $sanitiser = (new Sanitiser())->withNormalization(false);
 
         // NFD form
         $nfd = "cafe\xCC\x81";
@@ -285,7 +285,7 @@ class SanitiserTest extends TestCase
     public function test_with_logger_returns_new_instance(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $original = new Sanitiser;
+        $original = new Sanitiser();
         $withLogger = $original->withLogger($logger);
 
         $this->assertNotSame($original, $withLogger);
@@ -377,7 +377,7 @@ class SanitiserTest extends TestCase
 
     public function test_default_constructor_works_with_no_arguments(): void
     {
-        $sanitiser = new Sanitiser;
+        $sanitiser = new Sanitiser();
 
         $input = ['test' => "Hello\x00World"];
         $result = $sanitiser->filter($input);
@@ -389,7 +389,7 @@ class SanitiserTest extends TestCase
     {
         $logger = $this->createMock(LoggerInterface::class);
 
-        $sanitiser = (new Sanitiser)
+        $sanitiser = (new Sanitiser())
             ->withSchema(['email' => ['filters' => [FILTER_SANITIZE_EMAIL]]])
             ->withLogger($logger, true)
             ->withNormalization(false);

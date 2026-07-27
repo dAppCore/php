@@ -9,11 +9,18 @@
     Pro styles: solid, regular, light, thin, duotone, brands, sharp, jelly
     Free styles: solid, regular, brands (others fall back automatically)
 
-    Props: name, style (solid|regular|light|thin|duotone|brands|jelly),
+    Style falls back automatically, but a Pro-only *name* cannot: it renders
+    nothing at all on a free kit. Name a free `fallback` for those, and it is
+    used whenever Pro is absent:
+
+        <core:icon name="face-viewfinder" style="duotone" fallback="camera" />
+
+    Props: name, fallback, style (solid|regular|light|thin|duotone|brands|jelly),
            size (xs|sm|lg|xl|2xl), spin, pulse, flip, rotate, fw
 --}}
 @props([
     'name',
+    'fallback' => null,   // Free icon used when the Pro kit is absent
     'style' => null,      // Override: solid, regular, light, thin, duotone, brands, jelly
     'size' => null,       // Size class: xs, sm, lg, xl, 2xl, etc.
     'spin' => false,      // Animate spinning
@@ -136,12 +143,18 @@
         $finalStyle = $proStyleFallbacks[$rawStyle];
     }
 
-    $iconStyle = "fa-{$finalStyle}";
+    // Style degrades on its own, but a Pro-only NAME cannot — it just renders
+    // blank. Swap in the free icon the caller chose, if they named one.
+    $finalName = Pro::fontAwesomeName($name, $fallback);
+
+    // FA7 families are two classes (family + weight); "fa-{$style}" alone
+    // loses the binding for everything but the classic styles.
+    $iconStyle = Pro::fontAwesomeClasses($finalStyle);
 
     // Build classes
     $classes = collect([
         $iconStyle,
-        "fa-{$name}",
+        "fa-{$finalName}",
         $size ? "fa-{$size}" : null,
         $spin ? 'fa-spin' : null,
         $pulse ? 'fa-pulse' : null,

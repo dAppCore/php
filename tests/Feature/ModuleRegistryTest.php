@@ -15,14 +15,14 @@ class ModuleRegistryTest extends TestCase
 {
     public function test_registry_starts_unregistered(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
 
         $this->assertFalse($registry->isRegistered());
     }
 
     public function test_registry_marks_as_registered_after_register(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
 
         $registry->register([]);
 
@@ -31,7 +31,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_registry_only_registers_once(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
 
         $registry->register([]);
         $registry->register([$this->getFixturePath('Mod')]);
@@ -42,14 +42,14 @@ class ModuleRegistryTest extends TestCase
 
     public function test_get_mappings_returns_array(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
 
         $this->assertIsArray($registry->getMappings());
     }
 
     public function test_get_listeners_for_returns_empty_for_unknown_event(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
 
         $result = $registry->getListenersFor('Unknown\\Event');
 
@@ -59,7 +59,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_get_events_returns_array(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([]);
 
         $this->assertIsArray($registry->getEvents());
@@ -67,7 +67,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_get_modules_returns_array(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([]);
 
         $this->assertIsArray($registry->getModules());
@@ -75,7 +75,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_register_wires_lazy_listeners(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([$this->getFixturePath('Mod')]);
 
         $mappings = $registry->getMappings();
@@ -86,7 +86,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_get_listeners_for_returns_module_mappings(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([$this->getFixturePath('Mod')]);
 
         $listeners = $registry->getListenersFor(WebRoutesRegistering::class);
@@ -97,7 +97,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_get_events_returns_registered_events(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([
             $this->getFixturePath('Mod'),
             $this->getFixturePath('Plug'),
@@ -111,7 +111,7 @@ class ModuleRegistryTest extends TestCase
 
     public function test_get_modules_returns_registered_modules(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([
             $this->getFixturePath('Mod'),
             $this->getFixturePath('Plug'),
@@ -125,11 +125,11 @@ class ModuleRegistryTest extends TestCase
 
     public function test_register_fires_events_to_listeners(): void
     {
-        $registry = new ModuleRegistry(new ModuleScanner);
+        $registry = new ModuleRegistry(new ModuleScanner());
         $registry->register([$this->getFixturePath('Mod')]);
 
         // Fire the event and verify the module receives it
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         event($event);
 
         // The Example module registers views

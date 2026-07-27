@@ -281,7 +281,7 @@ class ConfigResolver
         string|Channel|null $channel,
         ?object $workspace = null,
     ): Collection {
-        $chain = new Collection;
+        $chain = new Collection();
 
         if ($channel === null) {
             // No channel specified - just null (applies to all)
@@ -515,7 +515,7 @@ class ConfigResolver
      */
     public function buildProfileChain(?object $workspace = null): Collection
     {
-        $chain = new Collection;
+        $chain = new Collection();
 
         // Workspace profiles (most specific)
         if ($workspace !== null) {
@@ -567,7 +567,7 @@ class ConfigResolver
      */
     protected function expandParentProfiles(Collection $chain): Collection
     {
-        $expanded = new Collection;
+        $expanded = new Collection();
         $seen = [];
 
         foreach ($chain as $profile) {

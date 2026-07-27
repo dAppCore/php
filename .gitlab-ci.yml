@@ -1,0 +1,75 @@
+# CorePHP — the gate.
+#
+# Before this file the project had no CI config of its own and inherited a
+# group pipeline whose build and code_intelligence jobs exit 127 on every
+# commit: nothing to build, nothing to index. Pipeline 795 was the first this
+# project ever completed, and it could not have passed. With
+# only_allow_merge_if_pipeline_succeeds on, that made every merge request
+# unmergeable for a reason unrelated to its contents.
+#
+# So the gate is defined here, and it gates on things that are true.
+
+stages:
+  - gate
+  - report
+
+default:
+  interruptible: true
+
+variables:
+  COMPOSER_NO_INTERACTION: "1"
+  # Deep enough that the merge-request diff base is present in the clone;
+  # without it the style check silently degrades to a whole-repo scan.
+  GIT_DEPTH: "50"
+
+# The runner is a shell executor on the homelab box, so `image:` would be
+# silently ignored and the script runs directly on the host. That host already
+# provides PHP 8.5 and Composer; installing a toolchain here fails on
+# permissions and is not needed.
+.php:
+  before_script:
+    - php -v | head -1
+    - composer install --no-progress --prefer-dist
+
+# Must be true for the change to land.
+gate:
+  extends: .php
+  stage: gate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+  script:
+    # Every PHP file parses.
+    - find src tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
+    # House style, whole tree. The tree was formatted in one pass so this
+    # needs no changed-files logic — which is the point: computing "what did
+    # this change touch" in CI went wrong three separate ways (a stale
+    # merge-request diff base after a force-push, a shallow clone with no real
+    # merge base, and a whitespace-only file list that made pint silently scan
+    # everything). None of that can happen to `pint --test`.
+    - ./vendor/bin/pint --test
+    # The package-level suite. This one is green and must stay green.
+    - ./vendor/bin/pest --testsuite=Feature,Unit --no-coverage
+
+# Reports, does not block.
+#
+# The suites under src/ were dark until they were wired into phpunit.xml, and
+# turning them on surfaced ~448 pre-existing failures: missing test-database
+# migrations, classes referenced from sibling packages that CorePHP does not
+# depend on, and genuine assertion drift. That debt is real and worth seeing on
+# every pipeline, but it predates any single change and blocking on it would
+# stop all work rather than fix it.
+#
+# This is deliberately NOT `|| true` on the gate job — a check that silently
+# passes teaches you nothing. It is a separate job, allowed to fail, so the
+# number is visible and can be driven down. When it reaches zero, move the
+# --testsuite line above to cover src too and delete this job.
+module-suite-debt:
+  extends: .php
+  stage: report
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+  script:
+    - ./vendor/bin/pest --testsuite=Module --no-coverage

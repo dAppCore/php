@@ -18,6 +18,13 @@ declare(strict_types=1);
  * Run with: php artisan test app/Core/Tests/Feature/CoreComponentsTest.php
  */
 
+use Core\Front\Components\Button;
+use Core\Front\Components\Card;
+use Core\Front\Components\Heading;
+use Core\Front\Components\Layout;
+use Core\Front\Components\NavList;
+use Core\Front\Components\Text;
+use Core\Pro;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\View\Compilers\BladeCompiler;
@@ -28,56 +35,56 @@ describe('Core Detection Helpers', function () {
 
     it('detects Flux Pro installation', function () {
         // Flux Pro is installed in this project
-        expect(\Core\Pro::hasFluxPro())->toBeTrue();
+        expect(Pro::hasFluxPro())->toBeTrue();
     });
 
     it('identifies Flux Pro components', function () {
-        expect(\Core\Pro::requiresFluxPro('calendar'))->toBeTrue();
-        expect(\Core\Pro::requiresFluxPro('editor'))->toBeTrue();
-        expect(\Core\Pro::requiresFluxPro('chart'))->toBeTrue();
-        expect(\Core\Pro::requiresFluxPro('chart.line'))->toBeTrue(); // Nested component
-        expect(\Core\Pro::requiresFluxPro('core:kanban'))->toBeTrue(); // With prefix
+        expect(Pro::requiresFluxPro('calendar'))->toBeTrue();
+        expect(Pro::requiresFluxPro('editor'))->toBeTrue();
+        expect(Pro::requiresFluxPro('chart'))->toBeTrue();
+        expect(Pro::requiresFluxPro('chart.line'))->toBeTrue(); // Nested component
+        expect(Pro::requiresFluxPro('core:kanban'))->toBeTrue(); // With prefix
 
         // Free components
-        expect(\Core\Pro::requiresFluxPro('button'))->toBeFalse();
-        expect(\Core\Pro::requiresFluxPro('input'))->toBeFalse();
-        expect(\Core\Pro::requiresFluxPro('modal'))->toBeFalse();
+        expect(Pro::requiresFluxPro('button'))->toBeFalse();
+        expect(Pro::requiresFluxPro('input'))->toBeFalse();
+        expect(Pro::requiresFluxPro('modal'))->toBeFalse();
     });
 
     it('respects FontAwesome Pro config', function () {
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => false]);
-        expect(\Core\Pro::hasFontAwesomePro())->toBeFalse();
+        expect(Pro::hasFontAwesomePro())->toBeFalse();
 
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => true]);
-        expect(\Core\Pro::hasFontAwesomePro())->toBeTrue();
+        expect(Pro::hasFontAwesomePro())->toBeTrue();
 
         // Clean up
-        \Core\Pro::clearCache();
+        Pro::clearCache();
     });
 
     it('provides correct FA styles based on Pro/Free', function () {
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => false]);
 
-        $freeStyles = \Core\Pro::fontAwesomeStyles();
+        $freeStyles = Pro::fontAwesomeStyles();
         expect($freeStyles)->toContain('solid');
         expect($freeStyles)->toContain('regular');
         expect($freeStyles)->toContain('brands');
         expect($freeStyles)->not->toContain('jelly');
         expect($freeStyles)->not->toContain('light');
 
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => true]);
 
-        $proStyles = \Core\Pro::fontAwesomeStyles();
+        $proStyles = Pro::fontAwesomeStyles();
         expect($proStyles)->toContain('jelly');
         expect($proStyles)->toContain('light');
         expect($proStyles)->toContain('thin');
 
         // Clean up
-        \Core\Pro::clearCache();
+        Pro::clearCache();
     });
 });
 
@@ -670,7 +677,7 @@ describe('Core Pro Component Rendering', function () {
 describe('Core PHP Builders', function () {
 
     it('Button builder renders HTML', function () {
-        $button = \Core\Front\Components\Button::make()
+        $button = Button::make()
             ->label('Save')
             ->primary();  // Use the actual API method
 
@@ -682,7 +689,7 @@ describe('Core PHP Builders', function () {
     });
 
     it('Card builder renders with title and body', function () {
-        $card = \Core\Front\Components\Card::make()
+        $card = Card::make()
             ->title('Card Title')
             ->body('Card content goes here');
 
@@ -694,7 +701,7 @@ describe('Core PHP Builders', function () {
     });
 
     it('Heading builder renders with level', function () {
-        $heading = \Core\Front\Components\Heading::make()
+        $heading = Heading::make()
             ->text('Page Title')
             ->level(1);
 
@@ -706,7 +713,7 @@ describe('Core PHP Builders', function () {
     });
 
     it('Text builder renders with variant', function () {
-        $text = \Core\Front\Components\Text::make()
+        $text = Text::make()
             ->content('Some text')
             ->muted();
 
@@ -717,7 +724,7 @@ describe('Core PHP Builders', function () {
 
     it('NavList builder renders items', function () {
         // NavList::item() signature is: label, href, active, icon
-        $navlist = \Core\Front\Components\NavList::make()
+        $navlist = NavList::make()
             ->item('Dashboard', '/dashboard', false, 'home')
             ->item('Settings', '/settings', false, 'cog');
 
@@ -732,7 +739,7 @@ describe('Core PHP Builders', function () {
 
     it('Layout builder renders HLCRF structure', function () {
         // Layout uses short method names: h(), c(), f()
-        $layout = \Core\Front\Components\Layout::make('HCF')
+        $layout = Layout::make('HCF')
             ->h('Header Content')
             ->c('Main Content')
             ->f('Footer Content');
@@ -810,7 +817,7 @@ describe('Custom Components (Non-Flux)', function () {
 
     it('core:icon falls back to solid for jelly when FA Free', function () {
         // Without FA Pro config, jelly icons should fall back to solid
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => false]);
 
         $html = Blade::render('<core:icon name="globe" />');
@@ -820,7 +827,7 @@ describe('Custom Components (Non-Flux)', function () {
 
     it('core:icon uses jelly style when FA Pro enabled', function () {
         // With FA Pro config, jelly icons should use fa-jelly
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => true]);
 
         $html = Blade::render('<core:icon name="globe" />');
@@ -828,7 +835,7 @@ describe('Custom Components (Non-Flux)', function () {
         expect($html)->toContain('fa-jelly');
 
         // Clean up
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => false]);
     });
 
@@ -841,7 +848,7 @@ describe('Custom Components (Non-Flux)', function () {
     });
 
     it('core:icon falls back pro-only styles to free equivalents', function () {
-        \Core\Pro::clearCache();
+        Pro::clearCache();
         config(['core.fontawesome.pro' => false]);
 
         // Light → Regular

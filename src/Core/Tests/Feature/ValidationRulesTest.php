@@ -14,14 +14,15 @@ use Core\Mod\Social\Enums\ResourceStatus;
 use Core\Tenant\Models\User;
 use Core\Tenant\Rules\CheckUserPasswordRule;
 use Core\Tenant\Rules\ResourceStatusRule;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 describe('CheckUserPasswordRule', function () {
     it('passes validation when password matches', function () {
-        $user = new User;
+        $user = new User();
         $user->password = Hash::make('correct-password');
 
         $rule = new CheckUserPasswordRule($user);
@@ -34,7 +35,7 @@ describe('CheckUserPasswordRule', function () {
     });
 
     it('fails validation when password does not match', function () {
-        $user = new User;
+        $user = new User();
         $user->password = Hash::make('correct-password');
 
         $rule = new CheckUserPasswordRule($user);
@@ -47,7 +48,7 @@ describe('CheckUserPasswordRule', function () {
     });
 
     it('uses custom error message when provided', function () {
-        $user = new User;
+        $user = new User();
         $user->password = Hash::make('correct-password');
 
         $customMessage = 'Your current password is incorrect';
@@ -64,7 +65,7 @@ describe('CheckUserPasswordRule', function () {
 
 describe('HexRule', function () {
     it('passes validation for 6-digit hex codes', function () {
-        $rule = new HexRule;
+        $rule = new HexRule();
         $validator = Validator::make(
             ['colour' => '#ffffff'],
             ['colour' => $rule]
@@ -74,7 +75,7 @@ describe('HexRule', function () {
     });
 
     it('passes validation for 3-digit hex codes', function () {
-        $rule = new HexRule;
+        $rule = new HexRule();
         $validator = Validator::make(
             ['colour' => '#fff'],
             ['colour' => $rule]
@@ -84,7 +85,7 @@ describe('HexRule', function () {
     });
 
     it('passes validation for uppercase hex codes', function () {
-        $rule = new HexRule;
+        $rule = new HexRule();
         $validator = Validator::make(
             ['colour' => '#ABCDEF'],
             ['colour' => $rule]
@@ -94,7 +95,7 @@ describe('HexRule', function () {
     });
 
     it('fails validation for invalid hex codes', function () {
-        $rule = new HexRule;
+        $rule = new HexRule();
         $validator = Validator::make(
             ['colour' => '#gggggg'],
             ['colour' => $rule]
@@ -104,7 +105,7 @@ describe('HexRule', function () {
     });
 
     it('fails validation when hash symbol is missing', function () {
-        $rule = new HexRule;
+        $rule = new HexRule();
         $validator = Validator::make(
             ['colour' => 'ffffff'],
             ['colour' => $rule]
@@ -136,7 +137,7 @@ describe('HexRule', function () {
 
 describe('ResourceStatusRule', function () {
     it('passes validation for enabled status', function () {
-        $rule = new ResourceStatusRule;
+        $rule = new ResourceStatusRule();
         $validator = Validator::make(
             ['status' => ResourceStatus::ENABLED->value],
             ['status' => $rule]
@@ -146,7 +147,7 @@ describe('ResourceStatusRule', function () {
     });
 
     it('passes validation for disabled status', function () {
-        $rule = new ResourceStatusRule;
+        $rule = new ResourceStatusRule();
         $validator = Validator::make(
             ['status' => ResourceStatus::DISABLED->value],
             ['status' => $rule]
@@ -156,7 +157,7 @@ describe('ResourceStatusRule', function () {
     });
 
     it('fails validation for invalid status values', function () {
-        $rule = new ResourceStatusRule;
+        $rule = new ResourceStatusRule();
         $validator = Validator::make(
             ['status' => 999],
             ['status' => $rule]
@@ -166,7 +167,7 @@ describe('ResourceStatusRule', function () {
     });
 
     it('fails validation for string values', function () {
-        $rule = new ResourceStatusRule;
+        $rule = new ResourceStatusRule();
         $validator = Validator::make(
             ['status' => 'enabled'],
             ['status' => $rule]

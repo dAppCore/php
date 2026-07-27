@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Core\Front\Admin\View\Components;
 
 use Illuminate\Contracts\Pagination\Paginator;
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class EditableTable extends Component
@@ -74,7 +75,7 @@ class EditableTable extends Component
         return count($this->columns) + ($this->selectable ? 1 : 0);
     }
 
-    public function render(): \Illuminate\Contracts\View\View
+    public function render(): View
     {
         return view('admin::components.editable-table');
     }

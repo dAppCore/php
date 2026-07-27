@@ -12,7 +12,10 @@ declare(strict_types=1);
 namespace Core\Lang\Console\Commands;
 
 use Core\Lang\Coverage\TranslationCoverage;
+use Core\Lang\Coverage\TranslationCoverageReport;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Completion\CompletionInput;
+use Symfony\Component\Console\Completion\CompletionSuggestions;
 
 /**
  * Report translation coverage across the codebase.
@@ -164,7 +167,7 @@ class TranslationCoverageCommand extends Command
     /**
      * Display per-locale statistics.
      *
-     * @param  \Core\Lang\Coverage\TranslationCoverageReport  $report
+     * @param  TranslationCoverageReport  $report
      */
     protected function displayLocaleStats($report): void
     {
@@ -201,7 +204,7 @@ class TranslationCoverageCommand extends Command
     /**
      * Display missing keys.
      *
-     * @param  \Core\Lang\Coverage\TranslationCoverageReport  $report
+     * @param  TranslationCoverageReport  $report
      */
     protected function displayMissingKeys($report, bool $verbose): void
     {
@@ -241,7 +244,7 @@ class TranslationCoverageCommand extends Command
     /**
      * Display unused keys.
      *
-     * @param  \Core\Lang\Coverage\TranslationCoverageReport  $report
+     * @param  TranslationCoverageReport  $report
      */
     protected function displayUnusedKeys($report, bool $verbose): void
     {
@@ -291,8 +294,8 @@ class TranslationCoverageCommand extends Command
      * Get shell completion suggestions.
      */
     public function complete(
-        \Symfony\Component\Console\Completion\CompletionInput $input,
-        \Symfony\Component\Console\Completion\CompletionSuggestions $suggestions
+        CompletionInput $input,
+        CompletionSuggestions $suggestions
     ): void {
         if ($input->mustSuggestOptionValuesFor('locale')) {
             // Suggest available locales

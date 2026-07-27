@@ -17,6 +17,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Predis\Client;
 
 /**
  * Provides resilient cache/session configuration.
@@ -76,17 +77,17 @@ class CacheResilienceProvider extends ServiceProvider
 
         // Register CacheWarmer as singleton
         $this->app->singleton(CacheWarmer::class, function () {
-            return new CacheWarmer;
+            return new CacheWarmer();
         });
 
         // Register StorageMetrics as singleton
         $this->app->singleton(StorageMetrics::class, function () {
-            return new StorageMetrics;
+            return new StorageMetrics();
         });
 
         // Register TieredCacheStore as singleton
         $this->app->singleton(TieredCacheStore::class, function () {
-            return new TieredCacheStore;
+            return new TieredCacheStore();
         });
     }
 
@@ -178,7 +179,7 @@ class CacheResilienceProvider extends ServiceProvider
             }
 
             // Fall back to Predis library
-            if (class_exists(\Predis\Client::class)) {
+            if (class_exists(Client::class)) {
                 return $this->checkPredis($host, $port, $password, $timeout);
             }
 
@@ -195,7 +196,7 @@ class CacheResilienceProvider extends ServiceProvider
     protected function checkPhpRedis(string $host, int $port, ?string $password, float $timeout): bool
     {
         try {
-            $redis = new \Redis;
+            $redis = new \Redis();
 
             if (! @$redis->connect($host, $port, $timeout)) {
                 return false;
@@ -233,7 +234,7 @@ class CacheResilienceProvider extends ServiceProvider
                 $options['password'] = $password;
             }
 
-            $client = new \Predis\Client($options, [
+            $client = new Client($options, [
                 'exceptions' => true,
             ]);
 

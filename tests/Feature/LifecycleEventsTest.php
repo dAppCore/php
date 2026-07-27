@@ -15,54 +15,27 @@ use Core\Events\MediaRequested;
 use Core\Events\QueueWorkerBooting;
 use Core\Events\SearchRequested;
 use Core\Events\WebRoutesRegistering;
-use Core\Front\Mcp\Contracts\McpToolHandler;
 use Core\Tests\TestCase;
 
-// Test fixture implementing McpToolHandler
-class TestMcpHandler implements McpToolHandler
+// Test fixtures — McpToolsRegistering stores class names as strings,
+// so these don't need to implement the McpToolHandler interface (lives in core-mcp).
+class TestMcpHandler
 {
-    public static function schema(): array
-    {
-        return ['name' => 'test', 'description' => 'Test', 'inputSchema' => []];
-    }
-
-    public function handle(array $args, \Core\Front\Mcp\McpContext $context): array
-    {
-        return [];
-    }
 }
 
-class TestMcpHandler2 implements McpToolHandler
+class TestMcpHandler2
 {
-    public static function schema(): array
-    {
-        return ['name' => 'test2', 'description' => 'Test 2', 'inputSchema' => []];
-    }
-
-    public function handle(array $args, \Core\Front\Mcp\McpContext $context): array
-    {
-        return [];
-    }
 }
 
-class TestMcpHandler3 implements McpToolHandler
+class TestMcpHandler3
 {
-    public static function schema(): array
-    {
-        return ['name' => 'test3', 'description' => 'Test 3', 'inputSchema' => []];
-    }
-
-    public function handle(array $args, \Core\Front\Mcp\McpContext $context): array
-    {
-        return [];
-    }
 }
 
 class LifecycleEventsTest extends TestCase
 {
     public function test_web_routes_event_collects_route_requests(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $event->routes(fn () => 'test');
 
@@ -71,7 +44,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_web_routes_event_collects_view_requests(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $event->views('test', '/path/to/views');
 
@@ -82,7 +55,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_admin_event_collects_navigation_requests(): void
     {
-        $event = new AdminPanelBooting;
+        $event = new AdminPanelBooting();
 
         $event->navigation(['label' => 'Test', 'icon' => 'cog']);
 
@@ -91,7 +64,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_api_event_collects_route_requests(): void
     {
-        $event = new ApiRoutesRegistering;
+        $event = new ApiRoutesRegistering();
 
         $event->routes(fn () => 'api-test');
 
@@ -100,7 +73,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_client_event_collects_livewire_requests(): void
     {
-        $event = new ClientRoutesRegistering;
+        $event = new ClientRoutesRegistering();
 
         $event->livewire('test-component', 'App\\Livewire\\TestComponent');
 
@@ -111,7 +84,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_console_event_collects_command_requests(): void
     {
-        $event = new ConsoleBooting;
+        $event = new ConsoleBooting();
 
         $event->command('App\\Console\\Commands\\TestCommand');
 
@@ -120,7 +93,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_mcp_event_collects_handlers(): void
     {
-        $event = new McpToolsRegistering;
+        $event = new McpToolsRegistering();
 
         $event->handler(TestMcpHandler::class);
 
@@ -130,14 +103,14 @@ class LifecycleEventsTest extends TestCase
 
     public function test_framework_booted_event_exists(): void
     {
-        $event = new FrameworkBooted;
+        $event = new FrameworkBooted();
 
         $this->assertInstanceOf(FrameworkBooted::class, $event);
     }
 
     public function test_lifecycle_event_collects_middleware_requests(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $event->middleware('custom', 'App\\Http\\Middleware\\Custom');
 
@@ -148,7 +121,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_lifecycle_event_collects_translation_requests(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $event->translations('test', '/path/to/lang');
 
@@ -159,7 +132,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_lifecycle_event_collects_policy_requests(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $event->policy('App\\Models\\User', 'App\\Policies\\UserPolicy');
 
@@ -170,7 +143,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_lifecycle_event_collects_blade_component_requests(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
 
         $event->bladeComponentPath('/path/to/components', 'custom');
 
@@ -181,7 +154,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_mcp_event_multiple_handlers_can_be_registered(): void
     {
-        $event = new McpToolsRegistering;
+        $event = new McpToolsRegistering();
 
         $event->handler(TestMcpHandler::class);
         $event->handler(TestMcpHandler2::class);
@@ -196,7 +169,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_mcp_event_handlers_returns_empty_when_none_registered(): void
     {
-        $event = new McpToolsRegistering;
+        $event = new McpToolsRegistering();
 
         $handlers = $event->handlers();
         $this->assertIsArray($handlers);
@@ -205,14 +178,14 @@ class LifecycleEventsTest extends TestCase
 
     public function test_queue_worker_booting_event_exists(): void
     {
-        $event = new QueueWorkerBooting;
+        $event = new QueueWorkerBooting();
 
         $this->assertInstanceOf(QueueWorkerBooting::class, $event);
     }
 
     public function test_mail_sending_event_collects_mailable_requests(): void
     {
-        $event = new MailSending;
+        $event = new MailSending();
 
         $event->mailable('App\\Mail\\WelcomeEmail');
         $event->mailable('App\\Mail\\OrderConfirmation');
@@ -225,7 +198,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_mail_sending_event_returns_empty_when_none_registered(): void
     {
-        $event = new MailSending;
+        $event = new MailSending();
 
         $this->assertIsArray($event->mailableRequests());
         $this->assertEmpty($event->mailableRequests());
@@ -233,7 +206,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_search_requested_event_collects_searchable_models(): void
     {
-        $event = new SearchRequested;
+        $event = new SearchRequested();
 
         $event->searchable('App\\Models\\Product');
         $event->searchable('App\\Models\\Article');
@@ -246,7 +219,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_search_requested_event_returns_empty_when_none_registered(): void
     {
-        $event = new SearchRequested;
+        $event = new SearchRequested();
 
         $this->assertIsArray($event->searchableRequests());
         $this->assertEmpty($event->searchableRequests());
@@ -254,7 +227,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_media_requested_event_collects_processor_requests(): void
     {
-        $event = new MediaRequested;
+        $event = new MediaRequested();
 
         $event->processor('image', 'App\\Media\\ImageProcessor');
         $event->processor('video', 'App\\Media\\VideoProcessor');
@@ -267,7 +240,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_media_requested_event_returns_empty_when_none_registered(): void
     {
-        $event = new MediaRequested;
+        $event = new MediaRequested();
 
         $this->assertIsArray($event->processorRequests());
         $this->assertEmpty($event->processorRequests());
@@ -275,7 +248,7 @@ class LifecycleEventsTest extends TestCase
 
     public function test_media_requested_event_overwrites_processor_of_same_type(): void
     {
-        $event = new MediaRequested;
+        $event = new MediaRequested();
 
         $event->processor('image', 'App\\Media\\OldProcessor');
         $event->processor('image', 'App\\Media\\NewProcessor');

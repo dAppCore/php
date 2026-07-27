@@ -17,7 +17,8 @@ parameters:
         - src/Core/Tests
         - src/Core/Bouncer/Tests
         - src/Core/Bouncer/Gate/Tests
-        - src/Core/Service/Tests
         - src/Core/Front/Tests
         - src/Mod/Trees
+        # Pending Core\Service module — see plans/code/core/lint/RFC.md migration
+        - src/Core/Cdn/Services/BunnyStorageService.php
     reportUnmatchedIgnoredErrors: false

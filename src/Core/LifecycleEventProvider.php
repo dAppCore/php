@@ -20,6 +20,8 @@ use Core\Events\McpRoutesRegistering;
 use Core\Events\McpToolsRegistering;
 use Core\Events\QueueWorkerBooting;
 use Core\Events\WebRoutesRegistering;
+use Core\Front\Mcp\Contracts\McpToolHandler;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -240,7 +242,7 @@ class LifecycleEventProvider extends ServiceProvider
 
         // Framework booted event fires after all providers have booted
         $this->app->booted(function () {
-            event(new FrameworkBooted);
+            event(new FrameworkBooted());
         });
     }
 
@@ -252,7 +254,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     protected static function processMiddleware(Events\LifecycleEvent $event): void
     {
-        /** @var \Illuminate\Routing\Router $router */
+        /** @var Router $router */
         $router = app('router');
 
         foreach ($event->middlewareRequests() as [$alias, $class]) {
@@ -349,7 +351,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireWebRoutes(): void
     {
-        $event = new WebRoutesRegistering;
+        $event = new WebRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -381,7 +383,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireAdminBooting(): void
     {
-        $event = new AdminPanelBooting;
+        $event = new AdminPanelBooting();
         event($event);
 
         static::processMiddleware($event);
@@ -414,7 +416,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireClientRoutes(): void
     {
-        $event = new ClientRoutesRegistering;
+        $event = new ClientRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -440,7 +442,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireApiRoutes(): void
     {
-        $event = new ApiRoutesRegistering;
+        $event = new ApiRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -464,7 +466,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     public static function fireMcpRoutes(): void
     {
-        $event = new McpRoutesRegistering;
+        $event = new McpRoutesRegistering();
         event($event);
 
         static::processMiddleware($event);
@@ -484,11 +486,11 @@ class LifecycleEventProvider extends ServiceProvider
      *
      * @return array<string> Fully qualified class names of McpToolHandler implementations
      *
-     * @see \Core\Front\Mcp\Contracts\McpToolHandler (in php-mcp package)
+     * @see McpToolHandler (in php-mcp package)
      */
     public static function fireMcpTools(): array
     {
-        $event = new McpToolsRegistering;
+        $event = new McpToolsRegistering();
         event($event);
 
         return $event->handlers();
@@ -502,7 +504,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     protected function fireConsoleBooting(): void
     {
-        $event = new ConsoleBooting;
+        $event = new ConsoleBooting();
         event($event);
 
         static::processMiddleware($event);
@@ -521,7 +523,7 @@ class LifecycleEventProvider extends ServiceProvider
      */
     protected function fireQueueWorkerBooting(): void
     {
-        $event = new QueueWorkerBooting;
+        $event = new QueueWorkerBooting();
         event($event);
 
         // Job registration handled by Laravel's queue system

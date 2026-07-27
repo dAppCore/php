@@ -16,7 +16,7 @@ class SeederRegistryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->registry = new SeederRegistry;
+        $this->registry = new SeederRegistry();
     }
 
     public function test_register_adds_seeder(): void
@@ -175,7 +175,7 @@ class SeederRegistryTest extends TestCase
     {
         $this->registry->register('App\Database\Seeders\First', priority: 10);
 
-        $other = new SeederRegistry;
+        $other = new SeederRegistry();
         $other->register('App\Database\Seeders\Second', priority: 20);
 
         $this->registry->merge($other);
@@ -188,7 +188,7 @@ class SeederRegistryTest extends TestCase
     {
         $this->registry->register('App\Database\Seeders\Same', priority: 10);
 
-        $other = new SeederRegistry;
+        $other = new SeederRegistry();
         $other->register('App\Database\Seeders\Same', priority: 99);
 
         $this->registry->merge($other);

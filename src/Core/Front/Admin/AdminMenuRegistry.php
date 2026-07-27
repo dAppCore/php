@@ -14,6 +14,7 @@ namespace Core\Front\Admin;
 use Core\Front\Admin\Contracts\AdminMenuProvider;
 use Core\Front\Admin\Contracts\DynamicMenuProvider;
 use Core\Front\Admin\Validation\IconValidator;
+use Core\Tenant\Services\EntitlementService;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -64,8 +65,11 @@ class AdminMenuRegistry
         'agents' => [
             'standalone' => true,
         ],
+        // Labelled "Services", not "Workspaces": the workspace switcher lives
+        // in the top nav, so the left menu is about what is inside the
+        // workspace you are already in, not about choosing between them.
         'workspaces' => [
-            'label' => 'Workspaces',
+            'label' => 'Services',
             'icon' => 'layer-group',
             'color' => 'blue',
         ],
@@ -111,13 +115,13 @@ class AdminMenuRegistry
 
     public function __construct(?object $entitlements = null, ?IconValidator $iconValidator = null)
     {
-        if ($entitlements === null && class_exists(\Core\Tenant\Services\EntitlementService::class)) {
-            $this->entitlements = app(\Core\Tenant\Services\EntitlementService::class);
+        if ($entitlements === null && class_exists(EntitlementService::class)) {
+            $this->entitlements = app(EntitlementService::class);
         } else {
             $this->entitlements = $entitlements;
         }
 
-        $this->iconValidator = $iconValidator ?? new IconValidator;
+        $this->iconValidator = $iconValidator ?? new IconValidator();
         $this->cacheTtl = (int) config('core.admin_menu.cache_ttl', self::DEFAULT_CACHE_TTL);
         $this->cachingEnabled = (bool) config('core.admin_menu.cache_enabled', true);
         $this->validateIcons = (bool) config('core.admin_menu.validate_icons', true);
@@ -170,6 +174,13 @@ class AdminMenuRegistry
      */
     public function build(?object $workspace, bool $isAdmin = false, ?object $user = null): array
     {
+        // Fall back to the authenticated user. Every caller in the estate
+        // omitted this argument, so providers were being asked whether a null
+        // user may see each service — which they refuse. The visible effect was
+        // a fully entitled workspace still being shown the "choose your tools"
+        // page, because no service ever resolved.
+        $user ??= auth()->user();
+
         // Get static items (potentially cached)
         $staticItems = $this->getStaticItems($workspace, $isAdmin, $user);
 
@@ -624,6 +635,13 @@ class AdminMenuRegistry
      */
     public function getAllServiceItems(?object $workspace, bool $isAdmin = false, ?object $user = null): array
     {
+        // Fall back to the authenticated user. Every caller in the estate
+        // omitted this argument, so providers were being asked whether a null
+        // user may see each service — which they refuse. The visible effect was
+        // a fully entitled workspace still being shown the "choose your tools"
+        // page, because no service ever resolved.
+        $user ??= auth()->user();
+
         $services = [];
 
         foreach ($this->providers as $provider) {
@@ -690,6 +708,13 @@ class AdminMenuRegistry
      */
     public function getServiceItem(string $serviceKey, ?object $workspace, bool $isAdmin = false, ?object $user = null): ?array
     {
+        // Fall back to the authenticated user. Every caller in the estate
+        // omitted this argument, so providers were being asked whether a null
+        // user may see each service — which they refuse. The visible effect was
+        // a fully entitled workspace still being shown the "choose your tools"
+        // page, because no service ever resolved.
+        $user ??= auth()->user();
+
         foreach ($this->providers as $provider) {
             // Check provider-level permissions
             if (! $provider->canViewMenu($user, $workspace)) {

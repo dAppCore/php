@@ -28,7 +28,10 @@ use Illuminate\Support\Facades\Log;
  */
 class PlantTreeWithTFTF implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * The number of times the job may be attempted.
@@ -42,7 +45,8 @@ class PlantTreeWithTFTF implements ShouldQueue
 
     public function __construct(
         public TreePlanting $planting
-    ) {}
+    ) {
+    }
 
     /**
      * Execute the job.

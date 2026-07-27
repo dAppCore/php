@@ -25,7 +25,8 @@ class MediaConversionData
         public readonly string $disk,
         public readonly string $engine,
         public readonly string $name,
-    ) {}
+    ) {
+    }
 
     /**
      * Create a conversion data instance from a MediaConversion.

@@ -47,7 +47,7 @@ class ApiVersionTest extends TestCase
 
         // We need to run these tests in Laravel context
         // This file documents the expected behavior
-        return new ApiVersion;
+        return new ApiVersion();
     }
 }
 

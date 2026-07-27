@@ -13,6 +13,7 @@ namespace Core\Actions;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * Represents a scheduled action persisted in the database.
@@ -24,10 +25,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $without_overlapping
  * @property bool $run_in_background
  * @property bool $is_enabled
- * @property \Illuminate\Support\Carbon|null $last_run_at
- * @property \Illuminate\Support\Carbon|null $next_run_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
+ * @property Carbon|null $last_run_at
+ * @property Carbon|null $next_run_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class ScheduledAction extends Model
 {

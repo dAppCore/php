@@ -85,5 +85,6 @@ class ConfigChanged
         public readonly mixed $previousValue,
         public readonly ConfigProfile $profile,
         public readonly ?int $channelId = null,
-    ) {}
+    ) {
+    }
 }

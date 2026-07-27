@@ -6,6 +6,7 @@ namespace Core\Tests\Feature;
 
 use Core\Actions\ScheduledAction;
 use Core\Console\Commands\ScheduleSyncCommand;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Orchestra\Testbench\TestCase;
 
@@ -36,7 +37,7 @@ class ScheduleSyncCommandTest extends TestCase
     {
         parent::setUp();
 
-        $this->app->make(\Illuminate\Contracts\Console\Kernel::class)->registerCommand(
+        $this->app->make(Kernel::class)->registerCommand(
             $this->app->make(ScheduleSyncCommand::class)
         );
     }

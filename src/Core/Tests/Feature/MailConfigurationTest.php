@@ -9,6 +9,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Mail\SendQueuedMailable;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -68,12 +70,12 @@ describe('Mail Sending', function () {
 
         Mail::to('recipient@example.com')->queue($mailable);
 
-        Queue::assertPushed(\Illuminate\Mail\SendQueuedMailable::class);
+        Queue::assertPushed(SendQueuedMailable::class);
     });
 
     it('ContactFormSubmission implements ShouldQueue', function () {
         expect(ContactFormSubmission::class)
-            ->toImplement(\Illuminate\Contracts\Queue\ShouldQueue::class);
+            ->toImplement(ShouldQueue::class);
     });
 });
 

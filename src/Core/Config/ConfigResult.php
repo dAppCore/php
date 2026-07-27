@@ -32,7 +32,8 @@ final readonly class ConfigResult
         public ?ScopeType $resolvedFrom = null,
         public ?int $profileId = null,
         public ?int $channelId = null,
-    ) {}
+    ) {
+    }
 
     /**
      * Create a found result.
