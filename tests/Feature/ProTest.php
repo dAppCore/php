@@ -166,4 +166,53 @@ class ProTest extends TestCase
         // Should reflect new config
         $this->assertTrue(Pro::hasFontAwesomePro());
     }
+
+    public function test_font_awesome_classes_binds_the_family_and_the_weight(): void
+    {
+        // FA7 families are two classes. "fa-jelly fa-rocket" loses the family
+        // binding and silently renders as classic, which is why callers must
+        // never interpolate "fa-{$style}" themselves.
+        $this->assertEquals('fa-jelly fa-regular', Pro::fontAwesomeClasses('jelly'));
+        $this->assertEquals('fa-sharp fa-solid', Pro::fontAwesomeClasses('sharp'));
+        $this->assertEquals('fa-utility fa-semibold', Pro::fontAwesomeClasses('utility'));
+    }
+
+    public function test_font_awesome_classes_leaves_classic_styles_as_one_class(): void
+    {
+        $this->assertEquals('fa-solid', Pro::fontAwesomeClasses('solid'));
+        $this->assertEquals('fa-regular', Pro::fontAwesomeClasses('regular'));
+        $this->assertEquals('fa-brands', Pro::fontAwesomeClasses('brands'));
+    }
+
+    public function test_font_awesome_classes_falls_back_visibly_for_an_unknown_style(): void
+    {
+        // Renders a real icon rather than nothing, so the mistake shows up on
+        // screen instead of shipping as a hole in the layout.
+        $this->assertEquals('fa-solid', Pro::fontAwesomeClasses('not-a-style'));
+    }
+
+    public function test_font_awesome_name_keeps_the_requested_icon_when_pro(): void
+    {
+        config(['core.fontawesome.pro' => true]);
+        Pro::clearCache();
+
+        $this->assertEquals('face-viewfinder', Pro::fontAwesomeName('face-viewfinder', 'camera'));
+    }
+
+    public function test_font_awesome_name_swaps_in_the_fallback_when_free(): void
+    {
+        config(['core.fontawesome.pro' => false]);
+        Pro::clearCache();
+
+        $this->assertEquals('camera', Pro::fontAwesomeName('face-viewfinder', 'camera'));
+    }
+
+    public function test_font_awesome_name_keeps_the_name_when_no_fallback_was_given(): void
+    {
+        config(['core.fontawesome.pro' => false]);
+        Pro::clearCache();
+
+        // Best effort — many Pro names also exist in free solid.
+        $this->assertEquals('face-viewfinder', Pro::fontAwesomeName('face-viewfinder'));
+    }
 }

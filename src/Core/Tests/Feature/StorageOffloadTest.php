@@ -13,12 +13,12 @@ namespace Core\Tests\Feature;
 
 use Core\Cdn\Models\StorageOffload as StorageOffloadModel;
 use Core\Cdn\Services\StorageOffload;
+use Core\Tests\TestCase;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
-use Tests\TestCase;
 
 #[Group('slow')]
 class StorageOffloadTest extends TestCase
@@ -50,7 +50,7 @@ class StorageOffloadTest extends TestCase
         // Rebind the service so it picks up the new config
         $this->app->forgetInstance(StorageOffload::class);
         $this->app->bind(StorageOffload::class, function () {
-            return new StorageOffload;
+            return new StorageOffload();
         });
 
         $this->offloadService = app(StorageOffload::class);
@@ -81,7 +81,7 @@ class StorageOffloadTest extends TestCase
     public function test_service_is_disabled_when_not_configured(): void
     {
         Config::set('offload.enabled', false);
-        $service = new StorageOffload;
+        $service = new StorageOffload();
 
         $this->assertFalse($service->isEnabled());
     }
@@ -165,7 +165,7 @@ class StorageOffloadTest extends TestCase
         Config::set('offload.keep_local', true);
 
         // Rebind service to pick up new config
-        $service = new StorageOffload;
+        $service = new StorageOffload();
         $service->upload($this->testFilePath, null, 'media');
 
         $this->assertFileExists($this->testFilePath);
@@ -174,7 +174,7 @@ class StorageOffloadTest extends TestCase
     public function test_upload_returns_null_when_disabled(): void
     {
         Config::set('offload.enabled', false);
-        $service = new StorageOffload;
+        $service = new StorageOffload();
 
         $result = $service->upload($this->testFilePath, null, 'media');
 
@@ -193,7 +193,7 @@ class StorageOffloadTest extends TestCase
         Config::set('offload.max_file_size', 5); // 5 bytes
 
         // Rebind service to pick up new config
-        $service = new StorageOffload;
+        $service = new StorageOffload();
         $result = $service->upload($this->testFilePath, null, 'media');
 
         $this->assertNull($result);
@@ -204,7 +204,7 @@ class StorageOffloadTest extends TestCase
         Config::set('offload.allowed_extensions', ['png', 'gif']);
 
         // Rebind service to pick up new config
-        $service = new StorageOffload;
+        $service = new StorageOffload();
 
         // .jpg extension should be rejected
         $result = $service->upload($this->testFilePath, null, 'media');

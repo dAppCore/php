@@ -12,12 +12,12 @@ declare(strict_types=1);
 namespace Core\Tests\Unit\Crypt;
 
 use Core\Crypt\EncryptArrayObject;
+use Core\Tests\TestCase;
 use Illuminate\Database\Eloquent\Casts\ArrayObject;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Mockery;
-use Tests\TestCase;
 
 class EncryptArrayObjectTest extends TestCase
 {
@@ -26,7 +26,7 @@ class EncryptArrayObjectTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cast = new EncryptArrayObject;
+        $this->cast = new EncryptArrayObject();
     }
 
     public function test_encrypts_and_decrypts_array_round_trip(): void

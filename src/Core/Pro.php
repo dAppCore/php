@@ -154,6 +154,68 @@ class Pro
     }
 
     /**
+     * Class prefix for a FontAwesome style.
+     *
+     * In FontAwesome 7 a family is TWO classes — the family and the weight —
+     * so `fa-jelly fa-rocket` loses its family binding and silently renders as
+     * classic. Only the classic styles are a single class. Callers must use
+     * this rather than interpolating "fa-{$style}".
+     *
+     *   Pro::fontAwesomeClasses('solid');   // "fa-solid"
+     *   Pro::fontAwesomeClasses('jelly');   // "fa-jelly fa-regular"
+     *   Pro::fontAwesomeClasses('sharp');   // "fa-sharp fa-solid"
+     */
+    public static function fontAwesomeClasses(string $style): string
+    {
+        return match ($style) {
+            'solid', 'regular', 'light', 'thin', 'brands' => 'fa-'.$style,
+            'duotone' => 'fa-duotone',
+            'sharp' => 'fa-sharp fa-solid',
+            'sharp-solid' => 'fa-sharp fa-solid',
+            'sharp-regular' => 'fa-sharp fa-regular',
+            'sharp-light' => 'fa-sharp fa-light',
+            'sharp-thin' => 'fa-sharp fa-thin',
+            'sharp-duotone' => 'fa-sharp-duotone fa-solid',
+            'jelly' => 'fa-jelly fa-regular',
+            'jelly-fill' => 'fa-jelly-fill fa-regular',
+            'jelly-duo' => 'fa-jelly-duo fa-regular',
+            'slab' => 'fa-slab fa-regular',
+            'slab-press' => 'fa-slab-press fa-regular',
+            'utility' => 'fa-utility fa-semibold',
+            'notdog' => 'fa-notdog fa-solid',
+            'chisel' => 'fa-chisel fa-regular',
+            'etch' => 'fa-etch fa-solid',
+            'mosaic' => 'fa-mosaic fa-solid',
+            'pixel' => 'fa-pixel fa-regular',
+            'thumbprint' => 'fa-thumbprint fa-light',
+            'vellum' => 'fa-vellum fa-solid',
+            'whiteboard' => 'fa-whiteboard fa-semibold',
+            default => 'fa-solid',
+        };
+    }
+
+    /**
+     * Resolve an icon to the name that will actually render.
+     *
+     * A Pro class on a free kit renders NOTHING — no error, no placeholder,
+     * just a gap where an icon should be, which is invisible in review and
+     * only shows up in production. So a caller names the free icon that is
+     * good enough, and it is used whenever Pro is absent.
+     *
+     *   Pro::fontAwesomeName('face-viewfinder', 'camera');
+     *   // Pro kit  -> "face-viewfinder"
+     *   // Free kit -> "camera"
+     */
+    public static function fontAwesomeName(string $name, ?string $fallback = null): string
+    {
+        if ($fallback === null || self::hasFontAwesomePro()) {
+            return $name;
+        }
+
+        return $fallback;
+    }
+
+    /**
      * Clear cached detection (for testing).
      */
     public static function clearCache(): void

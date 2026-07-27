@@ -13,10 +13,10 @@ namespace Core\Tests\Feature;
 
 use Core\Cdn\Models\StorageOffload as StorageOffloadModel;
 use Core\Cdn\Services\StorageOffload as StorageOffloadService;
+use Core\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
 
 class OffloadMigrateCommandTest extends TestCase
 {
@@ -43,7 +43,7 @@ class OffloadMigrateCommandTest extends TestCase
         // Rebind the service so it picks up the new config
         $this->app->forgetInstance(StorageOffloadService::class);
         $this->app->bind(StorageOffloadService::class, function () {
-            return new StorageOffloadService;
+            return new StorageOffloadService();
         });
 
         // Create test directory with files

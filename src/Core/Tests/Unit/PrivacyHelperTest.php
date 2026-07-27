@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Core\Tests\Unit;
 
 use Core\Helpers\PrivacyHelper;
+use Core\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
 
 class PrivacyHelperTest extends TestCase
 {

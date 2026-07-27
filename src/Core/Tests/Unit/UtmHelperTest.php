@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Core\Tests\Unit;
 
 use Core\Helpers\UtmHelper;
+use Core\Tests\TestCase;
 use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
 
 class UtmHelperTest extends TestCase
 {

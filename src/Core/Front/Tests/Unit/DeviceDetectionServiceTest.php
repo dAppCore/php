@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Core\Front\Tests\Unit;
 
 use Core\Front\Services\DeviceDetectionService;
+use Core\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
 
 class DeviceDetectionServiceTest extends TestCase
 {
@@ -23,7 +23,7 @@ class DeviceDetectionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DeviceDetectionService;
+        $this->service = new DeviceDetectionService();
     }
 
     // -------------------------------------------------------------------------

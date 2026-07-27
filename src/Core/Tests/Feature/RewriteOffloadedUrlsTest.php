@@ -13,10 +13,10 @@ namespace Core\Tests\Feature;
 
 use Core\Cdn\Middleware\RewriteOffloadedUrls;
 use Core\Cdn\Services\StorageOffload;
+use Core\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
-use Tests\TestCase;
 
 class RewriteOffloadedUrlsTest extends TestCase
 {
@@ -45,7 +45,7 @@ class RewriteOffloadedUrlsTest extends TestCase
         // Rebind the service so it picks up the new config
         $this->app->forgetInstance(StorageOffload::class);
         $this->app->bind(StorageOffload::class, function () {
-            return new StorageOffload;
+            return new StorageOffload();
         });
 
         $this->offloadService = app(StorageOffload::class);

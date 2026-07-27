@@ -14,13 +14,13 @@ namespace Core\Tests\Feature;
 use Core\Cdn\Services\AssetPipeline;
 use Core\Cdn\Services\CdnUrlBuilder;
 use Core\Cdn\Services\StorageUrlResolver;
+use Core\Tests\TestCase;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Group;
-use Tests\TestCase;
 
 /**
  * CDN Integration Tests.
@@ -68,7 +68,7 @@ class CdnIntegrationTest extends TestCase
         ]);
 
         // Initialize services
-        $this->urlBuilder = new CdnUrlBuilder;
+        $this->urlBuilder = new CdnUrlBuilder();
         $this->urlResolver = new StorageUrlResolver($this->urlBuilder);
         $this->assetPipeline = new AssetPipeline($this->urlResolver);
     }
