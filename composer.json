@@ -1,5 +1,5 @@
 {
-    "name": "lthn/php",
+    "name": "dappcore/php",
     "description": "Modular monolith framework for Laravel - event-driven architecture with lazy module loading",
     "keywords": [
         "laravel",
