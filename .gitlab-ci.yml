@@ -49,7 +49,13 @@ gate:
       # whole-repo one — which fails on 29 pre-existing issues that predate
       # the standard. Write the list to a file and count lines, so "no files"
       # is distinguishable from "some files" and can never reach pint bare.
-      BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-}"
+      # CI_MERGE_REQUEST_DIFF_BASE_SHA goes stale the moment a branch is
+      # force-pushed, and diffing against a point that is not an ancestor
+      # reports almost the whole repo as changed (148 files for a 13-file
+      # diff). Fetch the target branch and compute a real merge base.
+      TARGET="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-main}"
+      git fetch --quiet --depth=50 origin "$TARGET" 2>/dev/null || true
+      BASE="$(git merge-base FETCH_HEAD HEAD 2>/dev/null || true)"
       if [ -z "$BASE" ]; then BASE="$(git rev-parse HEAD~1 2>/dev/null || true)"; fi
       : > /tmp/pint-changed.txt
       if [ -n "$BASE" ] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
