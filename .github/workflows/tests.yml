@@ -14,10 +14,7 @@ jobs:
       fail-fast: true
       matrix:
         php: [8.2, 8.3, 8.4]
-        laravel: [11.*, 12.*]
-        exclude:
-          - php: 8.2
-            laravel: 12.*
+        laravel: [12.*]
 
     name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
 
@@ -43,7 +40,7 @@ jobs:
         run: vendor/bin/phpunit --coverage-clover=coverage.xml
 
       - name: Upload coverage to Codecov
-        if: matrix.php == '8.3' && matrix.laravel == '11.*'
+        if: matrix.php == '8.3'
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
