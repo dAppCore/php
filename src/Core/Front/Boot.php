@@ -31,13 +31,20 @@ use Illuminate\Support\AggregateServiceProvider;
  *   Api        - HTTP → JSON (REST API)                  — php-api
  *   Mcp        - HTTP → JSON-RPC (MCP protocol)           — php-mcp
  *
- * Client\Boot lived here until it was extracted to the standalone
- * php-client package (see git history: "refactor: extract Service +
- * Client to standalone packages"). The extraction deleted
- * src/Core/Front/Client/ but left this class still hard-referencing
- * Client\Boot in both $providers and middleware() — a class that no
- * longer exists in this repo — which fataled Application::configure()
- * for every consuming app, not just ones missing php-client.
+ * Client\Boot lived here until it was extracted to the standalone client
+ * package. The extraction deleted src/Core/Front/Client/ but left this
+ * class hard-referencing Client\Boot in both $providers and middleware(),
+ * so an application without that package fataled during
+ * Application::configure() on a class that is no longer here.
+ *
+ * It cannot simply be dropped either. The client package declares no
+ * providers for Laravel's package discovery — only "dont-discover" — so
+ * this list is the ONLY thing that registers the Client frontage.
+ * Removing the line stops the fatal and silently takes the dashboard with
+ * it, which is the worse failure of the two: an application that boots
+ * fine and has quietly lost a surface.
+ *
+ * So it is registered when it is installed, and skipped when it is not.
  */
 class Boot extends AggregateServiceProvider
 {
@@ -49,6 +56,15 @@ class Boot extends AggregateServiceProvider
         Components\Boot::class,
     ];
 
+    public function register(): void
+    {
+        if (class_exists(Client\Boot::class)) {
+            $this->providers[] = Client\Boot::class;
+        }
+
+        parent::register();
+    }
+
     /**
      * Configure HTTP middleware - delegates to each HTTP frontage.
      * Stdio has no HTTP middleware (different transport).
@@ -57,6 +73,13 @@ class Boot extends AggregateServiceProvider
     {
         Web\Boot::middleware($middleware);
         Admin\Boot::middleware($middleware);
+
+        // Same reason as the provider list above: present when the client
+        // package is installed, absent when it is not, and its middleware
+        // group has to follow it either way.
+        if (class_exists(Client\Boot::class)) {
+            Client\Boot::middleware($middleware);
+        }
 
         // API and MCP groups — inlined because middleware() runs during
         // Application::configure(), before package providers load.

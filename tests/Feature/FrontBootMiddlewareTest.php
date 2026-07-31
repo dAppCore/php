@@ -32,11 +32,29 @@ class FrontBootMiddlewareTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_front_boot_aggregate_providers_do_not_reference_the_deleted_client_frontage(): void
+    public function test_front_boot_aggregate_providers_do_not_hard_reference_the_client_frontage(): void
     {
         $ref = new \ReflectionClass(Boot::class);
         $providers = $ref->getDefaultProperties()['providers'];
 
-        $this->assertNotContains('Core\Front\Client\Boot', $providers);
+        $this->assertNotContains('Core\\Front\\Client\\Boot', $providers);
+    }
+
+    public function test_front_boot_registers_the_client_frontage_when_the_package_is_installed(): void
+    {
+        // The other half, and the one that matters more. The client package
+        // declares no providers for Laravel's package discovery, so this
+        // aggregate is the ONLY thing that registers the Client frontage —
+        // dropping the reference to stop the fatal would take the dashboard
+        // with it silently, in every application that has the package.
+        if (! class_exists(\Core\Front\Client\Boot::class)) {
+            $this->markTestSkipped('client package not installed in this checkout');
+        }
+
+        $boot = new Boot($this->app);
+        $boot->register();
+
+        $ref = new \ReflectionProperty($boot, 'providers');
+        $this->assertContains(\Core\Front\Client\Boot::class, $ref->getValue($boot));
     }
 }
