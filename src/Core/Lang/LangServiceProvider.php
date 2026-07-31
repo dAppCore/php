@@ -141,15 +141,20 @@ class LangServiceProvider extends ServiceProvider
 
     /**
      * Load translation files from the Lang directory.
+     *
+     * loadTranslationsFrom() registers a *hint path* that Laravel appends
+     * "/{locale}/{group}.php" onto at resolution time — it must NOT already
+     * contain the locale segment. The files live at Lang/en_GB/core.php (and
+     * would live at Lang/en/core.php for the fallback), so the hint is the
+     * Lang directory itself; passing __DIR__.'/en_GB' made Laravel look for
+     * Lang/en_GB/en_GB/core.php, which never existed, so `core::*` keys
+     * never resolved for any locale. One hint covers every locale Laravel
+     * tries via the fallback chain below, so there is nothing further to
+     * register for the 'en' fallback.
      */
     protected function loadTranslations(): void
     {
-        $this->loadTranslationsFrom(__DIR__.'/en_GB', 'core');
-
-        // Also register translations under the base locale (en) for fallback
-        if (is_dir(__DIR__.'/en')) {
-            $this->loadTranslationsFrom(__DIR__.'/en', 'core');
-        }
+        $this->loadTranslationsFrom(__DIR__, 'core');
     }
 
     /**

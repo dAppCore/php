@@ -27,7 +27,12 @@ class Boot extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadTranslationsFrom(__DIR__.'/Lang/en_GB', 'trees');
+        // Hint path must be the Lang directory itself, not the locale
+        // subfolder — Laravel appends "/{locale}/trees.php" at resolution
+        // time. The file lives at Lang/en_GB/trees.php, so passing
+        // Lang/en_GB here made it look for Lang/en_GB/en_GB/trees.php,
+        // which never existed and so never loaded.
+        $this->loadTranslationsFrom(__DIR__.'/Lang', 'trees');
     }
 
     // -------------------------------------------------------------------------
