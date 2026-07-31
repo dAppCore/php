@@ -19,23 +19,30 @@ use Illuminate\Support\AggregateServiceProvider;
 /**
  * Core front-end module - I/O translation layer.
  *
- * Six frontages bundled in the framework, each translating a transport protocol:
+ * Five frontages bundled in the framework, each translating a transport protocol:
  *   Web        - HTTP → HTML (public marketing)
- *   Client     - HTTP → HTML (namespace owner dashboard)
  *   Admin      - HTTP → HTML (backend admin dashboard)
  *   Cli        - Artisan commands (console context)
  *   Stdio      - stdin/stdout (CLI pipes, MCP stdio)
  *   Components - View namespaces (shared across HTTP frontages)
  *
  * Additional frontages provided by their packages (auto-discovered):
- *   Api        - HTTP → JSON (REST API)           — php-api
- *   Mcp        - HTTP → JSON-RPC (MCP protocol)   — php-mcp
+ *   Client     - HTTP → HTML (namespace owner dashboard) — php-client
+ *   Api        - HTTP → JSON (REST API)                  — php-api
+ *   Mcp        - HTTP → JSON-RPC (MCP protocol)           — php-mcp
+ *
+ * Client\Boot lived here until it was extracted to the standalone
+ * php-client package (see git history: "refactor: extract Service +
+ * Client to standalone packages"). The extraction deleted
+ * src/Core/Front/Client/ but left this class still hard-referencing
+ * Client\Boot in both $providers and middleware() — a class that no
+ * longer exists in this repo — which fataled Application::configure()
+ * for every consuming app, not just ones missing php-client.
  */
 class Boot extends AggregateServiceProvider
 {
     protected $providers = [
         Web\Boot::class,
-        Client\Boot::class,
         Admin\Boot::class,
         Cli\Boot::class,
         Stdio\Boot::class,
@@ -49,7 +56,6 @@ class Boot extends AggregateServiceProvider
     public static function middleware(Middleware $middleware): void
     {
         Web\Boot::middleware($middleware);
-        Client\Boot::middleware($middleware);
         Admin\Boot::middleware($middleware);
 
         // API and MCP groups — inlined because middleware() runs during
