@@ -36,9 +36,7 @@ class HorizonStatus
             return 'inactive';
         }
 
-        if (collect($masters)->contains(function ($master) {
-            return $master->status === 'paused';
-        })) {
+        if (collect($masters)->contains(fn ($master) => $master->status === 'paused')) {
             return 'paused';
         }
 

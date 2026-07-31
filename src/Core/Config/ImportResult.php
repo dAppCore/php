@@ -136,7 +136,7 @@ class ImportResult
      */
     public function isSuccessful(): bool
     {
-        return empty($this->errors);
+        return $this->errors === [];
     }
 
     /**
@@ -144,7 +144,7 @@ class ImportResult
      */
     public function hasChanges(): bool
     {
-        return ! empty($this->created) || ! empty($this->updated);
+        return $this->created !== [] || $this->updated !== [];
     }
 
     /**
@@ -152,7 +152,7 @@ class ImportResult
      */
     public function hasErrors(): bool
     {
-        return ! empty($this->errors);
+        return $this->errors !== [];
     }
 
     /**
@@ -195,22 +195,22 @@ class ImportResult
         $parts = [];
 
         if ($this->createdCount() > 0) {
-            $parts[] = "{$this->createdCount()} created";
+            $parts[] = $this->createdCount() . ' created';
         }
 
         if ($this->updatedCount() > 0) {
-            $parts[] = "{$this->updatedCount()} updated";
+            $parts[] = $this->updatedCount() . ' updated';
         }
 
         if ($this->skippedCount() > 0) {
-            $parts[] = "{$this->skippedCount()} skipped";
+            $parts[] = $this->skippedCount() . ' skipped';
         }
 
         if ($this->errorCount() > 0) {
-            $parts[] = "{$this->errorCount()} errors";
+            $parts[] = $this->errorCount() . ' errors';
         }
 
-        if (empty($parts)) {
+        if ($parts === []) {
             return 'No changes';
         }
 

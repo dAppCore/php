@@ -52,18 +52,21 @@ class ScheduledActionScanner
                 if ($file->getExtension() !== 'php') {
                     continue;
                 }
-
                 // Skip test directories — test files extend base classes
                 // that aren't available without dev dependencies.
                 // Convention: module test dirs use capital "Tests/" (e.g. app/Mod/Lem/Tests/).
-                if (preg_match('#[/\\\\]Tests[/\\\\]#', $file->getPathname())
-                    || str_ends_with($file->getBasename(), 'Test.php')) {
+                if (preg_match('#[/\\\\]Tests[/\\\\]#', $file->getPathname())) {
+                    continue;
+                }
+                if (str_ends_with($file->getBasename(), 'Test.php')) {
                     continue;
                 }
 
                 $contents = file_get_contents($file->getPathname());
-
-                if ($contents === false || ! str_contains($contents, '#[Scheduled')) {
+                if ($contents === false) {
+                    continue;
+                }
+                if (! str_contains($contents, '#[Scheduled')) {
                     continue;
                 }
 
@@ -84,7 +87,7 @@ class ScheduledActionScanner
 
                 $attribute = $this->extractScheduled($class);
 
-                if ($attribute !== null) {
+                if ($attribute instanceof Scheduled) {
                     $results[$class] = $attribute;
                 }
             }
@@ -102,7 +105,7 @@ class ScheduledActionScanner
             $ref = new ReflectionClass($class);
             $attrs = $ref->getAttributes(Scheduled::class);
 
-            if (empty($attrs)) {
+            if ($attrs === []) {
                 return null;
             }
 
@@ -161,6 +164,7 @@ class ScheduledActionScanner
                     if (is_array($t) && $t[0] === T_WHITESPACE) {
                         continue;
                     }
+
                     if (is_array($t) && $t[0] === T_STRING) {
                         $class = $t[1];
                     }
@@ -176,6 +180,6 @@ class ScheduledActionScanner
             return null;
         }
 
-        return $namespace !== null ? "{$namespace}\\{$class}" : $class;
+        return $namespace !== null ? sprintf('%s\%s', $namespace, $class) : $class;
     }
 }

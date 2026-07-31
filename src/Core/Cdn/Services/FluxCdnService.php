@@ -64,7 +64,7 @@ class FluxCdnService
         // In production, use CDN URL (no vBucket - shared platform asset)
         $versionHash = $this->getVersionHash();
         $filename = config('app.debug') ? 'flux.js' : 'flux.min.js';
-        $url = $this->cdnUrl("flux/{$filename}", $versionHash);
+        $url = $this->cdnUrl('flux/' . $filename, $versionHash);
 
         return '<script src="'.$url.'" data-navigate-once'.$nonce.'></script>';
     }
@@ -90,7 +90,7 @@ class FluxCdnService
         // In production, use CDN URL (no vBucket - shared platform asset)
         $versionHash = $this->getVersionHash('/editor.js');
         $filename = config('app.debug') ? 'editor.js' : 'editor.min.js';
-        $url = $this->cdnUrl("flux/{$filename}", $versionHash);
+        $url = $this->cdnUrl('flux/' . $filename, $versionHash);
 
         return '<script src="'.$url.'" defer></script>';
     }
@@ -190,15 +190,15 @@ class FluxCdnService
             : base_path('vendor/admin/flux/dist');
 
         $files = [
-            "{$basePath}/flux.js" => 'flux/flux.js',
-            "{$basePath}/flux.min.js" => 'flux/flux.min.js',
+            $basePath . '/flux.js' => 'flux/flux.js',
+            $basePath . '/flux.min.js' => 'flux/flux.min.js',
         ];
 
         // Add editor files for Pro
         if (Flux::pro()) {
-            $files["{$basePath}/editor.js"] = 'flux/editor.js';
-            $files["{$basePath}/editor.min.js"] = 'flux/editor.min.js';
-            $files["{$basePath}/editor.css"] = 'flux/editor.css';
+            $files[$basePath . '/editor.js'] = 'flux/editor.js';
+            $files[$basePath . '/editor.min.js'] = 'flux/editor.min.js';
+            $files[$basePath . '/editor.css'] = 'flux/editor.css';
         }
 
         return $files;

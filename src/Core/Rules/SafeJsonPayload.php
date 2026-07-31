@@ -55,7 +55,7 @@ class SafeJsonPayload implements ValidationRule
         // Check total encoded size
         $encoded = json_encode($value);
         if ($encoded === false || strlen($encoded) > $this->maxSizeBytes) {
-            $fail("The :attribute exceeds the maximum allowed size of {$this->maxSizeBytes} bytes.");
+            $fail(sprintf('The :attribute exceeds the maximum allowed size of %d bytes.', $this->maxSizeBytes));
 
             return;
         }
@@ -68,19 +68,19 @@ class SafeJsonPayload implements ValidationRule
         $this->traverseArray($value, 1, $keyCount, $depthError, $stringError);
 
         if ($depthError) {
-            $fail("The :attribute exceeds the maximum nesting depth of {$this->maxDepth} levels.");
+            $fail(sprintf('The :attribute exceeds the maximum nesting depth of %d levels.', $this->maxDepth));
 
             return;
         }
 
         if ($keyCount > $this->maxKeys) {
-            $fail("The :attribute exceeds the maximum of {$this->maxKeys} keys.");
+            $fail(sprintf('The :attribute exceeds the maximum of %d keys.', $this->maxKeys));
 
             return;
         }
 
         if ($stringError) {
-            $fail("The :attribute contains string values exceeding {$this->maxStringLength} characters.");
+            $fail(sprintf('The :attribute contains string values exceeding %d characters.', $this->maxStringLength));
 
             return;
         }
@@ -97,7 +97,7 @@ class SafeJsonPayload implements ValidationRule
             return;
         }
 
-        foreach ($array as $key => $value) {
+        foreach ($array as $value) {
             $keyCount++;
 
             if ($keyCount > $this->maxKeys) {

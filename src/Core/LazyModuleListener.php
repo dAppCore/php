@@ -79,8 +79,8 @@ class LazyModuleListener
      * @param  string  $method  Method name to call when the event fires
      */
     public function __construct(
-        private string $moduleClass,
-        private string $method
+        private readonly string $moduleClass,
+        private readonly string $method
     ) {
     }
 
@@ -109,9 +109,9 @@ class LazyModuleListener
             $module = $this->resolveModule();
             $module->{$this->method}($event);
             EventAuditLog::recordSuccess($eventClass, $this->moduleClass);
-        } catch (\Throwable $e) {
-            EventAuditLog::recordFailure($eventClass, $this->moduleClass, $e);
-            throw $e;
+        } catch (\Throwable $throwable) {
+            EventAuditLog::recordFailure($eventClass, $this->moduleClass, $throwable);
+            throw $throwable;
         } finally {
             ListenerProfiler::stop($profilerContext);
         }

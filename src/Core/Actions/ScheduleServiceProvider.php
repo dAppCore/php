@@ -63,7 +63,7 @@ class ScheduleServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->app->booted(function () {
+        $this->app->booted(function (): void {
             $this->registerScheduledActions();
         });
     }
@@ -89,7 +89,7 @@ class ScheduleServiceProvider extends ServiceProvider
                 }
 
                 if (! $hasAllowedNamespace) {
-                    logger()->warning("Scheduled action {$class} has disallowed namespace — skipping");
+                    logger()->warning(sprintf('Scheduled action %s has disallowed namespace — skipping', $class));
 
                     continue;
                 }
@@ -100,7 +100,7 @@ class ScheduleServiceProvider extends ServiceProvider
 
                 // Verify the class uses the Action trait
                 if (! in_array(Action::class, class_uses_recursive($class), true)) {
-                    logger()->warning("Scheduled action {$class} does not use the Action trait — skipping");
+                    logger()->warning(sprintf('Scheduled action %s does not use the Action trait — skipping', $class));
 
                     continue;
                 }
@@ -109,12 +109,12 @@ class ScheduleServiceProvider extends ServiceProvider
                 $method = $action->frequencyMethod();
 
                 if (! in_array($method, self::ALLOWED_FREQUENCIES, true)) {
-                    logger()->warning("Scheduled action {$class} has invalid frequency method: {$method}");
+                    logger()->warning(sprintf('Scheduled action %s has invalid frequency method: %s', $class, $method));
 
                     continue;
                 }
 
-                $event = $schedule->call(function () use ($class, $action) {
+                $event = $schedule->call(function () use ($class, $action): void {
                     $class::run();
                     $action->markRun();
                 })->name($class);
@@ -136,7 +136,7 @@ class ScheduleServiceProvider extends ServiceProvider
                     $event->timezone($action->timezone);
                 }
             } catch (\Throwable $e) {
-                logger()->warning("Failed to register scheduled action: {$action->action_class} — {$e->getMessage()}");
+                logger()->warning(sprintf('Failed to register scheduled action: %s — %s', $action->action_class, $e->getMessage()));
             }
         }
     }

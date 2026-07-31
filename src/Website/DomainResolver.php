@@ -65,11 +65,9 @@ class DomainResolver
 
         // In local environment, only use local domains
         if (app()->environment('local')) {
-            $domains = array_filter($domains, function ($domain) {
-                return str_ends_with($domain, '.test')
-                    || str_ends_with($domain, '.localhost')
-                    || $domain === 'localhost';
-            });
+            $domains = array_filter($domains, fn ($domain) => str_ends_with($domain, '.test')
+                || str_ends_with($domain, '.localhost')
+                || $domain === 'localhost');
         }
 
         return array_unique(array_values($domains));
@@ -104,7 +102,7 @@ class DomainResolver
             $base = str_replace('\\', '', $match[1]);
             $tlds = explode('|', str_replace('\\', '', $match[2]));
 
-            return array_map(fn ($tld) => $base.'.'.$tld, $tlds);
+            return array_map(fn ($tld): string => $base.'.'.$tld, $tlds);
         }
 
         return [str_replace('\\', '', $pattern)];

@@ -11,6 +11,11 @@ declare(strict_types=1);
 
 namespace Core\Seo;
 
+use Core\Seo\Analytics\SeoScoreTrend;
+use Core\Seo\Models\SeoScoreHistory;
+use Core\Seo\Validation\CanonicalUrlValidator;
+use Core\Seo\Validation\OgImageValidator;
+use Core\Seo\Validation\StructuredDataTester;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
@@ -273,7 +278,7 @@ class SeoMetadata extends Model
      */
     public function validateOgImage(bool $fetchRemote = true): array
     {
-        $validator = new Validation\OgImageValidator();
+        $validator = new OgImageValidator();
 
         return $validator->validateOgData($this->og_data);
     }
@@ -311,7 +316,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $validator = new Validation\CanonicalUrlValidator();
+        $validator = new CanonicalUrlValidator();
 
         return $validator->validateUrl($this->canonical_url);
     }
@@ -331,11 +336,11 @@ class SeoMetadata extends Model
             ];
         }
 
-        $validator = new Validation\CanonicalUrlValidator();
+        $validator = new CanonicalUrlValidator();
         $result = $validator->checkUrl($this->canonical_url);
 
         // Exclude self from conflict check
-        $otherRecords = $result['records']->filter(fn ($r) => $r->id !== $this->id);
+        $otherRecords = $result['records']->filter(fn ($r): bool => $r->id !== $this->id);
 
         return [
             'has_conflict' => $otherRecords->isNotEmpty(),
@@ -361,9 +366,9 @@ class SeoMetadata extends Model
      * @param  bool  $force  Force recording even if within minimum interval
      * @return Models\SeoScoreHistory|null The created record or null if skipped
      */
-    public function recordScore(bool $force = false): ?Models\SeoScoreHistory
+    public function recordScore(bool $force = false): ?SeoScoreHistory
     {
-        $trend = app(Analytics\SeoScoreTrend::class);
+        $trend = app(SeoScoreTrend::class);
 
         return $trend->recordScore($this, $force);
     }
@@ -376,7 +381,7 @@ class SeoMetadata extends Model
      */
     public function getScoreHistory(int $limit = 100): Collection
     {
-        $trend = app(Analytics\SeoScoreTrend::class);
+        $trend = app(SeoScoreTrend::class);
 
         return $trend->getHistory($this, $limit);
     }
@@ -389,7 +394,7 @@ class SeoMetadata extends Model
      */
     public function getDailyScoreTrend(int $days = 30): Collection
     {
-        $trend = app(Analytics\SeoScoreTrend::class);
+        $trend = app(SeoScoreTrend::class);
 
         return $trend->getDailyTrend($this, $days);
     }
@@ -402,7 +407,7 @@ class SeoMetadata extends Model
      */
     public function getWeeklyScoreTrend(int $weeks = 12): Collection
     {
-        $trend = app(Analytics\SeoScoreTrend::class);
+        $trend = app(SeoScoreTrend::class);
 
         return $trend->getWeeklyTrend($this, $weeks);
     }
@@ -414,12 +419,12 @@ class SeoMetadata extends Model
      */
     public function hasScoreImproved(): ?bool
     {
-        $latest = Models\SeoScoreHistory::latestForModel(
+        $latest = SeoScoreHistory::latestForModel(
             $this->seoable_type,
             $this->seoable_id
         );
 
-        if ($latest === null) {
+        if (!$latest instanceof SeoScoreHistory) {
             return null;
         }
 
@@ -433,12 +438,12 @@ class SeoMetadata extends Model
      */
     public function getScoreChange(): ?int
     {
-        $latest = Models\SeoScoreHistory::latestForModel(
+        $latest = SeoScoreHistory::latestForModel(
             $this->seoable_type,
             $this->seoable_id
         );
 
-        if ($latest === null) {
+        if (!$latest instanceof SeoScoreHistory) {
             return null;
         }
 
@@ -463,7 +468,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $tester = new Validation\StructuredDataTester();
+        $tester = new StructuredDataTester();
 
         return $tester->test($this->schema_markup);
     }
@@ -493,7 +498,7 @@ class SeoMetadata extends Model
             ];
         }
 
-        $tester = new Validation\StructuredDataTester();
+        $tester = new StructuredDataTester();
 
         return $tester->generateReport($this->schema_markup);
     }
@@ -509,7 +514,7 @@ class SeoMetadata extends Model
             return [];
         }
 
-        $tester = new Validation\StructuredDataTester();
+        $tester = new StructuredDataTester();
 
         return $tester->checkRichResultsEligibility($this->schema_markup);
     }

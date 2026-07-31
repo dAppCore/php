@@ -66,7 +66,7 @@ class TestStructuredData extends Command
      */
     protected function testUrl(StructuredDataTester $tester, string $url, bool $asJson): int
     {
-        $this->components->info("Testing URL: $url");
+        $this->components->info('Testing URL: ' . $url);
         $this->newLine();
 
         $result = $tester->testUrl($url);
@@ -86,7 +86,7 @@ class TestStructuredData extends Command
     protected function testFile(StructuredDataTester $tester, string $path, bool $asJson): int
     {
         if (! file_exists($path)) {
-            $this->components->error("File not found: $path");
+            $this->components->error('File not found: ' . $path);
 
             return self::FAILURE;
         }
@@ -100,7 +100,7 @@ class TestStructuredData extends Command
             return self::FAILURE;
         }
 
-        $this->components->info("Testing file: $path");
+        $this->components->info('Testing file: ' . $path);
         $this->newLine();
 
         $report = $tester->generateReport($schema);
@@ -163,9 +163,9 @@ class TestStructuredData extends Command
             $this->newLine();
             $this->components->error('Errors:');
             foreach ($result['errors'] as $error) {
-                $this->line("  <fg=red>*</> [{$error['path']}] {$error['message']}");
+                $this->line(sprintf('  <fg=red>*</> [%s] %s', $error['path'], $error['message']));
                 if ($this->option('verbose') && isset($error['fix'])) {
-                    $this->line("    <fg=gray>Fix: {$error['fix']}</>");
+                    $this->line(sprintf('    <fg=gray>Fix: %s</>', $error['fix']));
                 }
             }
         }
@@ -174,9 +174,9 @@ class TestStructuredData extends Command
             $this->newLine();
             $this->components->warn('Warnings:');
             foreach ($result['warnings'] as $warning) {
-                $this->line("  <fg=yellow>*</> [{$warning['path']}] {$warning['message']}");
+                $this->line(sprintf('  <fg=yellow>*</> [%s] %s', $warning['path'], $warning['message']));
                 if ($this->option('verbose') && isset($warning['fix'])) {
-                    $this->line("    <fg=gray>Fix: {$warning['fix']}</>");
+                    $this->line(sprintf('    <fg=gray>Fix: %s</>', $warning['fix']));
                 }
             }
         }
@@ -184,7 +184,7 @@ class TestStructuredData extends Command
         if (! empty($result['info'])) {
             $this->newLine();
             foreach ($result['info'] as $info) {
-                $this->line("  <fg=blue>i</> $info");
+                $this->line('  <fg=blue>i</> ' . $info);
             }
         }
     }
@@ -211,7 +211,7 @@ class TestStructuredData extends Command
             $this->newLine();
             $this->components->info('Rich Results Eligible:');
             foreach ($report['rich_results'] as $feature) {
-                $this->line("  <fg=green>*</> $feature");
+                $this->line('  <fg=green>*</> ' . $feature);
             }
         }
 
@@ -220,9 +220,9 @@ class TestStructuredData extends Command
             $this->newLine();
             $this->components->error('Errors:');
             foreach ($report['errors'] as $error) {
-                $this->line("  <fg=red>*</> [{$error['path']}] {$error['message']}");
-                $this->line("    <fg=gray>Explanation: {$error['explanation']}</>");
-                $this->line("    <fg=cyan>Fix: {$error['fix']}</>");
+                $this->line(sprintf('  <fg=red>*</> [%s] %s', $error['path'], $error['message']));
+                $this->line(sprintf('    <fg=gray>Explanation: %s</>', $error['explanation']));
+                $this->line(sprintf('    <fg=cyan>Fix: %s</>', $error['fix']));
             }
         }
 
@@ -231,10 +231,10 @@ class TestStructuredData extends Command
             $this->newLine();
             $this->components->warn('Warnings:');
             foreach ($report['warnings'] as $warning) {
-                $this->line("  <fg=yellow>*</> [{$warning['path']}] {$warning['message']}");
+                $this->line(sprintf('  <fg=yellow>*</> [%s] %s', $warning['path'], $warning['message']));
                 if ($this->option('verbose')) {
-                    $this->line("    <fg=gray>Explanation: {$warning['explanation']}</>");
-                    $this->line("    <fg=cyan>Fix: {$warning['fix']}</>");
+                    $this->line(sprintf('    <fg=gray>Explanation: %s</>', $warning['explanation']));
+                    $this->line(sprintf('    <fg=cyan>Fix: %s</>', $warning['fix']));
                 }
             }
         }
@@ -244,7 +244,7 @@ class TestStructuredData extends Command
             $this->newLine();
             $this->components->info('Recommendations:');
             foreach ($report['recommendations'] as $rec) {
-                $this->line("  <fg=blue>*</> $rec");
+                $this->line('  <fg=blue>*</> ' . $rec);
             }
         }
 
@@ -262,6 +262,6 @@ class TestStructuredData extends Command
             default => 'red',
         };
 
-        return "<fg=$color>$score/100</>";
+        return sprintf('<fg=%s>%d/100</>', $color, $score);
     }
 }

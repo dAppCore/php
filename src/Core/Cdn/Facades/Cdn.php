@@ -11,14 +11,16 @@ declare(strict_types=1);
 
 namespace Core\Cdn\Facades;
 
+use Carbon\Carbon;
 use Core\Cdn\Services\StorageUrlResolver;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static string cdn(string $path)
  * @method static string origin(string $path)
  * @method static string private(string $path)
- * @method static string|null signedUrl(string $path, int|\Carbon\Carbon|null $expiry = null)
+ * @method static string|null signedUrl(string $path, int|Carbon|null $expiry = null)
  * @method static string apex(string $path)
  * @method static string asset(string $path, ?string $context = null)
  * @method static array urls(string $path)
@@ -29,8 +31,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool deleteFromCdn(string $path, string $zone = 'public')
  * @method static bool purge(string $path)
  * @method static string cachedAsset(string $path, ?string $context = null)
- * @method static \Illuminate\Contracts\Filesystem\Filesystem publicDisk()
- * @method static \Illuminate\Contracts\Filesystem\Filesystem privateDisk()
+ * @method static Filesystem publicDisk()
+ * @method static Filesystem privateDisk()
  * @method static bool storePublic(string $path, mixed $contents, bool $pushToCdn = true)
  * @method static bool storePrivate(string $path, mixed $contents, bool $pushToCdn = true)
  * @method static bool deleteAsset(string $path, string $bucket = 'public')

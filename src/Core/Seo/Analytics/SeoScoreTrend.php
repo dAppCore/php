@@ -121,10 +121,10 @@ class SeoScoreTrend
                 'snapshot' => $this->createSnapshot($metadata),
                 'recorded_at' => now(),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::warning('Failed to record SEO score history', [
                 'metadata_id' => $metadata->id,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return null;
@@ -142,7 +142,7 @@ class SeoScoreTrend
         $count = 0;
 
         foreach ($metadataRecords as $metadata) {
-            if ($this->recordScore($metadata) !== null) {
+            if ($this->recordScore($metadata) instanceof SeoScoreHistory) {
                 $count++;
             }
         }
@@ -182,7 +182,7 @@ class SeoScoreTrend
             $metadata->seoable_id
         );
 
-        if ($latest === null) {
+        if (!$latest instanceof SeoScoreHistory) {
             return true;
         }
 
@@ -230,7 +230,7 @@ class SeoScoreTrend
 
         // Assume it's a seoable model
         return SeoScoreHistory::forModel(
-            get_class($model),
+            $model::class,
             $model->getKey(),
             $limit
         );
@@ -258,7 +258,7 @@ class SeoScoreTrend
         }
 
         return SeoScoreHistory::dailyAggregateForModel(
-            get_class($model),
+            $model::class,
             $model->getKey(),
             $days
         );
@@ -286,7 +286,7 @@ class SeoScoreTrend
         }
 
         return SeoScoreHistory::weeklyAggregateForModel(
-            get_class($model),
+            $model::class,
             $model->getKey(),
             $weeks
         );
@@ -315,7 +315,7 @@ class SeoScoreTrend
 
         $cacheKey = 'seo_trend:site_stats:'.$days;
 
-        return Cache::remember($cacheKey, 300, function () use ($days) {
+        return Cache::remember($cacheKey, 300, function () use ($days): array {
             $recentPeriod = now()->subDays($days);
             $previousPeriod = now()->subDays($days * 2);
 
@@ -383,7 +383,7 @@ class SeoScoreTrend
 
         $cacheKey = 'seo_trend:distribution:'.$days;
 
-        return Cache::remember($cacheKey, 300, function () use ($days) {
+        return Cache::remember($cacheKey, 300, function () use ($days): array {
             // Get the latest score for each unique model
             $latestScores = DB::table(self::TABLE.' as h1')
                 ->select('h1.seoable_type', 'h1.seoable_id', 'h1.score')
@@ -391,20 +391,21 @@ class SeoScoreTrend
                 ->whereRaw('h1.recorded_at = (SELECT MAX(h2.recorded_at) FROM '.self::TABLE.' as h2 WHERE h2.seoable_type = h1.seoable_type AND h2.seoable_id = h1.seoable_id)')
                 ->get();
 
-            $excellent = $latestScores->filter(fn ($r) => $r->score >= 80)->count();
-            $good = $latestScores->filter(fn ($r) => $r->score >= 60 && $r->score < 80)->count();
-            $fair = $latestScores->filter(fn ($r) => $r->score >= 40 && $r->score < 60)->count();
-            $poor = $latestScores->filter(fn ($r) => $r->score < 40)->count();
+            $excellent = $latestScores->filter(fn ($r): bool => $r->score >= 80)->count();
+            $good = $latestScores->filter(fn ($r): bool => $r->score >= 60 && $r->score < 80)->count();
+            $fair = $latestScores->filter(fn ($r): bool => $r->score >= 40 && $r->score < 60)->count();
+            $poor = $latestScores->filter(fn ($r): bool => $r->score < 40)->count();
 
             // 10-point bucket distribution
             $distribution = [];
             for ($i = 0; $i <= 90; $i += 10) {
                 $label = $i.'-'.($i + 9);
                 $distribution[$label] = $latestScores->filter(
-                    fn ($r) => $r->score >= $i && $r->score < $i + 10
+                    fn ($r): bool => $r->score >= $i && $r->score < $i + 10
                 )->count();
             }
-            $distribution['100'] = $latestScores->filter(fn ($r) => $r->score === 100)->count();
+
+            $distribution['100'] = $latestScores->filter(fn ($r): bool => $r->score === 100)->count();
 
             return [
                 'excellent' => $excellent,
@@ -531,7 +532,7 @@ class SeoScoreTrend
             return 0;
         }
 
-        $days = $days ?? config('seo.trends.retention_days', 90);
+        $days ??= config('seo.trends.retention_days', 90);
 
         return SeoScoreHistory::prune($days);
     }

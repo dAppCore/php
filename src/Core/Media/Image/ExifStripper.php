@@ -77,7 +77,7 @@ class ExifStripper
         $mimeType = $imageInfo['mime'];
 
         // Only JPEG and TIFF files typically contain EXIF data
-        if (! in_array($mimeType, ['image/jpeg', 'image/jpg', 'image/tiff'])) {
+        if (! in_array($mimeType, ['image/jpeg', 'image/jpg', 'image/tiff'], true)) {
             return true;
         }
 
@@ -87,10 +87,10 @@ class ExifStripper
             }
 
             return $this->stripWithGd($path);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('ExifStripper: Failed to strip EXIF data', [
                 'path' => $path,
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
             return false;
@@ -180,7 +180,7 @@ class ExifStripper
         $mimeType = $imageInfo['mime'];
 
         // Only process JPEG images
-        if (! in_array($mimeType, ['image/jpeg', 'image/jpg'])) {
+        if (! in_array($mimeType, ['image/jpeg', 'image/jpg'], true)) {
             return $content;
         }
 
@@ -190,9 +190,9 @@ class ExifStripper
             }
 
             return $this->stripContentWithGd($content);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('ExifStripper: Failed to strip EXIF from content', [
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
             return null;
@@ -254,8 +254,8 @@ class ExifStripper
         try {
             $exif = @exif_read_data($path);
 
-            return is_array($exif) && count($exif) > 0;
-        } catch (\Throwable $e) {
+            return is_array($exif) && $exif !== [];
+        } catch (\Throwable) {
             return false;
         }
     }
@@ -276,7 +276,7 @@ class ExifStripper
             $exif = @exif_read_data($path, 'ANY_TAG', true);
 
             return is_array($exif) ? $exif : [];
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return [];
         }
     }

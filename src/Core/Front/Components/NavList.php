@@ -123,8 +123,7 @@ class NavList extends Component
         }
 
         $html .= '</ul>';
-        $html .= '</nav>';
 
-        return $html;
+        return $html . '</nav>';
     }
 }

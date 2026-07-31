@@ -86,11 +86,6 @@ use Illuminate\Support\Facades\Log;
 class TieredCacheStore implements Store
 {
     /**
-     * Sentinel value for cache misses (to distinguish null from not found).
-     */
-    private const MISS_SENTINEL = '__TIERED_CACHE_MISS__';
-
-    /**
      * Configured cache tiers, sorted by priority.
      *
      * @var array<TierConfiguration>
@@ -120,11 +115,6 @@ class TieredCacheStore implements Store
     protected bool $logEnabled;
 
     /**
-     * Cache key prefix.
-     */
-    protected string $prefix;
-
-    /**
      * Create a new tiered cache store.
      *
      * @param  array<TierConfiguration>  $tiers  Tier configurations
@@ -132,21 +122,20 @@ class TieredCacheStore implements Store
      */
     public function __construct(
         array $tiers = [],
-        string $prefix = '',
+        protected string $prefix = '',
     ) {
         $this->enabled = (bool) config('core.storage.tiered_cache.enabled', true);
         $this->logEnabled = (bool) config('core.storage.tiered_cache.log_enabled', false);
-        $this->prefix = $prefix;
 
-        if (empty($tiers)) {
+        if ($tiers === []) {
             $tiers = $this->getDefaultTiers();
         }
 
         // Sort tiers by priority
-        usort($tiers, fn (TierConfiguration $a, TierConfiguration $b) => $a->priority <=> $b->priority);
+        usort($tiers, fn (TierConfiguration $a, TierConfiguration $b): int => $a->priority <=> $b->priority);
 
         // Filter to enabled tiers only
-        $this->tiers = array_values(array_filter($tiers, fn (TierConfiguration $t) => $t->enabled));
+        $this->tiers = array_values(array_filter($tiers, fn (TierConfiguration $t): bool => $t->enabled));
     }
 
     /**
@@ -160,7 +149,7 @@ class TieredCacheStore implements Store
 
         if (! empty($configTiers)) {
             return array_map(
-                fn (array $tier) => TierConfiguration::fromArray($tier),
+                TierConfiguration::fromArray(...),
                 $configTiers
             );
         }
@@ -183,7 +172,7 @@ class TieredCacheStore implements Store
      */
     public function get($key): mixed
     {
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->get($this->prefix.$key);
         }
 
@@ -205,7 +194,7 @@ class TieredCacheStore implements Store
                         $this->promoteToFasterTiers($prefixedKey, $value, $index);
                     }
 
-                    $this->log('debug', "Cache hit in tier: {$tier->name}", ['key' => $key]);
+                    $this->log('debug', 'Cache hit in tier: ' . $tier->name, ['key' => $key]);
 
                     return $value;
                 }
@@ -213,7 +202,7 @@ class TieredCacheStore implements Store
                 $this->recordMiss($tier->name, microtime(true) - $startTime);
             } catch (\Throwable $e) {
                 $this->recordError($tier->name, 'get', $e);
-                $this->log('warning', "Tier {$tier->name} error on get", [
+                $this->log('warning', sprintf('Tier %s error on get', $tier->name), [
                     'key' => $key,
                     'error' => $e->getMessage(),
                 ]);
@@ -232,10 +221,10 @@ class TieredCacheStore implements Store
     public function many(array $keys): array
     {
         $results = [];
-        $prefixedKeys = array_map(fn ($k) => $this->prefix.$k, $keys);
+        $prefixedKeys = array_map(fn ($k): string => $this->prefix.$k, $keys);
         $keyMap = array_combine($prefixedKeys, $keys);
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             $values = $this->getFallbackStore()->many($prefixedKeys);
             foreach ($values as $prefixedKey => $value) {
                 $results[$keyMap[$prefixedKey]] = $value;
@@ -248,7 +237,7 @@ class TieredCacheStore implements Store
         $found = [];
 
         foreach ($this->tiers as $index => $tier) {
-            if (empty($missing)) {
+            if ($missing === []) {
                 break;
             }
 
@@ -277,6 +266,7 @@ class TieredCacheStore implements Store
             if ($data['tier_index'] > 0) {
                 $this->promoteToFasterTiers($prefixedKey, $data['value'], $data['tier_index']);
             }
+
             $results[$keyMap[$prefixedKey]] = $data['value'];
         }
 
@@ -301,7 +291,7 @@ class TieredCacheStore implements Store
     {
         $prefixedKey = $this->prefix.$key;
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->put($prefixedKey, $value, $seconds);
         }
 
@@ -316,6 +306,7 @@ class TieredCacheStore implements Store
                 if (! $store->put($prefixedKey, $value, $tierTtl)) {
                     $success = false;
                 }
+
                 $this->recordWrite($tier->name, microtime(true) - $startTime);
             } catch (\Throwable $e) {
                 $this->recordError($tier->name, 'put', $e);
@@ -339,7 +330,7 @@ class TieredCacheStore implements Store
             $prefixedValues[$this->prefix.$key] = $value;
         }
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->putMany($prefixedValues, $seconds);
         }
 
@@ -372,7 +363,7 @@ class TieredCacheStore implements Store
     {
         $prefixedKey = $this->prefix.$key;
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->increment($prefixedKey, $value);
         }
 
@@ -389,8 +380,8 @@ class TieredCacheStore implements Store
             }
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->recordError($authoritativeTier->name, 'increment', $e);
+        } catch (\Throwable $throwable) {
+            $this->recordError($authoritativeTier->name, 'increment', $throwable);
 
             return false;
         }
@@ -406,7 +397,7 @@ class TieredCacheStore implements Store
     {
         $prefixedKey = $this->prefix.$key;
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->decrement($prefixedKey, $value);
         }
 
@@ -423,8 +414,8 @@ class TieredCacheStore implements Store
             }
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->recordError($authoritativeTier->name, 'decrement', $e);
+        } catch (\Throwable $throwable) {
+            $this->recordError($authoritativeTier->name, 'decrement', $throwable);
 
             return false;
         }
@@ -440,7 +431,7 @@ class TieredCacheStore implements Store
     {
         $prefixedKey = $this->prefix.$key;
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->forever($prefixedKey, $value);
         }
 
@@ -473,7 +464,7 @@ class TieredCacheStore implements Store
     {
         $prefixedKey = $this->prefix.$key;
 
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->forget($prefixedKey);
         }
 
@@ -486,6 +477,7 @@ class TieredCacheStore implements Store
                 if (! $store->forget($prefixedKey)) {
                     $success = false;
                 }
+
                 $this->recordDelete($tier->name);
             } catch (\Throwable $e) {
                 $this->recordError($tier->name, 'forget', $e);
@@ -503,7 +495,7 @@ class TieredCacheStore implements Store
      */
     public function flush(): bool
     {
-        if (! $this->enabled || empty($this->tiers)) {
+        if (! $this->enabled || $this->tiers === []) {
             return $this->getFallbackStore()->flush();
         }
 
@@ -613,7 +605,7 @@ class TieredCacheStore implements Store
     public function addTier(TierConfiguration $tier): static
     {
         $this->tiers[] = $tier;
-        usort($this->tiers, fn (TierConfiguration $a, TierConfiguration $b) => $a->priority <=> $b->priority);
+        usort($this->tiers, fn (TierConfiguration $a, TierConfiguration $b): int => $a->priority <=> $b->priority);
 
         return $this;
     }
@@ -625,7 +617,7 @@ class TieredCacheStore implements Store
     {
         $this->tiers = array_values(array_filter(
             $this->tiers,
-            fn (TierConfiguration $t) => $t->name !== $name
+            fn (TierConfiguration $t): bool => $t->name !== $name
         ));
 
         unset($this->stores[$name]);
@@ -671,7 +663,7 @@ class TieredCacheStore implements Store
                 $store = $this->getStoreForTier($tier);
                 $store->put($key, $value, $tier->ttl);
 
-                $this->log('debug', "Promoted to tier: {$tier->name}", ['key' => $key]);
+                $this->log('debug', 'Promoted to tier: ' . $tier->name, ['key' => $key]);
                 $this->getMetrics()?->increment('tiered', 'promotions');
             } catch (\Throwable $e) {
                 $this->recordError($tier->name, 'promote', $e);
@@ -736,7 +728,7 @@ class TieredCacheStore implements Store
      */
     protected function getMetrics(): ?StorageMetrics
     {
-        if ($this->metrics === null && app()->bound(StorageMetrics::class)) {
+        if (!$this->metrics instanceof StorageMetrics && app()->bound(StorageMetrics::class)) {
             $this->metrics = app(StorageMetrics::class);
         }
 
@@ -794,6 +786,6 @@ class TieredCacheStore implements Store
             return;
         }
 
-        Log::log($level, "[TieredCache] {$message}", $context);
+        Log::log($level, '[TieredCache] ' . $message, $context);
     }
 }

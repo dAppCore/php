@@ -59,7 +59,7 @@ class WarmCacheCommand extends Command
         // Configure store if specified
         if ($store = $this->option('store')) {
             $warmer->useStore($store);
-            $this->components->twoColumnDetail('Using store', "<fg=cyan>{$store}</>");
+            $this->components->twoColumnDetail('Using store', sprintf('<fg=cyan>%s</>', $store));
         }
 
         // Status mode
@@ -74,7 +74,7 @@ class WarmCacheCommand extends Command
 
         // Check if any items are registered
         $registeredKeys = $warmer->getRegisteredKeys();
-        if (empty($registeredKeys)) {
+        if ($registeredKeys === []) {
             $this->components->warn('No cache items registered for warming.');
             $this->newLine();
             $this->components->bulletList([
@@ -108,7 +108,7 @@ class WarmCacheCommand extends Command
     {
         $status = $warmer->getStatus();
 
-        if (empty($status)) {
+        if ($status === []) {
             $this->components->warn('No cache items registered for warming.');
             $this->newLine();
 
@@ -125,12 +125,12 @@ class WarmCacheCommand extends Command
             };
 
             $typeLabel = $info['type'] === 'batch'
-                ? "[batch:{$info['batch_size']}]"
+                ? sprintf('[batch:%s]', $info['batch_size'])
                 : '';
 
             $this->components->twoColumnDetail(
-                "<fg=cyan>{$key}</> {$typeLabel}",
-                "{$cachedStatus} (TTL: {$info['ttl']}s)"
+                sprintf('<fg=cyan>%s</> %s', $key, $typeLabel),
+                sprintf('%s (TTL: %ss)', $cachedStatus, $info['ttl'])
             );
         }
 
@@ -139,12 +139,13 @@ class WarmCacheCommand extends Command
         // Show stats summary
         $stats = $warmer->getStats();
         $this->components->twoColumnDetail('<fg=gray;options=bold>Summary</>', '');
-        $this->components->twoColumnDetail('Registered', "<fg=cyan>{$stats['total_registered']}</>");
-        $this->components->twoColumnDetail('Cached', "<fg=cyan>{$stats['total_cached']}</>");
-        $this->components->twoColumnDetail('Cache rate', "<fg=cyan>{$stats['cache_rate']}%</>");
+        $this->components->twoColumnDetail('Registered', sprintf('<fg=cyan>%d</>', $stats['total_registered']));
+        $this->components->twoColumnDetail('Cached', sprintf('<fg=cyan>%d</>', $stats['total_cached']));
+        $this->components->twoColumnDetail('Cache rate', sprintf('<fg=cyan>%s%%</>', $stats['cache_rate']));
         if ($stats['batch_items'] > 0) {
-            $this->components->twoColumnDetail('Batch items', "<fg=cyan>{$stats['batch_items']}</>");
+            $this->components->twoColumnDetail('Batch items', sprintf('<fg=cyan>%s</>', $stats['batch_items']));
         }
+
         $this->newLine();
 
         return self::SUCCESS;
@@ -156,12 +157,12 @@ class WarmCacheCommand extends Command
     protected function warmSingleKey(CacheWarmer $warmer, string $key): int
     {
         if (! $warmer->isRegistered($key)) {
-            $this->components->error("Key '{$key}' is not registered for warming.");
+            $this->components->error(sprintf("Key '%s' is not registered for warming.", $key));
             $this->newLine();
 
             // Show available keys
             $availableKeys = $warmer->getRegisteredKeys();
-            if (! empty($availableKeys)) {
+            if ($availableKeys !== []) {
                 $this->components->info('Available keys:');
                 $this->components->bulletList($availableKeys);
                 $this->newLine();
@@ -171,10 +172,8 @@ class WarmCacheCommand extends Command
         }
 
         $this->components->task(
-            "Warming key: {$key}",
-            function () use ($warmer, $key) {
-                return $warmer->warm($key);
-            }
+            'Warming key: ' . $key,
+            fn () => $warmer->warm($key)
         );
 
         $this->newLine();
@@ -183,9 +182,9 @@ class WarmCacheCommand extends Command
         if (isset($results[$key])) {
             $result = $results[$key];
             if ($result['status'] === 'success') {
-                $this->components->info("Successfully warmed '{$key}' in {$result['duration']}s");
+                $this->components->info(sprintf("Successfully warmed '%s' in %ss", $key, $result['duration']));
             } else {
-                $this->components->error("Failed to warm '{$key}': {$result['error']}");
+                $this->components->error(sprintf("Failed to warm '%s': %s", $key, $result['error']));
 
                 return self::FAILURE;
             }
@@ -223,7 +222,7 @@ class WarmCacheCommand extends Command
                 'failed' => '<fg=red>failed</>',
                 'exists' => '<fg=gray>exists</>',
                 'skipped' => '<fg=gray>skipped</>',
-                default => "<fg=yellow>{$result['status']}</>",
+                default => sprintf('<fg=yellow>%s</>', $result['status']),
             };
 
             $duration = $result['duration'] > 0
@@ -231,12 +230,12 @@ class WarmCacheCommand extends Command
                 : '';
 
             $this->components->twoColumnDetail(
-                "<fg=cyan>{$key}</>",
-                "{$statusLabel} {$duration}"
+                sprintf('<fg=cyan>%s</>', $key),
+                sprintf('%s %s', $statusLabel, $duration)
             );
 
             if (isset($result['error'])) {
-                $this->line("  <fg=red>Error: {$result['error']}</>");
+                $this->line(sprintf('  <fg=red>Error: %s</>', $result['error']));
             }
 
             match ($result['status']) {
@@ -253,13 +252,15 @@ class WarmCacheCommand extends Command
 
         // Summary
         $this->components->twoColumnDetail('<fg=gray;options=bold>Summary</>', '');
-        $this->components->twoColumnDetail('Warmed', "<fg=green>{$successes}</>");
+        $this->components->twoColumnDetail('Warmed', sprintf('<fg=green>%d</>', $successes));
         if ($failures > 0) {
-            $this->components->twoColumnDetail('Failed', "<fg=red>{$failures}</>");
+            $this->components->twoColumnDetail('Failed', sprintf('<fg=red>%d</>', $failures));
         }
+
         if ($staleOnly && $skipped > 0) {
-            $this->components->twoColumnDetail('Already cached', "<fg=gray>{$skipped}</>");
+            $this->components->twoColumnDetail('Already cached', sprintf('<fg=gray>%d</>', $skipped));
         }
+
         $this->components->twoColumnDetail('Total time', sprintf('<fg=cyan>%.3fs</>', $totalDuration));
         $this->newLine();
 

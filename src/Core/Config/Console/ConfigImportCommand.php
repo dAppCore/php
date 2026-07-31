@@ -47,7 +47,7 @@ class ConfigImportCommand extends Command
 
         // Check file exists
         if (! file_exists($file)) {
-            $this->components->error("File not found: {$file}");
+            $this->components->error('File not found: ' . $file);
 
             return self::FAILURE;
         }
@@ -64,7 +64,7 @@ class ConfigImportCommand extends Command
             $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
-                $this->components->error("Workspace not found: {$workspaceSlug}");
+                $this->components->error('Workspace not found: ' . $workspaceSlug);
 
                 return self::FAILURE;
             }
@@ -73,7 +73,7 @@ class ConfigImportCommand extends Command
         // Read file content
         $content = file_get_contents($file);
         if ($content === false) {
-            $this->components->error("Failed to read file: {$file}");
+            $this->components->error('Failed to read file: ' . $file);
 
             return self::FAILURE;
         }
@@ -85,13 +85,13 @@ class ConfigImportCommand extends Command
             default => 'JSON',
         };
 
-        $scope = $workspace ? "workspace: {$workspace->slug}" : 'system';
+        $scope = $workspace ? 'workspace: ' . $workspace->slug : 'system';
 
         if ($dryRun) {
-            $this->components->info("Dry-run import from {$file} ({$scope}):");
+            $this->components->info(sprintf('Dry-run import from %s (%s):', $file, $scope));
         } else {
             if (! $force) {
-                $this->components->warn("This will import config from {$file} to {$scope}.");
+                $this->components->warn(sprintf('This will import config from %s to %s.', $file, $scope));
 
                 if (! $this->confirm('Are you sure you want to continue?')) {
                     $this->components->info('Import cancelled.');
@@ -102,7 +102,7 @@ class ConfigImportCommand extends Command
 
             // Create backup before import
             if (! $skipBackup && ! $dryRun) {
-                $this->components->task('Creating backup version', function () use ($versioning, $workspace, $file) {
+                $this->components->task('Creating backup version', function () use ($versioning, $workspace, $file): void {
                     $versioning->createVersion(
                         $workspace,
                         'Backup before import from '.basename($file)
@@ -113,7 +113,7 @@ class ConfigImportCommand extends Command
 
         // Perform import
         $result = null;
-        $this->components->task("Importing {$format} config", function () use ($exporter, $content, $extension, $workspace, $dryRun, &$result) {
+        $this->components->task(sprintf('Importing %s config', $format), function () use ($exporter, $content, $extension, $workspace, $dryRun, &$result): void {
             $result = match ($extension) {
                 'yaml', 'yml' => $exporter->importYaml($content, $workspace, $dryRun),
                 default => $exporter->importJson($content, $workspace, $dryRun),
@@ -131,7 +131,7 @@ class ConfigImportCommand extends Command
         if ($result->createdCount() > 0) {
             $this->components->twoColumnDetail('<fg=green>Created</>', $result->createdCount().' items');
             foreach ($result->getCreated() as $item) {
-                $this->components->bulletList(["{$item['type']}: {$item['code']}"]);
+                $this->components->bulletList([sprintf('%s: %s', $item['type'], $item['code'])]);
             }
         }
 
@@ -139,7 +139,7 @@ class ConfigImportCommand extends Command
         if ($result->updatedCount() > 0) {
             $this->components->twoColumnDetail('<fg=yellow>Updated</>', $result->updatedCount().' items');
             foreach ($result->getUpdated() as $item) {
-                $this->components->bulletList(["{$item['type']}: {$item['code']}"]);
+                $this->components->bulletList([sprintf('%s: %s', $item['type'], $item['code'])]);
             }
         }
 
@@ -156,7 +156,7 @@ class ConfigImportCommand extends Command
             $this->newLine();
             $this->components->error('Errors:');
             foreach ($result->getErrors() as $error) {
-                $this->components->bulletList(["<fg=red>{$error}</>"]);
+                $this->components->bulletList([sprintf('<fg=red>%s</>', $error)]);
             }
 
             return self::FAILURE;
@@ -165,9 +165,9 @@ class ConfigImportCommand extends Command
         $this->newLine();
 
         if ($dryRun) {
-            $this->components->info("Dry-run complete: {$result->getSummary()}");
+            $this->components->info('Dry-run complete: ' . $result->getSummary());
         } else {
-            $this->components->info("Import complete: {$result->getSummary()}");
+            $this->components->info('Import complete: ' . $result->getSummary());
         }
 
         return self::SUCCESS;

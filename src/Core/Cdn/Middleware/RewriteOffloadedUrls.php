@@ -24,11 +24,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class RewriteOffloadedUrls
 {
-    protected StorageOffload $offloadService;
-
-    public function __construct(StorageOffload $offloadService)
+    public function __construct(protected StorageOffload $offloadService)
     {
-        $this->offloadService = $offloadService;
     }
 
     /**
@@ -136,13 +133,8 @@ class RewriteOffloadedUrls
         if (str_contains($value, '/storage/')) {
             return true;
         }
-
         // Check for storage_path pattern
-        if (preg_match('#/app/(public|private)/#', $value)) {
-            return true;
-        }
-
-        return false;
+        return (bool) preg_match('#/app/(public|private)/#', $value);
     }
 
     /**

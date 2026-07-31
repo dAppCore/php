@@ -81,7 +81,7 @@ abstract class MediaConversion
      *
      * @var callable|null
      */
-    protected $progressCallback = null;
+    protected $progressCallback;
 
     /**
      * Whether to dispatch progress events.
@@ -269,7 +269,6 @@ abstract class MediaConversion
      * - ?string $message: Optional status message
      *
      * @param  callable  $callback  Progress callback
-     * @return $this
      */
     public function onProgress(callable $callback): static
     {
@@ -282,7 +281,6 @@ abstract class MediaConversion
      * Enable or disable progress event dispatching.
      *
      * @param  bool  $dispatch  Whether to dispatch events
-     * @return $this
      */
     public function withProgressEvents(bool $dispatch = true): static
     {
@@ -293,8 +291,6 @@ abstract class MediaConversion
 
     /**
      * Disable progress event dispatching.
-     *
-     * @return $this
      */
     public function withoutProgressEvents(): static
     {
@@ -309,7 +305,7 @@ abstract class MediaConversion
      */
     protected function getProgressReporter(): ConversionProgressReporter
     {
-        if ($this->progressReporter === null) {
+        if (!$this->progressReporter instanceof ConversionProgressReporter) {
             $this->progressReporter = new ConversionProgressReporter(
                 $this->filepath,
                 $this->getEngineName()
@@ -385,11 +381,11 @@ abstract class MediaConversion
             $reporter->complete($result?->path);
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             // Report failure
-            $reporter->fail($e->getMessage(), $e);
+            $reporter->fail($throwable->getMessage(), $throwable);
 
-            throw $e;
+            throw $throwable;
         }
     }
 

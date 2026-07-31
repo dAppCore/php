@@ -73,7 +73,7 @@ class TmxImporter
             return [
                 'imported' => 0,
                 'skipped' => 0,
-                'errors' => ["File not found: {$filePath}"],
+                'errors' => ['File not found: ' . $filePath],
                 'locales_found' => [],
             ];
         }
@@ -123,8 +123,9 @@ class TmxImporter
         if (! $dom->loadXML($content)) {
             $errors = libxml_get_errors();
             foreach ($errors as $error) {
-                $result['errors'][] = "XML Error: {$error->message} (line {$error->line})";
+                $result['errors'][] = sprintf('XML Error: %s (line %d)', $error->message, $error->line);
             }
+
             libxml_clear_errors();
 
             return $result;
@@ -168,7 +169,7 @@ class TmxImporter
                         $entry->getTargetLocale()
                     );
 
-                    if ($existing !== null) {
+                    if ($existing instanceof TranslationMemoryEntry) {
                         $result['skipped']++;
 
                         continue;
@@ -180,7 +181,7 @@ class TmxImporter
         }
 
         // Batch store entries
-        if (! empty($entries)) {
+        if ($entries !== []) {
             $result['imported'] = $this->repository->storeBatch($entries);
         }
 
@@ -245,8 +246,10 @@ class TmxImporter
             }
 
             $text = $this->extractSegmentText($seg);
-
-            if (empty($text)) {
+            if ($text === '') {
+                continue;
+            }
+            if ($text === '0') {
                 continue;
             }
 
@@ -277,6 +280,7 @@ class TmxImporter
                 if ($sourceLocaleFilter !== null && $sourceLocale !== $sourceLocaleFilter) {
                     continue;
                 }
+
                 if ($targetLocaleFilter !== null && $targetLocale !== $targetLocaleFilter) {
                     continue;
                 }
@@ -295,7 +299,7 @@ class TmxImporter
                 if (isset($metadata['creationdate'])) {
                     try {
                         $createdAt = new DateTimeImmutable($metadata['creationdate']);
-                    } catch (\Exception $e) {
+                    } catch (\Exception) {
                         // Invalid date format, ignore
                     }
                 }
@@ -356,9 +360,11 @@ class TmxImporter
             if (! $note instanceof DOMElement) {
                 continue;
             }
+
             $notes[] = $note->textContent;
         }
-        if (! empty($notes)) {
+
+        if ($notes !== []) {
             $metadata['notes'] = $notes;
         }
 
@@ -382,24 +388,16 @@ class TmxImporter
                 // Handle inline elements
                 $tagName = $child->tagName;
 
-                switch ($tagName) {
-                    case 'bpt': // Beginning paired tag
-                    case 'ept': // Ending paired tag
-                    case 'it':  // Isolated tag
-                    case 'ph':  // Placeholder
-                        // Include placeholder content or use marker
-                        $text .= $child->textContent ?: '{'.$tagName.'}';
-
-                        break;
-                    case 'hi':  // Highlight
-                        // Include highlighted content as-is
-                        $text .= $child->textContent;
-
-                        break;
-                    default:
-                        // Include any other element's text content
-                        $text .= $child->textContent;
-                }
+                match ($tagName) {
+                    // Placeholder
+                    // Include placeholder content or use marker
+                    'bpt', 'ept', 'it', 'ph' => $text .= $child->textContent ?: '{'.$tagName.'}',
+                    // Highlight
+                    // Include highlighted content as-is
+                    'hi' => $text .= $child->textContent,
+                    // Include any other element's text content
+                    default => $text .= $child->textContent,
+                };
             }
         }
 
@@ -453,7 +451,7 @@ class TmxImporter
         ];
 
         if (! File::exists($filePath)) {
-            $result['errors'][] = "File not found: {$filePath}";
+            $result['errors'][] = 'File not found: ' . $filePath;
 
             return $result;
         }
@@ -466,8 +464,9 @@ class TmxImporter
         if (! $dom->loadXML($content)) {
             $errors = libxml_get_errors();
             foreach ($errors as $error) {
-                $result['errors'][] = "XML Error: {$error->message} (line {$error->line})";
+                $result['errors'][] = sprintf('XML Error: %s (line %d)', $error->message, $error->line);
             }
+
             libxml_clear_errors();
 
             return $result;

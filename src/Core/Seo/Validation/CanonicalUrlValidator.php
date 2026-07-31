@@ -136,19 +136,17 @@ class CanonicalUrlValidator
         $total = $allRecords->count();
 
         // Find records without canonical URLs
-        $missing = $allRecords->filter(fn ($r) => empty($r->canonical_url));
+        $missing = $allRecords->filter(fn ($r): bool => empty($r->canonical_url));
 
         // Find records with canonical URLs
-        $withCanonical = $allRecords->filter(fn ($r) => ! empty($r->canonical_url));
+        $withCanonical = $allRecords->filter(fn ($r): bool => ! empty($r->canonical_url));
 
         // Find duplicates
         $duplicates = $this->findConflicts();
         $duplicateCount = $duplicates->sum(fn ($group) => $group->count());
 
         // Find protocol issues (HTTP vs HTTPS)
-        $protocolIssues = $withCanonical->filter(function ($record) {
-            return str_starts_with($record->canonical_url, 'http://');
-        });
+        $protocolIssues = $withCanonical->filter(fn ($record) => str_starts_with($record->canonical_url, 'http://'));
 
         // Find www inconsistencies
         $wwwInconsistencies = $this->findWwwInconsistencies($withCanonical);
@@ -202,12 +200,12 @@ class CanonicalUrlValidator
         }
 
         // Check for query strings (usually not recommended)
-        if (! empty($parts['query'])) {
+        if (isset($parts['query']) && ($parts['query'] !== '' && $parts['query'] !== '0')) {
             $warnings[] = 'Canonical URLs generally should not include query strings';
         }
 
         // Check for fragments (not allowed in canonical URLs)
-        if (! empty($parts['fragment'])) {
+        if (isset($parts['fragment']) && ($parts['fragment'] !== '' && $parts['fragment'] !== '0')) {
             $errors[] = 'Canonical URLs must not include URL fragments (#)';
         }
 
@@ -228,7 +226,7 @@ class CanonicalUrlValidator
         }
 
         return [
-            'valid' => empty($errors),
+            'valid' => $errors === [],
             'errors' => $errors,
             'warnings' => $warnings,
         ];
@@ -269,9 +267,7 @@ class CanonicalUrlValidator
             $normalized .= ':'.$port;
         }
 
-        $normalized .= $path;
-
-        return $normalized;
+        return $normalized . $path;
     }
 
     /**
@@ -283,7 +279,7 @@ class CanonicalUrlValidator
     protected function findWwwInconsistencies(Collection $records): Collection
     {
         // Group by normalized domain (without www)
-        $byDomain = $records->groupBy(function ($record) {
+        $byDomain = $records->groupBy(function ($record): ?string {
             $host = parse_url($record->canonical_url, PHP_URL_HOST);
             if ($host === null || $host === false) {
                 return null;
@@ -291,14 +287,14 @@ class CanonicalUrlValidator
 
             // Remove www prefix for grouping
             return preg_replace('/^www\./', '', $host);
-        })->filter(fn ($group, $key) => $key !== null);
+        })->filter(fn ($group, $key): bool => $key !== null);
 
         // Find groups with both www and non-www versions
         $inconsistent = collect();
 
-        foreach ($byDomain as $domain => $group) {
-            $hasWww = $group->some(fn ($r) => str_contains($r->canonical_url, '://www.'));
-            $hasNonWww = $group->some(fn ($r) => ! str_contains($r->canonical_url, '://www.'));
+        foreach ($byDomain as $group) {
+            $hasWww = $group->some(fn ($r): bool => str_contains($r->canonical_url, '://www.'));
+            $hasNonWww = $group->some(fn ($r): bool => ! str_contains($r->canonical_url, '://www.'));
 
             if ($hasWww && $hasNonWww) {
                 $inconsistent = $inconsistent->merge($group);
@@ -319,7 +315,7 @@ class CanonicalUrlValidator
      */
     protected function findSelfReferencingIssues(Collection $records): Collection
     {
-        return $records->filter(function ($record) {
+        return $records->filter(function ($record): bool {
             // Load the seoable model if it has a getUrl() method
             $seoable = $record->seoable;
 

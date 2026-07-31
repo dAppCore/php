@@ -173,7 +173,7 @@ class PrivacyHelper
 
         // Pad each group to 4 characters
         return implode(':', array_map(
-            fn ($group) => str_pad($group, 4, '0', STR_PAD_LEFT),
+            fn (string $group): string => str_pad($group, 4, '0', STR_PAD_LEFT),
             $all
         ));
     }

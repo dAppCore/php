@@ -56,7 +56,7 @@ class ResilientRedisStore extends RedisStore
      */
     protected function getFallbackStore(): DatabaseStore
     {
-        if ($this->fallbackStore === null) {
+        if (!$this->fallbackStore instanceof DatabaseStore) {
             $this->fallbackStore = new DatabaseStore(
                 app('db')->connection(),
                 'cache',
@@ -72,7 +72,7 @@ class ResilientRedisStore extends RedisStore
      */
     protected function getCircuitBreaker(): CircuitBreaker
     {
-        if ($this->circuitBreaker === null) {
+        if (!$this->circuitBreaker instanceof CircuitBreaker) {
             $this->circuitBreaker = new CircuitBreaker('redis');
         }
 
@@ -84,7 +84,7 @@ class ResilientRedisStore extends RedisStore
      */
     protected function getMetrics(): StorageMetrics
     {
-        if ($this->metrics === null) {
+        if (!$this->metrics instanceof StorageMetrics) {
             $this->metrics = app(StorageMetrics::class);
         }
 
@@ -170,7 +170,7 @@ class ResilientRedisStore extends RedisStore
 
         Log::log($logLevel, '[Cache] Redis unavailable, using database fallback', [
             'error' => $e->getMessage(),
-            'exception_class' => get_class($e),
+            'exception_class' => $e::class,
         ]);
     }
 
@@ -216,8 +216,8 @@ class ResilientRedisStore extends RedisStore
             $this->recordSuccess('get', $startTime, $result !== null);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'get');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'get');
 
             return $this->getFallbackStore()->get($key);
         }
@@ -241,8 +241,8 @@ class ResilientRedisStore extends RedisStore
             $this->recordSuccess('many', $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'many');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'many');
 
             return $this->getFallbackStore()->many($keys);
         }
@@ -267,8 +267,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordWrite('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'put');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'put');
 
             return $this->getFallbackStore()->put($key, $value, $seconds);
         }
@@ -293,8 +293,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordWrite('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'putMany');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'putMany');
 
             return $this->getFallbackStore()->putMany($values, $seconds);
         }
@@ -319,8 +319,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordWrite('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'increment');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'increment');
 
             return $this->getFallbackStore()->increment($key, $value);
         }
@@ -345,8 +345,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordWrite('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'decrement');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'decrement');
 
             return $this->getFallbackStore()->decrement($key, $value);
         }
@@ -371,8 +371,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordWrite('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'forever');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'forever');
 
             return $this->getFallbackStore()->forever($key, $value);
         }
@@ -397,8 +397,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordDelete('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'forget');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'forget');
 
             return $this->getFallbackStore()->forget($key);
         }
@@ -423,8 +423,8 @@ class ResilientRedisStore extends RedisStore
             $this->getMetrics()->recordDelete('redis', microtime(true) - $startTime);
 
             return $result;
-        } catch (\Throwable $e) {
-            $this->handleRedisFailure($e, 'flush');
+        } catch (\Throwable $throwable) {
+            $this->handleRedisFailure($throwable, 'flush');
 
             return $this->getFallbackStore()->flush();
         }

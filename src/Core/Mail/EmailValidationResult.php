@@ -42,8 +42,7 @@ class EmailValidationResult
         return new self(
             isValid: true,
             isDisposable: false,
-            domain: $domain,
-            reason: null
+            domain: $domain
         );
     }
 

@@ -22,7 +22,7 @@ return new class () extends Migration {
         Schema::disableForeignKeyConstraints();
 
         // 1. Config Keys (definitions)
-        Schema::create('config_keys', function (Blueprint $table) {
+        Schema::create('config_keys', function (Blueprint $table): void {
             $table->id();
             $table->string('code')->unique();
             $table->foreignId('parent_id')->nullable()
@@ -38,7 +38,7 @@ return new class () extends Migration {
         });
 
         // 2. Config Profiles (scope containers)
-        Schema::create('config_profiles', function (Blueprint $table) {
+        Schema::create('config_profiles', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
             $table->string('scope_type')->index();
@@ -54,7 +54,7 @@ return new class () extends Migration {
         });
 
         // 3. Config Values
-        Schema::create('config_values', function (Blueprint $table) {
+        Schema::create('config_values', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('profile_id')
                 ->constrained('config_profiles')
@@ -74,7 +74,7 @@ return new class () extends Migration {
         });
 
         // 4. Config Channels
-        Schema::create('config_channels', function (Blueprint $table) {
+        Schema::create('config_channels', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
             $table->string('code')->unique();
@@ -88,7 +88,7 @@ return new class () extends Migration {
         });
 
         // 5. Config Resolved Cache
-        Schema::create('config_resolved', function (Blueprint $table) {
+        Schema::create('config_resolved', function (Blueprint $table): void {
             $table->id();
             $table->string('scope_type');
             $table->unsignedBigInteger('scope_id');

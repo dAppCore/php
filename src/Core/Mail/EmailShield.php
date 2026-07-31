@@ -190,13 +190,13 @@ class EmailShield
      */
     public function validate(string $email, ?bool $useCache = null): EmailValidationResult
     {
-        $useCache = $useCache ?? $this->cacheValidation;
+        $useCache ??= $this->cacheValidation;
         $normalizedEmail = strtolower(trim($email));
 
         // Try to get cached result
         if ($useCache) {
             $cached = $this->getCachedValidation($normalizedEmail);
-            if ($cached !== null) {
+            if ($cached instanceof EmailValidationResult) {
                 return $cached;
             }
         }
@@ -310,9 +310,7 @@ class EmailShield
         $this->disposableDomains = Cache::remember(
             self::CACHE_KEY,
             self::CACHE_DURATION,
-            function () {
-                return $this->loadDisposableDomainsFromFile();
-            }
+            fn () => $this->loadDisposableDomainsFromFile()
         );
     }
 
@@ -335,9 +333,11 @@ class EmailShield
         $domains = [];
         foreach ($lines as $line) {
             $domain = strtolower(trim($line));
-
             // Skip empty lines and comments
-            if ($domain === '' || str_starts_with($domain, '#')) {
+            if ($domain === '') {
+                continue;
+            }
+            if (str_starts_with($domain, '#')) {
                 continue;
             }
 
@@ -469,9 +469,7 @@ class EmailShield
         return Cache::remember(
             $cacheKey,
             self::MX_CACHE_DURATION,
-            function () use ($domain): bool {
-                return $this->performMxLookup($domain);
-            }
+            fn (): bool => $this->performMxLookup($domain)
         );
     }
 
@@ -485,7 +483,7 @@ class EmailShield
         // Suppress warnings as getmxrr returns false on failure
         $result = @getmxrr($domain, $mxRecords);
 
-        return $result && count($mxRecords) > 0;
+        return $result && $mxRecords !== [];
     }
 
     /**
@@ -508,7 +506,7 @@ class EmailShield
      */
     public function updateDisposableDomainsList(?string $url = null): bool
     {
-        $url = $url ?? self::DISPOSABLE_DOMAINS_URL;
+        $url ??= self::DISPOSABLE_DOMAINS_URL;
 
         try {
             $response = Http::timeout(30)->get($url);
@@ -526,7 +524,7 @@ class EmailShield
             $lines = explode("\n", $content);
 
             // Validate we got a reasonable list
-            $validDomains = array_filter($lines, function ($line) {
+            $validDomains = array_filter($lines, function ($line): bool {
                 $domain = strtolower(trim($line));
 
                 return $domain !== '' && ! str_starts_with($domain, '#');
@@ -558,9 +556,9 @@ class EmailShield
             ]);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('EmailShield: Exception updating disposable domains list', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return false;
@@ -626,7 +624,7 @@ class EmailShield
      */
     protected function queueDeepValidation(string $email, string $domain, ?string $queue = null, ?callable $onComplete = null): void
     {
-        $job = function () use ($email, $domain, $onComplete) {
+        $job = function () use ($email, $domain, $onComplete): EmailValidationResult {
             $hasMx = $this->hasMxRecords($domain);
             $result = $hasMx
                 ? EmailValidationResult::valid($domain)

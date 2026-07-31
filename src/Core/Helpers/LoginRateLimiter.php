@@ -92,6 +92,6 @@ class LoginRateLimiter
         $email = Str::transliterate(Str::lower($request->input('email', '')));
         $ip = $request->ip();
 
-        return "{$email}|{$ip}";
+        return sprintf('%s|%s', $email, $ip);
     }
 }

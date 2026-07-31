@@ -77,20 +77,6 @@ class SeederDiscovery
     private array $seeders = [];
 
     /**
-     * Paths to scan for seeders.
-     *
-     * @var array<string>
-     */
-    private array $paths = [];
-
-    /**
-     * Seeder classes to exclude.
-     *
-     * @var array<string>
-     */
-    private array $excluded = [];
-
-    /**
      * Whether discovery has been performed.
      */
     private bool $discovered = false;
@@ -101,17 +87,22 @@ class SeederDiscovery
      * @param  array<string>  $paths  Directories to scan for modules
      * @param  array<string>  $excluded  Seeder classes to exclude
      */
-    public function __construct(array $paths = [], array $excluded = [])
-    {
-        $this->paths = $paths;
-        $this->excluded = $excluded;
+    public function __construct(
+        /**
+         * Paths to scan for seeders.
+         */
+        private array $paths = [],
+        /**
+         * Seeder classes to exclude.
+         */
+        private array $excluded = []
+    ) {
     }
 
     /**
      * Add paths to scan for seeders.
      *
      * @param  array<string>  $paths  Directories to add
-     * @return $this
      */
     public function addPaths(array $paths): self
     {
@@ -125,7 +116,6 @@ class SeederDiscovery
      * Set paths to scan for seeders.
      *
      * @param  array<string>  $paths  Directories to scan
-     * @return $this
      */
     public function setPaths(array $paths): self
     {
@@ -139,7 +129,6 @@ class SeederDiscovery
      * Add seeder classes to exclude.
      *
      * @param  array<string>  $classes  Seeder class names to exclude
-     * @return $this
      */
     public function exclude(array $classes): self
     {
@@ -182,8 +171,6 @@ class SeederDiscovery
 
     /**
      * Reset the discovery cache.
-     *
-     * @return $this
      */
     public function reset(): self
     {
@@ -217,11 +204,11 @@ class SeederDiscovery
         }
 
         // Look for Database/Seeders directories in immediate subdirectories
-        $pattern = "{$path}/*/Database/Seeders/*Seeder.php";
+        $pattern = $path . '/*/Database/Seeders/*Seeder.php';
         $files = glob($pattern) ?: [];
 
         // Also check for seeders directly in the path (for Core modules)
-        $directPattern = "{$path}/Database/Seeders/*Seeder.php";
+        $directPattern = $path . '/Database/Seeders/*Seeder.php';
         $directFiles = glob($directPattern) ?: [];
         $files = array_merge($files, $directFiles);
 
@@ -294,7 +281,7 @@ class SeederDiscovery
     {
         // Check for attribute first
         $attributes = $reflection->getAttributes(SeederPriority::class);
-        if (! empty($attributes)) {
+        if ($attributes !== []) {
             return $attributes[0]->newInstance()->priority;
         }
 
@@ -333,7 +320,7 @@ class SeederDiscovery
         }
 
         // If no attributes, check for property
-        if (empty($after) && $reflection->hasProperty('after')) {
+        if ($after === [] && $reflection->hasProperty('after')) {
             $prop = $reflection->getProperty('after');
             if ($prop->isPublic() && ! $prop->isStatic()) {
                 $defaultProps = $reflection->getDefaultProperties();
@@ -367,7 +354,7 @@ class SeederDiscovery
         }
 
         // If no attributes, check for property
-        if (empty($before) && $reflection->hasProperty('before')) {
+        if ($before === [] && $reflection->hasProperty('before')) {
             $prop = $reflection->getProperty('before');
             if ($prop->isPublic() && ! $prop->isStatic()) {
                 $defaultProps = $reflection->getDefaultProperties();
@@ -418,6 +405,7 @@ class SeederDiscovery
             if (! isset($inDegree[$seeder])) {
                 $inDegree[$seeder] = 0;
             }
+
             if (! isset($graph[$seeder])) {
                 $graph[$seeder] = [];
             }
@@ -440,12 +428,12 @@ class SeederDiscovery
         }
 
         // Sort queue by priority (lower priority first - lower numbers run first)
-        usort($queue, fn ($a, $b) => $this->seeders[$a]['priority'] <=> $this->seeders[$b]['priority']);
+        usort($queue, fn ($a, $b): int => $this->seeders[$a]['priority'] <=> $this->seeders[$b]['priority']);
 
         $sorted = [];
         $processed = 0;
 
-        while (! empty($queue)) {
+        while ($queue !== []) {
             $seeder = array_shift($queue);
             $sorted[] = $seeder;
             $processed++;
@@ -460,11 +448,11 @@ class SeederDiscovery
             }
 
             // Sort newly ready seeders by priority and add to queue
-            usort($ready, fn ($a, $b) => $this->seeders[$a]['priority'] <=> $this->seeders[$b]['priority']);
+            usort($ready, fn ($a, $b): int => $this->seeders[$a]['priority'] <=> $this->seeders[$b]['priority']);
             $queue = array_merge($ready, $queue);
 
             // Re-sort the entire queue to maintain priority order
-            usort($queue, fn ($a, $b) => $this->seeders[$a]['priority'] <=> $this->seeders[$b]['priority']);
+            usort($queue, fn ($a, $b): int => $this->seeders[$a]['priority'] <=> $this->seeders[$b]['priority']);
         }
 
         // Check for cycles

@@ -96,7 +96,7 @@ class ConfigPanel extends Component
     {
         return ConfigKey::query()
             ->when($this->category, fn ($q) => $q->where('category', $this->category))
-            ->when($this->search, fn ($q) => $q->where('code', 'LIKE', "%{$this->search}%"))
+            ->when($this->search, fn ($q) => $q->where('code', 'LIKE', sprintf('%%%s%%', $this->search)))
             ->orderBy('category')
             ->orderBy('code')
             ->get();
@@ -134,6 +134,7 @@ class ConfigPanel extends Component
         if ($this->scope === 'system') {
             $this->workspaceId = null;
         }
+
         $this->cancel();
     }
 
@@ -169,7 +170,7 @@ class ConfigPanel extends Component
 
         $workspaceValue = ConfigValue::findValue($this->activeProfile->id, $key->id);
 
-        return $workspaceValue === null;
+        return !$workspaceValue instanceof ConfigValue;
     }
 
     public function isLocked(ConfigKey $key): bool

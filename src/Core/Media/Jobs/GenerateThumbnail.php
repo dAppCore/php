@@ -74,7 +74,7 @@ class GenerateThumbnail implements ShouldQueue
 
         Log::info('GenerateThumbnail: Starting thumbnail generation', [
             'source' => $this->sourcePath,
-            'dimensions' => "{$this->width}x{$this->height}",
+            'dimensions' => sprintf('%dx%d', $this->width, $this->height),
             'attempt' => $this->attempts(),
         ]);
 
@@ -101,22 +101,22 @@ class GenerateThumbnail implements ShouldQueue
                 Log::info('GenerateThumbnail: Thumbnail generated successfully', [
                     'source' => $this->sourcePath,
                     'thumbnail' => $result,
-                    'dimensions' => "{$this->width}x{$this->height}",
+                    'dimensions' => sprintf('%dx%d', $this->width, $this->height),
                 ]);
             } else {
                 Log::warning('GenerateThumbnail: Thumbnail generation returned null', [
                     'source' => $this->sourcePath,
-                    'dimensions' => "{$this->width}x{$this->height}",
+                    'dimensions' => sprintf('%dx%d', $this->width, $this->height),
                 ]);
             }
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('GenerateThumbnail: Exception during generation', [
                 'source' => $this->sourcePath,
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
                 'attempt' => $this->attempts(),
             ]);
 
-            throw $e;
+            throw $throwable;
         }
     }
 
@@ -136,7 +136,7 @@ class GenerateThumbnail implements ShouldQueue
 
         Log::error('GenerateThumbnail: Job failed after all retries', [
             'source' => $this->sourcePath,
-            'dimensions' => "{$this->width}x{$this->height}",
+            'dimensions' => sprintf('%dx%d', $this->width, $this->height),
             'error' => $exception?->getMessage(),
         ]);
     }
@@ -158,7 +158,7 @@ class GenerateThumbnail implements ShouldQueue
     {
         $sourceDisk = $this->options['source_disk'] ?? 'public';
 
-        return 'lazy_thumb:'.md5("{$sourceDisk}:{$this->sourcePath}:{$this->width}x{$this->height}");
+        return 'lazy_thumb:'.md5(sprintf('%s:%s:%dx%d', $sourceDisk, $this->sourcePath, $this->width, $this->height));
     }
 
     /**

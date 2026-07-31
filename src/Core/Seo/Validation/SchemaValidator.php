@@ -97,7 +97,7 @@ class SchemaValidator
             $errors = array_merge($errors, $contextResult);
 
             foreach ($schema['@graph'] as $index => $item) {
-                $itemResult = self::validateSchemaItem($item, "graph[$index]");
+                $itemResult = self::validateSchemaItem($item, sprintf('graph[%s]', $index));
                 $errors = array_merge($errors, $itemResult['errors']);
                 $warnings = array_merge($warnings, $itemResult['warnings']);
             }
@@ -108,7 +108,7 @@ class SchemaValidator
         }
 
         return [
-            'valid' => empty($errors),
+            'valid' => $errors === [],
             'errors' => $errors,
             'warnings' => $warnings,
         ];
@@ -144,7 +144,7 @@ class SchemaValidator
 
         // Check for @type
         if (! isset($item['@type'])) {
-            $errors[] = "$path: Missing @type property";
+            $errors[] = $path . ': Missing @type property';
 
             return ['errors' => $errors, 'warnings' => $warnings];
         }
@@ -155,7 +155,7 @@ class SchemaValidator
         if (isset(self::REQUIRED_PROPERTIES[$type])) {
             foreach (self::REQUIRED_PROPERTIES[$type] as $property) {
                 if (! isset($item[$property]) || self::isEmpty($item[$property])) {
-                    $errors[] = "$path ($type): Missing required property '$property'";
+                    $errors[] = sprintf("%s (%s): Missing required property '%s'", $path, $type, $property);
                 }
             }
         }
@@ -164,7 +164,7 @@ class SchemaValidator
         if (isset(self::RECOMMENDED_PROPERTIES[$type])) {
             foreach (self::RECOMMENDED_PROPERTIES[$type] as $property) {
                 if (! isset($item[$property]) || self::isEmpty($item[$property])) {
-                    $warnings[] = "$path ($type): Missing recommended property '$property'";
+                    $warnings[] = sprintf("%s (%s): Missing recommended property '%s'", $path, $type, $property);
                 }
             }
         }
@@ -177,13 +177,13 @@ class SchemaValidator
 
             if (is_array($value)) {
                 if (isset($value['@type'])) {
-                    $nestedResult = self::validateSchemaItem($value, "$path.$key");
+                    $nestedResult = self::validateSchemaItem($value, sprintf('%s.%s', $path, $key));
                     $errors = array_merge($errors, $nestedResult['errors']);
                     $warnings = array_merge($warnings, $nestedResult['warnings']);
                 } elseif (self::isIndexedArray($value)) {
                     foreach ($value as $index => $nestedItem) {
                         if (is_array($nestedItem) && isset($nestedItem['@type'])) {
-                            $nestedResult = self::validateSchemaItem($nestedItem, "$path.$key[$index]");
+                            $nestedResult = self::validateSchemaItem($nestedItem, sprintf('%s.%s', $path, $key[$index]));
                             $errors = array_merge($errors, $nestedResult['errors']);
                             $warnings = array_merge($warnings, $nestedResult['warnings']);
                         }
@@ -214,58 +214,63 @@ class SchemaValidator
             case 'BlogPosting':
             case 'NewsArticle':
                 if (isset($item['headline']) && strlen($item['headline']) > 110) {
-                    $errors[] = "$path ($type): headline should be 110 characters or fewer";
+                    $errors[] = sprintf('%s (%s): headline should be 110 characters or fewer', $path, $type);
                 }
+
                 if (isset($item['datePublished']) && ! self::isValidIso8601($item['datePublished'])) {
-                    $errors[] = "$path ($type): datePublished must be valid ISO 8601 format";
+                    $errors[] = sprintf('%s (%s): datePublished must be valid ISO 8601 format', $path, $type);
                 }
+
                 if (isset($item['dateModified']) && ! self::isValidIso8601($item['dateModified'])) {
-                    $errors[] = "$path ($type): dateModified must be valid ISO 8601 format";
+                    $errors[] = sprintf('%s (%s): dateModified must be valid ISO 8601 format', $path, $type);
                 }
+
                 break;
 
             case 'HowTo':
                 if (isset($item['step']) && ! is_array($item['step'])) {
-                    $errors[] = "$path ($type): step must be an array";
+                    $errors[] = sprintf('%s (%s): step must be an array', $path, $type);
                 } elseif (isset($item['step']) && empty($item['step'])) {
-                    $errors[] = "$path ($type): step array cannot be empty";
+                    $errors[] = sprintf('%s (%s): step array cannot be empty', $path, $type);
                 }
+
                 if (isset($item['totalTime']) && ! self::isValidIsoDuration($item['totalTime'])) {
-                    $errors[] = "$path ($type): totalTime must be valid ISO 8601 duration (e.g., PT30M)";
+                    $errors[] = sprintf('%s (%s): totalTime must be valid ISO 8601 duration (e.g., PT30M)', $path, $type);
                 }
+
                 break;
 
             case 'HowToStep':
-                if (isset($item['position']) && (! is_int($item['position']) || $item['position'] < 1)) {
-                    $errors[] = "$path ($type): position must be a positive integer";
-                }
-                break;
 
             case 'ListItem':
                 if (isset($item['position']) && (! is_int($item['position']) || $item['position'] < 1)) {
-                    $errors[] = "$path ($type): position must be a positive integer";
+                    $errors[] = sprintf('%s (%s): position must be a positive integer', $path, $type);
                 }
+
                 break;
 
             case 'Offer':
                 if (isset($item['price']) && ! is_numeric($item['price']) && $item['price'] !== '0') {
-                    $errors[] = "$path ($type): price must be numeric";
+                    $errors[] = sprintf('%s (%s): price must be numeric', $path, $type);
                 }
+
                 break;
 
             case 'AggregateRating':
                 if (isset($item['ratingValue'])) {
                     $rating = (float) $item['ratingValue'];
                     if ($rating < 0 || $rating > 5) {
-                        $errors[] = "$path ($type): ratingValue should be between 0 and 5";
+                        $errors[] = sprintf('%s (%s): ratingValue should be between 0 and 5', $path, $type);
                     }
                 }
+
                 break;
 
             case 'ImageObject':
                 if (isset($item['url']) && ! filter_var($item['url'], FILTER_VALIDATE_URL)) {
-                    $errors[] = "$path ($type): url must be a valid URL";
+                    $errors[] = sprintf('%s (%s): url must be a valid URL', $path, $type);
                 }
+
                 break;
         }
 
@@ -284,12 +289,7 @@ class SchemaValidator
         if (is_string($value) && trim($value) === '') {
             return true;
         }
-
-        if (is_array($value) && empty($value)) {
-            return true;
-        }
-
-        return false;
+        return $value === [];
     }
 
     /**
@@ -297,7 +297,7 @@ class SchemaValidator
      */
     private static function isIndexedArray(array $array): bool
     {
-        if (empty($array)) {
+        if ($array === []) {
             return true;
         }
 

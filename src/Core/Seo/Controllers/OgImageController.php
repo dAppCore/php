@@ -52,7 +52,7 @@ class OgImageController extends Controller
         }
 
         // Get the image content
-        $filename = "og-images/services/{$service}.png";
+        $filename = sprintf('og-images/services/%s.png', $service);
 
         if (! Storage::disk('public')->exists($filename)) {
             return response('Not Found', 404);

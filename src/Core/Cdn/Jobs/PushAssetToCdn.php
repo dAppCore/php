@@ -116,7 +116,7 @@ class PushAssetToCdn implements ShouldQueue
                 'error' => $result->message(),
             ]);
 
-            $this->fail(new \Exception("Failed to push {$this->path} to CDN zone {$this->zone}"));
+            $this->fail(new \Exception(sprintf('Failed to push %s to CDN zone %s', $this->path, $this->zone)));
         }
 
         Log::info('PushAssetToCdn: Asset pushed successfully', [
@@ -136,8 +136,8 @@ class PushAssetToCdn implements ShouldQueue
         return [
             'cdn',
             'push',
-            "zone:{$this->zone}",
-            "path:{$this->path}",
+            'zone:' . $this->zone,
+            'path:' . $this->path,
         ];
     }
 
@@ -146,7 +146,7 @@ class PushAssetToCdn implements ShouldQueue
      */
     public function uniqueId(): string
     {
-        return "{$this->zone}:{$this->path}";
+        return sprintf('%s:%s', $this->zone, $this->path);
     }
 
     /**

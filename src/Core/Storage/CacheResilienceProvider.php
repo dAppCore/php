@@ -76,19 +76,13 @@ class CacheResilienceProvider extends ServiceProvider
         $this->registerTieredCacheDriver();
 
         // Register CacheWarmer as singleton
-        $this->app->singleton(CacheWarmer::class, function () {
-            return new CacheWarmer();
-        });
+        $this->app->singleton(CacheWarmer::class, fn () => new CacheWarmer());
 
         // Register StorageMetrics as singleton
-        $this->app->singleton(StorageMetrics::class, function () {
-            return new StorageMetrics();
-        });
+        $this->app->singleton(StorageMetrics::class, fn () => new StorageMetrics());
 
         // Register TieredCacheStore as singleton
-        $this->app->singleton(TieredCacheStore::class, function () {
-            return new TieredCacheStore();
-        });
+        $this->app->singleton(TieredCacheStore::class, fn () => new TieredCacheStore());
     }
 
     /**
@@ -99,8 +93,8 @@ class CacheResilienceProvider extends ServiceProvider
      */
     protected function registerResilientRedisDriver(): void
     {
-        $this->app->booting(function () {
-            Cache::extend('resilient-redis', function ($app, $config) {
+        $this->app->booting(function (): void {
+            Cache::extend('resilient-redis', function (array $app, array $config) {
                 $redis = $app['redis'];
                 $prefix = $app['config']['cache.prefix'];
                 $connection = $config['connection'] ?? 'default';
@@ -120,8 +114,8 @@ class CacheResilienceProvider extends ServiceProvider
      */
     protected function registerTieredCacheDriver(): void
     {
-        $this->app->booting(function () {
-            Cache::extend('tiered', function ($app, $config) {
+        $this->app->booting(function (): void {
+            Cache::extend('tiered', function (array $app, array $config) {
                 $prefix = $config['prefix'] ?? $app['config']['cache.prefix'] ?? '';
                 $tiers = [];
 
@@ -286,7 +280,7 @@ class CacheResilienceProvider extends ServiceProvider
         }
 
         // Dispatch after the app is booted to ensure event listeners are registered
-        $this->app->booted(function () {
+        $this->app->booted(function (): void {
             $dispatcher = $this->app->make(Dispatcher::class);
             $dispatcher->dispatch(new RedisFallbackActivated(
                 context: 'boot',

@@ -23,7 +23,7 @@ class ClearFilters extends Component
         public string $label = 'Clear Filters',
     ) {
         $this->clearStatements = collect($this->fields)
-            ->map(fn ($field) => "\$set('{$field}', '')")
+            ->map(fn (string $field): string => sprintf("\$set('%s', '')", $field))
             ->implode('; ');
     }
 

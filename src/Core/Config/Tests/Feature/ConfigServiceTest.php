@@ -23,7 +23,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     // Clear hash for clean test state
     ConfigResolver::clearAll();
 
@@ -63,20 +63,20 @@ beforeEach(function () {
     $this->resolver = app(ConfigResolver::class);
 });
 
-describe('ConfigKey model', function () {
-    it('creates keys with correct types', function () {
+describe('ConfigKey model', function (): void {
+    it('creates keys with correct types', function (): void {
         expect($this->stringKey->type)->toBe(ConfigType::STRING);
         expect($this->boolKey->type)->toBe(ConfigType::BOOL);
         expect($this->intKey->type)->toBe(ConfigType::INT);
     });
 
-    it('returns typed defaults', function () {
+    it('returns typed defaults', function (): void {
         expect($this->stringKey->getTypedDefault())->toBe('default_string');
         expect($this->boolKey->getTypedDefault())->toBe(false);
         expect($this->intKey->getTypedDefault())->toBe(10);
     });
 
-    it('finds keys by code', function () {
+    it('finds keys by code', function (): void {
         $found = ConfigKey::byCode('test.string_key');
 
         expect($found)->not->toBeNull();
@@ -84,31 +84,31 @@ describe('ConfigKey model', function () {
     });
 });
 
-describe('ConfigProfile model', function () {
-    it('creates system profile', function () {
+describe('ConfigProfile model', function (): void {
+    it('creates system profile', function (): void {
         expect($this->systemProfile->scope_type)->toBe(ScopeType::SYSTEM);
         expect($this->systemProfile->scope_id)->toBeNull();
     });
 
-    it('creates workspace profile', function () {
+    it('creates workspace profile', function (): void {
         expect($this->workspaceProfile->scope_type)->toBe(ScopeType::WORKSPACE);
         expect($this->workspaceProfile->scope_id)->toBe($this->workspace->id);
     });
 
-    it('links workspace profile to system parent', function () {
+    it('links workspace profile to system parent', function (): void {
         expect($this->workspaceProfile->parent_profile_id)->toBe($this->systemProfile->id);
     });
 });
 
-describe('ConfigResolver', function () {
-    it('resolves to default when no value set', function () {
+describe('ConfigResolver', function (): void {
+    it('resolves to default when no value set', function (): void {
         $result = $this->resolver->resolve('test.string_key', null);
 
         expect($result->found)->toBeFalse();
         expect($result->get())->toBe('default_string');
     });
 
-    it('resolves system value', function () {
+    it('resolves system value', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'system_value');
 
         $result = $this->resolver->resolve('test.string_key', null);
@@ -118,7 +118,7 @@ describe('ConfigResolver', function () {
         expect($result->resolvedFrom)->toBe(ScopeType::SYSTEM);
     });
 
-    it('workspace overrides system value', function () {
+    it('workspace overrides system value', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'system_value');
         ConfigValue::setValue($this->workspaceProfile->id, $this->stringKey->id, 'workspace_value');
 
@@ -128,7 +128,7 @@ describe('ConfigResolver', function () {
         expect($result->resolvedFrom)->toBe(ScopeType::WORKSPACE);
     });
 
-    it('respects FINAL lock from system', function () {
+    it('respects FINAL lock from system', function (): void {
         // Set locked value at system level
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'locked_value', locked: true);
 
@@ -143,7 +143,7 @@ describe('ConfigResolver', function () {
         expect($result->resolvedFrom)->toBe(ScopeType::SYSTEM);
     });
 
-    it('returns unconfigured for unknown keys', function () {
+    it('returns unconfigured for unknown keys', function (): void {
         $result = $this->resolver->resolve('nonexistent.key', null);
 
         expect($result->found)->toBeFalse();
@@ -151,14 +151,14 @@ describe('ConfigResolver', function () {
     });
 });
 
-describe('ConfigService with materialised resolution', function () {
-    it('gets config value with default', function () {
+describe('ConfigService with materialised resolution', function (): void {
+    it('gets config value with default', function (): void {
         $value = $this->service->get('test.string_key', 'fallback');
 
         expect($value)->toBe('default_string');
     });
 
-    it('gets config value from resolved table after prime', function () {
+    it('gets config value from resolved table after prime', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'db_value');
         $this->service->prime();
 
@@ -167,7 +167,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($value)->toBe('db_value');
     });
 
-    it('reads from materialised table not source', function () {
+    it('reads from materialised table not source', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'original');
         $this->service->prime();
 
@@ -182,7 +182,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($value)->toBe('original');
     });
 
-    it('updates materialised table on set', function () {
+    it('updates materialised table on set', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'initial');
         $this->service->prime();
 
@@ -195,7 +195,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($value)->toBe('updated');
     });
 
-    it('checks if configured', function () {
+    it('checks if configured', function (): void {
         expect($this->service->isConfigured('test.string_key'))->toBeFalse();
 
         $this->service->set('test.string_key', 'some_value', $this->systemProfile);
@@ -203,7 +203,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($this->service->isConfigured('test.string_key'))->toBeTrue();
     });
 
-    it('checks if prefix is configured', function () {
+    it('checks if prefix is configured', function (): void {
         expect($this->service->isConfigured('test'))->toBeFalse();
 
         $this->service->set('test.string_key', 'value', $this->systemProfile);
@@ -211,7 +211,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($this->service->isConfigured('test'))->toBeTrue();
     });
 
-    it('locks and unlocks values', function () {
+    it('locks and unlocks values', function (): void {
         $this->service->set('test.string_key', 'value', $this->systemProfile);
         $this->service->lock('test.string_key', $this->systemProfile);
 
@@ -223,7 +223,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($result->isLocked())->toBeFalse();
     });
 
-    it('gets all config values for scope', function () {
+    it('gets all config values for scope', function (): void {
         $this->service->set('test.string_key', 'string_val', $this->systemProfile);
         $this->service->set('test.bool_key', true, $this->systemProfile);
         $this->service->set('test.int_key', 42, $this->systemProfile);
@@ -236,7 +236,7 @@ describe('ConfigService with materialised resolution', function () {
         expect($all['test.int_key'])->toBe(42);
     });
 
-    it('primes materialised table for workspace', function () {
+    it('primes materialised table for workspace', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'system');
         ConfigValue::setValue($this->workspaceProfile->id, $this->stringKey->id, 'workspace');
 
@@ -245,6 +245,7 @@ describe('ConfigService with materialised resolution', function () {
 
         // Workspace context should get override
         $this->service->setContext($this->workspace);
+
         $wsValue = $this->service->get('test.string_key');
         expect($wsValue)->toBe('workspace');
 
@@ -255,14 +256,12 @@ describe('ConfigService with materialised resolution', function () {
     });
 });
 
-describe('ConfigResolved model', function () {
-    it('stores and retrieves resolved values', function () {
+describe('ConfigResolved model', function (): void {
+    it('stores and retrieves resolved values', function (): void {
         ConfigResolved::store(
             keyCode: 'test.key',
             value: 'test_value',
             type: ConfigType::STRING,
-            workspaceId: null,
-            channelId: null,
         );
 
         $resolved = ConfigResolved::lookup('test.key');
@@ -271,19 +270,19 @@ describe('ConfigResolved model', function () {
         expect($resolved->value)->toBe('test_value');
     });
 
-    it('clears scope correctly', function () {
+    it('clears scope correctly', function (): void {
         ConfigResolved::store('key1', 'v1', ConfigType::STRING);
         ConfigResolved::store('key2', 'v2', ConfigType::STRING, workspaceId: $this->workspace->id);
 
-        ConfigResolved::clearScope(null, null);
+        ConfigResolved::clearScope();
 
         expect(ConfigResolved::lookup('key1'))->toBeNull();
         expect(ConfigResolved::lookup('key2', $this->workspace->id))->not->toBeNull();
     });
 });
 
-describe('Single hash', function () {
-    it('loads scope into hash on first access', function () {
+describe('Single hash', function (): void {
+    it('loads scope into hash on first access', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'hash_test');
         $this->service->prime();
 
@@ -300,7 +299,7 @@ describe('Single hash', function () {
         expect(count(ConfigResolver::all()))->toBeGreaterThan(0);
     });
 
-    it('subsequent reads hit hash not database', function () {
+    it('subsequent reads hit hash not database', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'hash_read');
         $this->service->prime();
 
@@ -318,7 +317,7 @@ describe('Single hash', function () {
         expect($hashValue)->toBe('hash_read');
     });
 
-    it('lazy primes uncached keys into hash', function () {
+    it('lazy primes uncached keys into hash', function (): void {
         // Set value but don't prime
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'lazy_prime');
 
@@ -333,7 +332,7 @@ describe('Single hash', function () {
         expect(ConfigResolver::has('test.string_key'))->toBeTrue();
     });
 
-    it('invalidation clears hash and database', function () {
+    it('invalidation clears hash and database', function (): void {
         ConfigValue::setValue($this->systemProfile->id, $this->stringKey->id, 'to_invalidate');
         $this->service->prime();
 
@@ -348,8 +347,8 @@ describe('Single hash', function () {
     });
 });
 
-describe('ConfigResult', function () {
-    it('converts to array for serialisation', function () {
+describe('ConfigResult', function (): void {
+    it('converts to array for serialisation', function (): void {
         $result = ConfigResult::found(
             key: 'test.key',
             value: 'test_value',
@@ -367,7 +366,7 @@ describe('ConfigResult', function () {
         expect($array['locked'])->toBeTrue();
     });
 
-    it('reconstructs from array', function () {
+    it('reconstructs from array', function (): void {
         $original = ConfigResult::found(
             key: 'test.key',
             value: 42,
@@ -386,7 +385,7 @@ describe('ConfigResult', function () {
         expect($reconstructed->resolvedFrom)->toBe($original->resolvedFrom);
     });
 
-    it('provides typed accessors', function () {
+    it('provides typed accessors', function (): void {
         $result = ConfigResult::found(
             key: 'test.key',
             value: '42',
@@ -400,7 +399,7 @@ describe('ConfigResult', function () {
         expect($result->int())->toBe(42);
     });
 
-    it('supports virtual results', function () {
+    it('supports virtual results', function (): void {
         $result = ConfigResult::virtual(
             key: 'bio.page.title',
             value: 'My Bio Page',

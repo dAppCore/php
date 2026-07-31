@@ -57,7 +57,7 @@ class ConfigExportCommand extends Command
             $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
-                $this->components->error("Workspace not found: {$workspaceSlug}");
+                $this->components->error('Workspace not found: ' . $workspaceSlug);
 
                 return self::FAILURE;
             }
@@ -81,7 +81,7 @@ class ConfigExportCommand extends Command
             default => 'JSON',
         };
 
-        $this->components->task("Exporting {$format} config", function () use ($exporter, $file, $workspace, $includeSensitive, $includeKeys, $category) {
+        $this->components->task(sprintf('Exporting %s config', $format), function () use ($exporter, $file, $workspace, $includeSensitive, $includeKeys, $category): void {
             $content = match (strtolower(pathinfo($file, PATHINFO_EXTENSION))) {
                 'yaml', 'yml' => $exporter->exportYaml($workspace, $includeSensitive, $includeKeys, $category),
                 default => $exporter->exportJson($workspace, $includeSensitive, $includeKeys, $category),
@@ -90,8 +90,8 @@ class ConfigExportCommand extends Command
             file_put_contents($file, $content);
         });
 
-        $scope = $workspace ? "workspace: {$workspace->slug}" : 'system';
-        $this->components->info("Config exported to {$file} ({$scope})");
+        $scope = $workspace ? 'workspace: ' . $workspace->slug : 'system';
+        $this->components->info(sprintf('Config exported to %s (%s)', $file, $scope));
 
         return self::SUCCESS;
     }

@@ -116,11 +116,11 @@ class Pro
 
         if (app()->environment('local', 'development', 'testing')) {
             $message = $component
-                ? "Flux Pro component <{$component}> requires a licence."
+                ? sprintf('Flux Pro component <%s> requires a licence.', $component)
                 : 'Flux Pro component requires a licence.';
 
             throw new \RuntimeException(
-                "{$message} Purchase at: https://fluxui.dev/pricing"
+                $message . ' Purchase at: https://fluxui.dev/pricing'
             );
         }
     }

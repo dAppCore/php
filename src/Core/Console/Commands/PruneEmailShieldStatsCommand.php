@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Console\Commands;
 
+use Carbon\Carbon;
 use Core\Mail\EmailShieldStat;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Completion\CompletionInput;
@@ -63,10 +64,10 @@ class PruneEmailShieldStatsCommand extends Command
 
         // Show current state table
         $this->components->twoColumnDetail('<fg=gray;options=bold>Configuration</>', '');
-        $this->components->twoColumnDetail('Retention period', "<fg=cyan>{$days} days</>");
-        $this->components->twoColumnDetail('Cutoff date', "<fg=cyan>{$cutoffDate}</>");
+        $this->components->twoColumnDetail('Retention period', sprintf('<fg=cyan>%d days</>', $days));
+        $this->components->twoColumnDetail('Cutoff date', sprintf('<fg=cyan>%s</>', $cutoffDate));
         $this->components->twoColumnDetail('Records to delete', $recordsToDelete > 0
-            ? "<fg=yellow>{$recordsToDelete}</>"
+            ? sprintf('<fg=yellow>%d</>', $recordsToDelete)
             : '<fg=green>0</>');
         $this->newLine();
 
@@ -86,8 +87,8 @@ class PruneEmailShieldStatsCommand extends Command
 
         // Show progress for deletion
         $this->components->task(
-            "Deleting {$recordsToDelete} old records",
-            function () use ($days) {
+            sprintf('Deleting %d old records', $recordsToDelete),
+            function () use ($days): true {
                 EmailShieldStat::pruneOldRecords($days);
 
                 return true;
@@ -95,7 +96,7 @@ class PruneEmailShieldStatsCommand extends Command
         );
 
         $this->newLine();
-        $this->components->info("Successfully deleted {$recordsToDelete} records older than {$days} days.");
+        $this->components->info(sprintf('Successfully deleted %d records older than %d days.', $recordsToDelete, $days));
         $this->newLine();
 
         // Show remaining stats
@@ -103,10 +104,11 @@ class PruneEmailShieldStatsCommand extends Command
         $oldest = EmailShieldStat::getOldestRecordDate();
 
         $this->components->twoColumnDetail('<fg=gray;options=bold>Current State</>', '');
-        $this->components->twoColumnDetail('Remaining records', "<fg=cyan>{$remaining}</>");
-        if ($oldest) {
-            $this->components->twoColumnDetail('Oldest record', "<fg=cyan>{$oldest->format('Y-m-d')}</>");
+        $this->components->twoColumnDetail('Remaining records', sprintf('<fg=cyan>%d</>', $remaining));
+        if ($oldest instanceof Carbon) {
+            $this->components->twoColumnDetail('Oldest record', sprintf('<fg=cyan>%s</>', $oldest->format('Y-m-d')));
         }
+
         $this->newLine();
 
         return self::SUCCESS;

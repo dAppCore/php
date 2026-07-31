@@ -112,7 +112,7 @@ class ActionGateServiceTest extends TestCase
 
     public function test_closure_routes_use_uri_fallback(): void
     {
-        $route = new Route(['GET'], '/hello', fn () => 'hello');
+        $route = new Route(['GET'], '/hello', fn (): string => 'hello');
 
         $result = $this->service->resolveAction($route);
 
@@ -121,7 +121,7 @@ class ActionGateServiceTest extends TestCase
 
     public function test_named_closure_routes_use_name(): void
     {
-        $route = new Route(['GET'], '/hello', fn () => 'hello');
+        $route = new Route(['GET'], '/hello', fn (): string => 'hello');
         $route->name('greeting.hello');
 
         $result = $this->service->resolveAction($route);
@@ -170,7 +170,6 @@ class ActionGateServiceTest extends TestCase
         $route->middleware('admin');
 
         $method = new \ReflectionMethod($this->service, 'resolveGuard');
-        $method->setAccessible(true);
 
         $guard = $method->invoke($this->service, $route);
 
@@ -183,7 +182,6 @@ class ActionGateServiceTest extends TestCase
         $route->middleware('api');
 
         $method = new \ReflectionMethod($this->service, 'resolveGuard');
-        $method->setAccessible(true);
 
         $guard = $method->invoke($this->service, $route);
 
@@ -195,7 +193,6 @@ class ActionGateServiceTest extends TestCase
         $route = new Route(['GET'], '/home', ['uses' => 'HomeController@index']);
 
         $method = new \ReflectionMethod($this->service, 'resolveGuard');
-        $method->setAccessible(true);
 
         $guard = $method->invoke($this->service, $route);
 

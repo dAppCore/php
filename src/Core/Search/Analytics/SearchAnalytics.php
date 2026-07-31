@@ -150,17 +150,17 @@ class SearchAnalytics
                 'query' => $this->sanitizeQuery($query),
                 'query_hash' => $this->hashQuery($query),
                 'result_count' => $resultCount,
-                'types' => ! empty($types) ? json_encode($types) : null,
+                'types' => $types === [] ? null : json_encode($types),
                 'duration_ms' => $duration,
                 'session_id' => $this->trackSessions ? $sessionId : null,
                 'user_id' => auth()->id(),
                 'ip_hash' => $this->hashIp(request()->ip()),
-                'metadata' => ! empty($metadata) ? json_encode($metadata) : null,
+                'metadata' => $metadata === [] ? null : json_encode($metadata),
                 'created_at' => now(),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::warning('Failed to track search query', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
         }
     }
@@ -199,9 +199,9 @@ class SearchAnalytics
                 'user_id' => auth()->id(),
                 'created_at' => now(),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::warning('Failed to track search click', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
         }
     }
@@ -299,7 +299,7 @@ class SearchAnalytics
 
         $searchesWithClicks = DB::table(self::TABLE)
             ->where('created_at', '>=', now()->subDays($days))
-            ->whereExists(function ($query) {
+            ->whereExists(function ($query): void {
                 $query->select(DB::raw(1))
                     ->from('search_analytics_clicks')
                     ->whereColumn('search_analytics_clicks.query_hash', 'search_analytics.query_hash');
@@ -330,7 +330,7 @@ class SearchAnalytics
                 ->avg('position');
 
             return round((float) ($result ?? 0), 2);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return 0.0;
         }
     }
@@ -347,7 +347,7 @@ class SearchAnalytics
             return 0;
         }
 
-        $days = $days ?? config('search.analytics.retention_days', 90);
+        $days ??= config('search.analytics.retention_days', 90);
 
         if ($days <= 0) {
             return 0;

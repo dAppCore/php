@@ -79,9 +79,7 @@ class LangServiceProvider extends ServiceProvider
      */
     protected function registerIcuFormatter(): void
     {
-        $this->app->singleton(IcuMessageFormatter::class, function (Application $app) {
-            return new IcuMessageFormatter($app->getLocale());
-        });
+        $this->app->singleton(IcuMessageFormatter::class, fn (Application $app) => new IcuMessageFormatter($app->getLocale()));
 
         // Register an alias for easier access
         $this->app->alias(IcuMessageFormatter::class, 'icu.formatter');
@@ -101,7 +99,7 @@ class LangServiceProvider extends ServiceProvider
     protected function registerTranslationMemory(): void
     {
         // Register the repository
-        $this->app->singleton(TranslationMemoryRepository::class, function (Application $app) {
+        $this->app->singleton(TranslationMemoryRepository::class, function (Application $app): JsonTranslationMemoryRepository {
             $driver = config('core.lang.translation_memory.driver', 'json');
 
             if ($driver === 'json') {
@@ -120,11 +118,9 @@ class LangServiceProvider extends ServiceProvider
         });
 
         // Register the main service
-        $this->app->singleton(TranslationMemory::class, function (Application $app) {
-            return new TranslationMemory(
-                $app->make(TranslationMemoryRepository::class)
-            );
-        });
+        $this->app->singleton(TranslationMemory::class, fn (Application $app) => new TranslationMemory(
+            $app->make(TranslationMemoryRepository::class)
+        ));
 
         // Register an alias for easier access
         $this->app->alias(TranslationMemory::class, 'translation.memory');
@@ -190,9 +186,7 @@ class LangServiceProvider extends ServiceProvider
         /** @var Translator $translator */
         $translator = $this->app->make('translator');
 
-        $translator->determineLocalesUsing(function (array $locales) use ($translator) {
-            return $this->buildFallbackChain($locales, $translator->getFallback());
-        });
+        $translator->determineLocalesUsing(fn (array $locales) => $this->buildFallbackChain($locales, $translator->getFallback()));
     }
 
     /**

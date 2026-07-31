@@ -77,7 +77,7 @@ class TmxExporter
         $entries = $this->repository->findByLocalePair($sourceLocale, $targetLocale);
 
         if (isset($options['min_quality'])) {
-            $entries = $entries->filter(fn (TranslationMemoryEntry $e) => $e->getQuality() >= $options['min_quality']);
+            $entries = $entries->filter(fn (TranslationMemoryEntry $e): bool => $e->getQuality() >= $options['min_quality']);
         }
 
         return $this->exportEntriesToFile($filePath, $entries, $sourceLocale, $options);
@@ -104,7 +104,7 @@ class TmxExporter
         $entries = $this->repository->all();
 
         if (isset($options['min_quality'])) {
-            $entries = $entries->filter(fn (TranslationMemoryEntry $e) => $e->getQuality() >= $options['min_quality']);
+            $entries = $entries->filter(fn (TranslationMemoryEntry $e): bool => $e->getQuality() >= $options['min_quality']);
         }
 
         // Determine primary source locale from entries
@@ -133,7 +133,7 @@ class TmxExporter
         $entries = $this->repository->findByLocalePair($sourceLocale, $targetLocale);
 
         if (isset($options['min_quality'])) {
-            $entries = $entries->filter(fn (TranslationMemoryEntry $e) => $e->getQuality() >= $options['min_quality']);
+            $entries = $entries->filter(fn (TranslationMemoryEntry $e): bool => $e->getQuality() >= $options['min_quality']);
         }
 
         return $this->entriesToTmx($entries, $sourceLocale, $options);
@@ -154,7 +154,7 @@ class TmxExporter
         $entries = $this->repository->all();
 
         if (isset($options['min_quality'])) {
-            $entries = $entries->filter(fn (TranslationMemoryEntry $e) => $e->getQuality() >= $options['min_quality']);
+            $entries = $entries->filter(fn (TranslationMemoryEntry $e): bool => $e->getQuality() >= $options['min_quality']);
         }
 
         $sourceLocale = $entries->first()?->getSourceLocale() ?? 'en';
@@ -199,8 +199,8 @@ class TmxExporter
             $result['success'] = true;
             $result['exported'] = $entries->count();
             $result['file_size'] = strlen($tmx);
-        } catch (\Exception $e) {
-            $result['error'] = $e->getMessage();
+        } catch (\Exception $exception) {
+            $result['error'] = $exception->getMessage();
         }
 
         return $result;
@@ -225,6 +225,7 @@ class TmxExporter
         // Create TMX root element
         $tmx = $dom->createElement('tmx');
         $tmx->setAttribute('version', self::TMX_VERSION);
+
         $dom->appendChild($tmx);
 
         // Create header
@@ -374,6 +375,7 @@ class TmxExporter
             if ($entry->isHighQuality()) {
                 $highQuality++;
             }
+
             if ($entry->needsReview()) {
                 $needsReview++;
             }

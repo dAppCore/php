@@ -229,7 +229,7 @@ class Schema
         $domain = $workspace?->domain ?? $this->baseDomain();
 
         $items = [
-            ['name' => 'Home', 'url' => "https://{$domain}/"],
+            ['name' => 'Home', 'url' => sprintf('https://%s/', $domain)],
         ];
 
         // Add category if available
@@ -237,7 +237,7 @@ class Schema
         if ($category) {
             $items[] = [
                 'name' => $category->name,
-                'url' => "https://{$domain}/help/{$category->slug}",
+                'url' => sprintf('https://%s/help/%s', $domain, $category->slug),
             ];
         }
 
@@ -294,7 +294,7 @@ class Schema
             ],
         ];
 
-        if (! empty($sameAs)) {
+        if ($sameAs !== []) {
             $schema['sameAs'] = $sameAs;
         }
 
@@ -338,7 +338,7 @@ class Schema
         }
 
         // Fallback: extract from HTML/text
-        if (empty($steps)) {
+        if ($steps === []) {
             preg_match_all('/(?:^|\n)\s*(\d+)\.\s*(.+?)(?=\n\s*\d+\.|\n\n|$)/s', $content, $matches);
             foreach ($matches[2] as $stepText) {
                 $steps[] = [
@@ -376,7 +376,7 @@ class Schema
             }
         }
 
-        return empty($faqs) ? null : $faqs;
+        return $faqs === [] ? null : $faqs;
     }
 
     /**
@@ -390,10 +390,10 @@ class Schema
         $domain = $workspace?->domain ?? $this->baseDomain();
 
         if ($item->type === 'post') {
-            return "https://{$domain}/blog/{$item->slug}";
+            return sprintf('https://%s/blog/%s', $domain, $item->slug);
         }
 
-        return "https://{$domain}/{$item->slug}";
+        return sprintf('https://%s/%s', $domain, $item->slug);
     }
 
     /**

@@ -115,8 +115,6 @@ class Boot extends ServiceProvider
             app('blade.compiler')
         );
 
-        app('blade.compiler')->precompiler(function (string $value) use ($compiler) {
-            return $compiler->compile($value);
-        });
+        app('blade.compiler')->precompiler(fn (string $value) => $compiler->compile($value));
     }
 }

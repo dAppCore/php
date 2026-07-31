@@ -76,12 +76,12 @@ class TranslationCoverageCommand extends Command
                 base_path('packages'),
                 base_path('src'),
                 $additionalPath,
-            ], fn ($p) => is_dir($p));
+            ], is_dir(...));
         }
 
         // Run analysis with progress indication
         $report = null;
-        $this->components->task('Scanning code for translation keys', function () use ($coverage, $options, &$report) {
+        $this->components->task('Scanning code for translation keys', function () use ($coverage, $options, &$report): true {
             $report = $coverage->analyze($options);
 
             return true;
@@ -140,25 +140,25 @@ class TranslationCoverageCommand extends Command
 
         $this->components->twoColumnDetail(
             'Locales analyzed',
-            "<fg=cyan>{$summary['locales']}</>"
+            sprintf('<fg=cyan>%d</>', $summary['locales'])
         );
 
         $coverageColor = $summary['total_coverage'] >= 90 ? 'green' : ($summary['total_coverage'] >= 70 ? 'yellow' : 'red');
         $this->components->twoColumnDetail(
             'Overall coverage',
-            "<fg={$coverageColor}>{$summary['total_coverage']}%</>"
+            sprintf('<fg=%s>%s%%</>', $coverageColor, $summary['total_coverage'])
         );
 
         $missingColor = $summary['total_missing'] === 0 ? 'green' : 'yellow';
         $this->components->twoColumnDetail(
             'Missing keys',
-            "<fg={$missingColor}>{$summary['total_missing']}</>"
+            sprintf('<fg=%s>%d</>', $missingColor, $summary['total_missing'])
         );
 
         $unusedColor = $summary['total_unused'] === 0 ? 'green' : 'yellow';
         $this->components->twoColumnDetail(
             'Unused keys',
-            "<fg={$unusedColor}>{$summary['total_unused']}</>"
+            sprintf('<fg=%s>%d</>', $unusedColor, $summary['total_unused'])
         );
 
         $this->newLine();
@@ -219,20 +219,20 @@ class TranslationCoverageCommand extends Command
                 continue;
             }
 
-            $this->line("  <fg=cyan;options=bold>{$locale}:</>");
+            $this->line(sprintf('  <fg=cyan;options=bold>%s:</>', $locale));
 
             foreach ($missing as $key => $usages) {
-                $this->line("    - <fg=yellow>{$key}</>");
+                $this->line(sprintf('    - <fg=yellow>%s</>', $key));
 
                 if ($verbose && ! empty($usages)) {
                     foreach (array_slice($usages, 0, 3) as $usage) {
                         $shortPath = $this->shortenPath($usage['file']);
-                        $this->line("      <fg=gray>Used in: {$shortPath}:{$usage['line']}</>");
+                        $this->line(sprintf('      <fg=gray>Used in: %s:%s</>', $shortPath, $usage['line']));
                     }
 
                     if (count($usages) > 3) {
                         $remaining = count($usages) - 3;
-                        $this->line("      <fg=gray>... and {$remaining} more usages</>");
+                        $this->line(sprintf('      <fg=gray>... and %d more usages</>', $remaining));
                     }
                 }
             }
@@ -259,15 +259,15 @@ class TranslationCoverageCommand extends Command
                 continue;
             }
 
-            $this->line("  <fg=cyan;options=bold>{$locale}:</>");
+            $this->line(sprintf('  <fg=cyan;options=bold>%s:</>', $locale));
 
             foreach ($unused as $key => $files) {
-                $this->line("    - <fg=blue>{$key}</>");
+                $this->line(sprintf('    - <fg=blue>%s</>', $key));
 
                 if ($verbose && ! empty($files)) {
                     foreach ($files as $file) {
                         $shortPath = $this->shortenPath($file);
-                        $this->line("      <fg=gray>Defined in: {$shortPath}</>");
+                        $this->line(sprintf('      <fg=gray>Defined in: %s</>', $shortPath));
                     }
                 }
             }
@@ -303,10 +303,11 @@ class TranslationCoverageCommand extends Command
             if (is_dir($langPath)) {
                 $locales = [];
                 foreach (scandir($langPath) as $item) {
-                    if ($item !== '.' && $item !== '..' && $item !== 'vendor' && is_dir($langPath.'/'.$item)) {
+                    if (!in_array($item, ['.', '..', 'vendor'], true) && is_dir($langPath.'/'.$item)) {
                         $locales[] = $item;
                     }
                 }
+
                 $suggestions->suggestValues($locales);
             }
         }

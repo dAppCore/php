@@ -52,7 +52,6 @@ class SeederRegistry
      * @param  int  $priority  Priority (higher runs first, default 50)
      * @param  array<string>  $after  Seeders that must run before this one
      * @param  array<string>  $before  Seeders that must run after this one
-     * @return $this
      */
     public function register(
         string $class,
@@ -74,7 +73,6 @@ class SeederRegistry
      *
      * @param  array<string, array{priority?: int, after?: array<string>, before?: array<string>}|int>  $seeders
      *                                                                                                            Either [Class => priority] or [Class => ['priority' => n, 'after' => [], 'before' => []]]
-     * @return $this
      */
     public function registerMany(array $seeders): self
     {
@@ -98,7 +96,6 @@ class SeederRegistry
      * Remove a seeder from the registry.
      *
      * @param  string  $class  Seeder class to remove
-     * @return $this
      */
     public function remove(string $class): self
     {
@@ -161,7 +158,6 @@ class SeederRegistry
      * Merge another registry into this one.
      *
      * @param  SeederRegistry  $registry  Registry to merge
-     * @return $this
      */
     public function merge(SeederRegistry $registry): self
     {
@@ -176,8 +172,6 @@ class SeederRegistry
 
     /**
      * Clear all registered seeders.
-     *
-     * @return $this
      */
     public function clear(): self
     {

@@ -49,12 +49,14 @@ class ResilientSession
             if ($this->isSessionError($e)) {
                 return $this->handleSessionError($request, $e, 'database');
             }
+
             throw $e;
         } catch (\PDOException $e) {
             // Catch PDO exceptions that might be session-related
             if ($this->isSessionError($e)) {
                 return $this->handleSessionError($request, $e, 'pdo');
             }
+
             throw $e;
         }
     }
@@ -64,7 +66,7 @@ class ResilientSession
      */
     protected function handleSessionError(Request $request, \Throwable $e, string $type): Response
     {
-        Log::warning("[ResilientSession] Session {$type} error - clearing cookies", [
+        Log::warning(sprintf('[ResilientSession] Session %s error - clearing cookies', $type), [
             'message' => $e->getMessage(),
             'uri' => $request->getRequestUri(),
             'ip' => $request->ip(),

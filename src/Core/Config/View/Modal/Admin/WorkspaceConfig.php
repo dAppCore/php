@@ -103,7 +103,7 @@ class WorkspaceConfig extends Component
     {
         return ConfigKey::orderBy('code')
             ->get()
-            ->map(fn ($key) => explode('.', $key->code)[0])
+            ->map(fn ($key): string => explode('.', $key->code)[0])
             ->unique()
             ->values()
             ->all();
@@ -112,9 +112,9 @@ class WorkspaceConfig extends Component
     #[Computed]
     public function navItems(): array
     {
-        return collect($this->namespaces)->map(fn ($ns) => [
+        return collect($this->namespaces)->map(fn (string $ns): array => [
             'label' => ucfirst($ns),
-            'action' => "navigate('{$ns}')",
+            'action' => sprintf("navigate('%s')", $ns),
             'current' => str_starts_with($this->path ?? '', $ns),
         ])->all();
     }
@@ -131,8 +131,8 @@ class WorkspaceConfig extends Component
         return ConfigKey::where('code', 'like', $prefix.'%')
             ->orderBy('code')
             ->get()
-            ->filter(fn ($key) => count(explode('.', $key->code)) >= 3)
-            ->map(fn ($key) => explode('.', $key->code)[1])
+            ->filter(fn ($key): bool => count(explode('.', $key->code)) >= 3)
+            ->map(fn ($key): string => explode('.', $key->code)[1])
             ->unique()
             ->values()
             ->all();
@@ -141,9 +141,9 @@ class WorkspaceConfig extends Component
     #[Computed]
     public function tabItems(): array
     {
-        return collect($this->tabs)->map(fn ($t) => [
+        return collect($this->tabs)->map(fn ($t): array => [
             'label' => ucfirst($t),
-            'action' => "navigate('{$this->prefix}/{$t}')",
+            'action' => sprintf("navigate('%s/%s')", $this->prefix, $t),
             'selected' => str_contains($this->path ?? '', '/'.$t),
         ])->all();
     }
@@ -163,7 +163,7 @@ class WorkspaceConfig extends Component
             ->all();
 
         // Direct children: prefix + one segment (no dots in remainder)
-        $matches = array_filter($allKeys, fn ($code) => ! str_contains(substr($code, strlen($prefix)), '.'));
+        $matches = array_filter($allKeys, fn ($code): bool => ! str_contains(substr($code, strlen($prefix)), '.'));
 
         return ConfigKey::whereIn('code', $matches)
             ->orderBy('code')
@@ -204,7 +204,7 @@ class WorkspaceConfig extends Component
 
         $value = ConfigValue::findValue($this->workspaceProfile->id, $key->id);
 
-        if ($value !== null) {
+        if ($value instanceof ConfigValue) {
             return $value->getTypedValue();
         }
 
@@ -228,7 +228,7 @@ class WorkspaceConfig extends Component
 
         $workspaceValue = ConfigValue::findValue($this->workspaceProfile->id, $key->id);
 
-        return $workspaceValue === null;
+        return !$workspaceValue instanceof ConfigValue;
     }
 
     public function isLockedBySystem(ConfigKey $key): bool

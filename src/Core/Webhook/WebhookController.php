@@ -21,12 +21,12 @@ class WebhookController
         $signatureValid = null;
 
         // Check for registered verifier
-        $verifier = app()->bound("webhook.verifier.{$source}")
-            ? app("webhook.verifier.{$source}")
+        $verifier = app()->bound('webhook.verifier.' . $source)
+            ? app('webhook.verifier.' . $source)
             : null;
 
         if ($verifier instanceof WebhookVerifier) {
-            $secret = config("webhook.secrets.{$source}", '');
+            $secret = config('webhook.secrets.' . $source, '');
             $signatureValid = $verifier->verify($request, $secret);
         }
 

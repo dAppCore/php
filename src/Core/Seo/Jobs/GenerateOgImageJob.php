@@ -82,7 +82,7 @@ class GenerateOgImageJob implements ShouldQueue
         $page = Page::find($this->pageId);
 
         if (! $page) {
-            Log::warning("OG image generation skipped: page {$this->pageId} not found");
+            Log::warning(sprintf('OG image generation skipped: page %d not found', $this->pageId));
 
             return;
         }
@@ -100,17 +100,17 @@ class GenerateOgImageJob implements ShouldQueue
         try {
             $url = $ogService->generate($page, $this->template);
 
-            Log::info("OG image generated for page {$page->id}", [
+            Log::info('OG image generated for page ' . $page->id, [
                 'url' => $url,
                 'template' => $this->template,
             ]);
-        } catch (\Exception $e) {
-            Log::error("Failed to generate OG image for page {$page->id}", [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+        } catch (\Exception $exception) {
+            Log::error('Failed to generate OG image for page ' . $page->id, [
+                'error' => $exception->getMessage(),
+                'trace' => $exception->getTraceAsString(),
             ]);
 
-            throw $e;
+            throw $exception;
         }
     }
 
@@ -121,6 +121,6 @@ class GenerateOgImageJob implements ShouldQueue
      */
     public function tags(): array
     {
-        return ['og-image', "page:{$this->pageId}"];
+        return ['og-image', 'page:' . $this->pageId];
     }
 }

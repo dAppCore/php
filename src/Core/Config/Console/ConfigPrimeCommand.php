@@ -30,7 +30,7 @@ class ConfigPrimeCommand extends Command
 
         if ($systemOnly) {
             $this->info('Priming system config cache...');
-            $config->prime(null);
+            $config->prime();
             $this->info('System config cached.');
 
             return self::SUCCESS;
@@ -46,12 +46,12 @@ class ConfigPrimeCommand extends Command
             $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
-                $this->error("Workspace not found: {$workspaceSlug}");
+                $this->error('Workspace not found: ' . $workspaceSlug);
 
                 return self::FAILURE;
             }
 
-            $this->info("Priming config cache for workspace: {$workspace->slug}");
+            $this->info('Priming config cache for workspace: ' . $workspace->slug);
             $config->prime($workspace);
             $this->info('Workspace config cached.');
 
@@ -62,13 +62,13 @@ class ConfigPrimeCommand extends Command
 
         if (! class_exists(Workspace::class)) {
             $this->warn('Tenant module not installed. Only priming system config.');
-            $config->prime(null);
+            $config->prime();
             $this->info('System config cached.');
 
             return self::SUCCESS;
         }
 
-        $this->withProgressBar(Workspace::all(), function ($workspace) use ($config) {
+        $this->withProgressBar(Workspace::all(), function (?object $workspace) use ($config): void {
             $config->prime($workspace);
         });
 

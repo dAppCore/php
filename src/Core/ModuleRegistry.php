@@ -89,7 +89,7 @@ class ModuleRegistry
      * @param  ModuleScanner  $scanner  The scanner used to discover module listeners
      */
     public function __construct(
-        private ModuleScanner $scanner
+        private readonly ModuleScanner $scanner
     ) {
     }
 
@@ -127,7 +127,7 @@ class ModuleRegistry
      */
     private function sortByPriority(array $listeners): array
     {
-        uasort($listeners, fn ($a, $b) => $b['priority'] <=> $a['priority']);
+        uasort($listeners, fn ($a, $b): int => $b['priority'] <=> $a['priority']);
 
         return $listeners;
     }

@@ -55,7 +55,7 @@ class File
         );
 
         // Clean up temp file after request completes
-        app()->terminating(function () use ($tempFile) {
+        app()->terminating(function () use ($tempFile): void {
             fclose($tempFile);
         });
 

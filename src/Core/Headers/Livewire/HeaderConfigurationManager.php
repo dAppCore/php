@@ -324,8 +324,8 @@ class HeaderConfigurationManager extends Component
     {
         $directives = [];
         foreach ($this->cspDirectives as $directive => $value) {
-            $sources = array_filter(array_map('trim', explode(' ', $value)));
-            if (! empty($sources)) {
+            $sources = array_filter(array_map(trim(...), explode(' ', $value)));
+            if ($sources !== []) {
                 $directives[$directive] = $sources;
             }
         }
@@ -343,7 +343,7 @@ class HeaderConfigurationManager extends Component
         $features = [];
         foreach ($this->permissionsFeatures as $feature => $config) {
             if ($config['enabled'] ?? false) {
-                $allowlist = array_filter(array_map('trim', explode(' ', $config['allowlist'] ?? '')));
+                $allowlist = array_filter(array_map(trim(...), explode(' ', $config['allowlist'] ?? '')));
                 $features[$feature] = $allowlist;
             } else {
                 $features[$feature] = [];
@@ -394,7 +394,7 @@ class HeaderConfigurationManager extends Component
     public function resetToDefaults(): void
     {
         // Clear runtime config and reload defaults
-        Config::set('headers', null);
+        Config::set('headers');
         $this->loadConfiguration();
 
         $this->saveMessage = 'Configuration reset to defaults.';

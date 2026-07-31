@@ -185,7 +185,7 @@ class TranslationCoverageReport implements Arrayable
      */
     public function getTotalCoverage(): float
     {
-        if (empty($this->stats)) {
+        if ($this->stats === []) {
             return 100.0;
         }
 
@@ -243,7 +243,10 @@ class TranslationCoverageReport implements Arrayable
      */
     public function hasIssues(): bool
     {
-        return $this->getTotalMissing() > 0 || $this->getTotalUnused() > 0;
+        if ($this->getTotalMissing() > 0) {
+            return true;
+        }
+        return $this->getTotalUnused() > 0;
     }
 
     /**
@@ -311,7 +314,7 @@ class TranslationCoverageReport implements Arrayable
 
             // Missing keys
             $missing = $this->getMissing($locale);
-            if (! empty($missing)) {
+            if ($missing !== []) {
                 $output[] = '';
                 $output[] = '  ### Missing Keys:';
                 foreach ($missing as $key => $usages) {
@@ -330,7 +333,7 @@ class TranslationCoverageReport implements Arrayable
 
             // Unused keys
             $unused = $this->getUnused($locale);
-            if (! empty($unused)) {
+            if ($unused !== []) {
                 $output[] = '';
                 $output[] = '  ### Unused Keys:';
                 foreach ($unused as $key => $files) {

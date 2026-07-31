@@ -22,7 +22,7 @@ class Search extends Component
         public string $placeholder = 'Search...',
         public ?string $model = null,
     ) {
-        $this->wireModel = $this->model ? "wire:model.live.debounce.300ms=\"{$this->model}\"" : '';
+        $this->wireModel = $this->model ? sprintf('wire:model.live.debounce.300ms="%s"', $this->model) : '';
     }
 
     public function render(): View

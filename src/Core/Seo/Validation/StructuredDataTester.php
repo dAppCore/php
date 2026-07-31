@@ -245,7 +245,7 @@ class StructuredDataTester
         // Check for @graph structure
         if (isset($schema['@graph'])) {
             foreach ($schema['@graph'] as $index => $item) {
-                $itemResult = $this->validateSchemaItem($item, "graph[$index]");
+                $itemResult = $this->validateSchemaItem($item, sprintf('graph[%s]', $index));
                 $errors = array_merge($errors, $itemResult['errors']);
                 $warnings = array_merge($warnings, $itemResult['warnings']);
 
@@ -268,16 +268,16 @@ class StructuredDataTester
 
         // Add info messages
         $typesFound = array_unique($typesFound);
-        if (! empty($typesFound)) {
+        if ($typesFound !== []) {
             $info[] = 'Schema types found: '.implode(', ', $typesFound);
         }
 
-        if (! empty($richResults)) {
+        if ($richResults !== []) {
             $info[] = 'Eligible for rich results: '.implode(', ', $richResults);
         }
 
         $result = [
-            'valid' => empty($errors),
+            'valid' => $errors === [],
             'errors' => $errors,
             'warnings' => $warnings,
             'info' => $info,
@@ -330,7 +330,7 @@ class StructuredDataTester
 
             $schemas = $this->extractJsonLd($response->body());
 
-            if (empty($schemas)) {
+            if ($schemas === []) {
                 return [
                     'valid' => true,
                     'schemas_found' => 0,
@@ -344,7 +344,7 @@ class StructuredDataTester
             $totalWarnings = 0;
             $allValid = true;
 
-            foreach ($schemas as $index => $schema) {
+            foreach ($schemas as $schema) {
                 $result = $this->test($schema);
                 $results[] = $result;
 
@@ -365,10 +365,10 @@ class StructuredDataTester
                     'total_warnings' => $totalWarnings,
                 ],
             ];
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::warning('Failed to test URL for structured data', [
                 'url' => $url,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return [
@@ -378,7 +378,7 @@ class StructuredDataTester
                     'valid' => false,
                     'errors' => [[
                         'code' => 'exception',
-                        'message' => 'Error testing URL: '.$e->getMessage(),
+                        'message' => 'Error testing URL: '.$exception->getMessage(),
                         'path' => 'url',
                         'fix' => 'Check that the URL is valid and accessible.',
                     ]],
@@ -528,9 +528,9 @@ class StructuredDataTester
                 'issues' => $data['issues'] ?? [],
                 'raw' => $data,
             ];
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::warning('Google Rich Results Test failed', [
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return [
@@ -539,7 +539,7 @@ class StructuredDataTester
                 'richResultsDetected' => [],
                 'issues' => [[
                     'severity' => 'error',
-                    'message' => 'API request failed: '.$e->getMessage(),
+                    'message' => 'API request failed: '.$exception->getMessage(),
                 ]],
                 'raw' => null,
             ];
@@ -565,13 +565,13 @@ class StructuredDataTester
         $testResult = $this->test($schema);
 
         // Enrich errors and warnings with fixes
-        $enrichedErrors = array_map(function ($error) {
+        $enrichedErrors = array_map(function (array $error): array {
             $fix = $this->getFix($error['code']);
 
             return array_merge($error, $fix);
         }, $testResult['errors']);
 
-        $enrichedWarnings = array_map(function ($warning) {
+        $enrichedWarnings = array_map(function (array $warning): array {
             $fix = $this->getFix($warning['code']);
 
             return array_merge($warning, $fix);
@@ -672,13 +672,13 @@ class StructuredDataTester
 
             if (is_array($value)) {
                 if (isset($value['@type'])) {
-                    $nestedResult = $this->validateSchemaItem($value, "$path.$key");
+                    $nestedResult = $this->validateSchemaItem($value, sprintf('%s.%s', $path, $key));
                     $errors = array_merge($errors, $nestedResult['errors']);
                     $warnings = array_merge($warnings, $nestedResult['warnings']);
                 } elseif ($this->isIndexedArray($value)) {
                     foreach ($value as $index => $nested) {
                         if (is_array($nested) && isset($nested['@type'])) {
-                            $nestedResult = $this->validateSchemaItem($nested, "$path.$key[$index]");
+                            $nestedResult = $this->validateSchemaItem($nested, sprintf('%s.%s', $path, $key[$index]));
                             $errors = array_merge($errors, $nestedResult['errors']);
                             $warnings = array_merge($warnings, $nestedResult['warnings']);
                         }
@@ -711,6 +711,7 @@ class StructuredDataTester
                     'fix' => 'Review the schema.org documentation for '.$type,
                 ];
             }
+
             foreach ($result['warnings'] as $warning) {
                 $warnings[] = [
                     'code' => 'schema_recommendation',
@@ -730,9 +731,9 @@ class StructuredDataTester
             if (! isset($item[$prop]) || $this->isEmpty($item[$prop])) {
                 $errors[] = [
                     'code' => 'missing_required',
-                    'message' => "$type: Missing required property '$prop'",
-                    'path' => "$path.$prop",
-                    'fix' => "Add the '$prop' property to enable rich results.",
+                    'message' => sprintf("%s: Missing required property '%s'", $type, $prop),
+                    'path' => sprintf('%s.%s', $path, $prop),
+                    'fix' => sprintf("Add the '%s' property to enable rich results.", $prop),
                 ];
             }
         }
@@ -742,9 +743,9 @@ class StructuredDataTester
             if (! isset($item[$prop]) || $this->isEmpty($item[$prop])) {
                 $warnings[] = [
                     'code' => 'missing_recommended',
-                    'message' => "$type: Missing recommended property '$prop'",
-                    'path' => "$path.$prop",
-                    'fix' => "Consider adding '$prop' for better rich result display.",
+                    'message' => sprintf("%s: Missing recommended property '%s'", $type, $prop),
+                    'path' => sprintf('%s.%s', $path, $prop),
+                    'fix' => sprintf("Consider adding '%s' for better rich result display.", $prop),
                 ];
             }
         }
@@ -767,8 +768,8 @@ class StructuredDataTester
             if (isset($item[$dateProp]) && ! $this->isValidDate($item[$dateProp])) {
                 $errors[] = [
                     'code' => 'invalid_date',
-                    'message' => "$dateProp must be in ISO 8601 format",
-                    'path' => "$path.$dateProp",
+                    'message' => $dateProp . ' must be in ISO 8601 format',
+                    'path' => sprintf('%s.%s', $path, $dateProp),
                     'fix' => self::ERROR_FIXES['invalid_date']['fix'],
                 ];
             }
@@ -782,8 +783,8 @@ class StructuredDataTester
                     if (is_string($url) && ! filter_var($url, FILTER_VALIDATE_URL)) {
                         $errors[] = [
                             'code' => 'invalid_url',
-                            'message' => "$urlProp contains an invalid URL",
-                            'path' => "$path.$urlProp",
+                            'message' => $urlProp . ' contains an invalid URL',
+                            'path' => sprintf('%s.%s', $path, $urlProp),
                             'fix' => self::ERROR_FIXES['invalid_url']['fix'],
                         ];
                     }
@@ -797,7 +798,7 @@ class StructuredDataTester
                 $warnings[] = [
                     'code' => 'headline_too_long',
                     'message' => 'Headline exceeds 110 characters ('.strlen($item['headline']).')',
-                    'path' => "$path.headline",
+                    'path' => $path . '.headline',
                     'fix' => self::ERROR_FIXES['headline_too_long']['fix'],
                 ];
             }
@@ -812,8 +813,8 @@ class StructuredDataTester
             if ($rating < $worst || $rating > $best) {
                 $errors[] = [
                     'code' => 'invalid_rating',
-                    'message' => "ratingValue ($rating) is outside valid range ($worst-$best)",
-                    'path' => "$path.ratingValue",
+                    'message' => sprintf('ratingValue (%s) is outside valid range (%s-%s)', $rating, $worst, $best),
+                    'path' => $path . '.ratingValue',
                     'fix' => self::ERROR_FIXES['invalid_rating']['fix'],
                 ];
             }
@@ -825,8 +826,8 @@ class StructuredDataTester
             if (! isset($item['image']) || $this->isEmpty($item['image'])) {
                 $warnings[] = [
                     'code' => 'missing_image',
-                    'message' => "$type should include an image for rich results",
-                    'path' => "$path.image",
+                    'message' => $type . ' should include an image for rich results',
+                    'path' => $path . '.image',
                     'fix' => self::ERROR_FIXES['missing_image']['fix'],
                 ];
             }
@@ -939,7 +940,7 @@ class StructuredDataTester
         }
 
         if (! in_array('WebSite', $types, true) && ! in_array('Organization', $types, true)) {
-            $recommendations[] = 'Consider adding Organization or WebSite schema to enhance your site\'s presence in search results.';
+            $recommendations[] = "Consider adding Organization or WebSite schema to enhance your site's presence in search results.";
         }
 
         // If there are articles without FAQ
@@ -988,12 +989,7 @@ class StructuredDataTester
         if (is_string($value) && trim($value) === '') {
             return true;
         }
-
-        if (is_array($value) && empty($value)) {
-            return true;
-        }
-
-        return false;
+        return $value === [];
     }
 
     /**
@@ -1001,7 +997,7 @@ class StructuredDataTester
      */
     protected function isIndexedArray(array $array): bool
     {
-        if (empty($array)) {
+        if ($array === []) {
             return true;
         }
 

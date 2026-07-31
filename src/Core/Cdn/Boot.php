@@ -55,6 +55,7 @@ class Boot extends ServiceProvider
         if (class_exists(CdnManager::class)) {
             $this->app->singleton(CdnManager::class);
         }
+
         if (class_exists(StorageManager::class)) {
             $this->app->singleton(StorageManager::class);
         }

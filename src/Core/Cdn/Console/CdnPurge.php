@@ -73,7 +73,7 @@ class CdnPurge extends Command
         }
 
         // Check for mutually exclusive options
-        $optionCount = ($everything ? 1 : 0) + (! empty($urls) ? 1 : 0) + (! empty($tag) ? 1 : 0) + (! empty($workspaceArg) ? 1 : 0);
+        $optionCount = ($everything ? 1 : 0) + (empty($urls) ? 0 : 1) + (empty($tag) ? 0 : 1) + (empty($workspaceArg) ? 0 : 1);
         if ($optionCount > 1 && $everything) {
             $this->error('Cannot use --everything with other options');
 
@@ -101,6 +101,7 @@ class CdnPurge extends Command
             if (class_exists(Workspace::class)) {
                 $workspaceOptions = array_merge($workspaceOptions, Workspace::pluck('slug')->toArray());
             }
+
             $workspaceArg = $this->choice(
                 'What would you like to purge?',
                 $workspaceOptions,
@@ -109,7 +110,7 @@ class CdnPurge extends Command
 
             if ($workspaceArg === 'Select specific URLs') {
                 $urlInput = $this->ask('Enter URL(s) to purge (comma-separated)');
-                $urls = array_map('trim', explode(',', $urlInput));
+                $urls = array_map(trim(...), explode(',', $urlInput));
 
                 return $this->purgeUrls($urls, $dryRun);
             }
@@ -150,8 +151,8 @@ class CdnPurge extends Command
             $this->error('Failed to purge CDN cache: '.$result->message());
 
             return self::FAILURE;
-        } catch (\Exception $e) {
-            $this->error("Purge failed: {$e->getMessage()}");
+        } catch (\Exception $exception) {
+            $this->error('Purge failed: ' . $exception->getMessage());
 
             return self::FAILURE;
         }
@@ -162,7 +163,7 @@ class CdnPurge extends Command
         $this->info('Purging '.count($urls).' URL(s)...');
 
         foreach ($urls as $url) {
-            $this->line("  - {$url}");
+            $this->line('  - ' . $url);
         }
 
         if ($dryRun) {
@@ -182,8 +183,8 @@ class CdnPurge extends Command
             $this->error('Failed to purge URLs: '.$result->message());
 
             return self::FAILURE;
-        } catch (\Exception $e) {
-            $this->error("Purge failed: {$e->getMessage()}");
+        } catch (\Exception $exception) {
+            $this->error('Purge failed: ' . $exception->getMessage());
 
             return self::FAILURE;
         }
@@ -191,10 +192,10 @@ class CdnPurge extends Command
 
     protected function purgeByTag(string $tag, bool $dryRun): int
     {
-        $this->info("Purging cache tag: {$tag}");
+        $this->info('Purging cache tag: ' . $tag);
 
         if ($dryRun) {
-            $this->info("Would purge: all content with tag '{$tag}'");
+            $this->info(sprintf("Would purge: all content with tag '%s'", $tag));
 
             return self::SUCCESS;
         }
@@ -211,8 +212,8 @@ class CdnPurge extends Command
             $this->error('Failed to purge cache tag: '.$result->message());
 
             return self::FAILURE;
-        } catch (\Exception $e) {
-            $this->error("Purge failed: {$e->getMessage()}");
+        } catch (\Exception $exception) {
+            $this->error('Purge failed: ' . $exception->getMessage());
 
             return self::FAILURE;
         }
@@ -234,16 +235,16 @@ class CdnPurge extends Command
             return self::FAILURE;
         }
 
-        $this->info("Purging {$workspaces->count()} workspaces...");
+        $this->info(sprintf('Purging %s workspaces...', $workspaces->count()));
         $this->newLine();
 
         $success = true;
 
         foreach ($workspaces as $workspace) {
-            $this->line("Workspace: <info>{$workspace->slug}</info>");
+            $this->line(sprintf('Workspace: <info>%s</info>', $workspace->slug));
 
             if ($dryRun) {
-                $this->line("  Would purge: workspace-{$workspace->uuid}");
+                $this->line('  Would purge: workspace-' . $workspace->uuid);
 
                 continue;
             }
@@ -258,7 +259,7 @@ class CdnPurge extends Command
                     $success = false;
                 }
             } catch (\Exception $e) {
-                $this->line("  <fg=red>Error: {$e->getMessage()}</>");
+                $this->line(sprintf('  <fg=red>Error: %s</>', $e->getMessage()));
                 $success = false;
             }
         }
@@ -287,18 +288,18 @@ class CdnPurge extends Command
         $workspace = Workspace::where('slug', $slug)->first();
 
         if (! $workspace) {
-            $this->error("Workspace not found: {$slug}");
+            $this->error('Workspace not found: ' . $slug);
             $this->newLine();
             $this->info('Available workspaces:');
-            Workspace::pluck('slug')->each(fn ($s) => $this->line("  - {$s}"));
+            Workspace::pluck('slug')->each(fn ($s) => $this->line('  - ' . $s));
 
             return self::FAILURE;
         }
 
-        $this->info("Purging workspace: {$workspace->slug}");
+        $this->info('Purging workspace: ' . $workspace->slug);
 
         if ($dryRun) {
-            $this->line("Would purge: workspace-{$workspace->uuid}");
+            $this->line('Would purge: workspace-' . $workspace->uuid);
 
             return self::SUCCESS;
         }
@@ -315,8 +316,8 @@ class CdnPurge extends Command
             $this->error('Failed to purge workspace cache: '.$result->message());
 
             return self::FAILURE;
-        } catch (\Exception $e) {
-            $this->error("Purge failed: {$e->getMessage()}");
+        } catch (\Exception $exception) {
+            $this->error('Purge failed: ' . $exception->getMessage());
 
             return self::FAILURE;
         }

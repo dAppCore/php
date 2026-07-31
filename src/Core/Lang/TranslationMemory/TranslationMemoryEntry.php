@@ -89,7 +89,7 @@ class TranslationMemoryEntry implements Arrayable, JsonSerializable
      */
     public static function generateId(string $source, string $sourceLocale, string $targetLocale): string
     {
-        return hash('xxh128', "{$sourceLocale}:{$targetLocale}:{$source}");
+        return hash('xxh128', sprintf('%s:%s:%s', $sourceLocale, $targetLocale, $source));
     }
 
     /**
@@ -289,7 +289,7 @@ class TranslationMemoryEntry implements Arrayable, JsonSerializable
      */
     public function getLocalePair(): string
     {
-        return "{$this->sourceLocale}->{$this->targetLocale}";
+        return sprintf('%s->%s', $this->sourceLocale, $this->targetLocale);
     }
 
     /**

@@ -96,7 +96,7 @@ class TimezoneList
                 }
             }
 
-            foreach ($this->continents as $continent => $mask) {
+            foreach ($this->continents as $mask) {
                 $timezones = DateTimeZone::listIdentifiers($mask);
 
                 foreach ($timezones as $timezone) {
@@ -130,7 +130,7 @@ class TimezoneList
      */
     protected function formatTimezone(string $timezone, ?string $cutOffContinent = null): string
     {
-        $displayedTimezone = empty($cutOffContinent)
+        $displayedTimezone = in_array($cutOffContinent, [null, '', '0'], true)
             ? $timezone
             : substr($timezone, strlen($cutOffContinent) + 1);
 

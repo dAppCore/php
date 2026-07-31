@@ -39,7 +39,7 @@ class FindDomainRecord
         // Try to find a workspace for this domain
         $workspace = $this->resolveWorkspaceFromDomain($host);
 
-        if ($workspace) {
+        if ($workspace !== null) {
             $request->attributes->set('workspace_model', $workspace);
             $request->attributes->set('workspace', $workspace->slug);
         }
@@ -68,11 +68,7 @@ class FindDomainRecord
 
         // Check against configured excluded domains
         $excludedDomains = config('core.domain.excluded', []);
-        if (in_array($host, $excludedDomains, true)) {
-            return true;
-        }
-
-        return false;
+        return in_array($host, $excludedDomains, true);
     }
 
     /**

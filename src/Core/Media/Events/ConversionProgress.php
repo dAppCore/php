@@ -134,7 +134,7 @@ class ConversionProgress
             engine: $engine,
             stage: self::STAGE_PROCESSING,
             percent: min(100, max(0, $percent)),
-            message: $message ?? "Processing: {$percent}%",
+            message: $message ?? sprintf('Processing: %d%%', $percent),
             context: $context,
         );
     }
@@ -231,7 +231,10 @@ class ConversionProgress
      */
     public function isTerminal(): bool
     {
-        return $this->isCompleted() || $this->isFailed();
+        if ($this->isCompleted()) {
+            return true;
+        }
+        return $this->isFailed();
     }
 
     /**

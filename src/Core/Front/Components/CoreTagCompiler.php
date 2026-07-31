@@ -129,7 +129,7 @@ class CoreTagCompiler extends ComponentTagCompiler
             \/>
         /x";
 
-        return preg_replace_callback($pattern, function (array $matches) {
+        return preg_replace_callback($pattern, function (array $matches): string {
             $this->boundAttributes = [];
             $attributes = $this->getAttributesFromAttributeString($matches['attributes']);
 

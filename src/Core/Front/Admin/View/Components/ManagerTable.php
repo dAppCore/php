@@ -31,7 +31,7 @@ class ManagerTable extends Component
 
     protected function processColumns(): array
     {
-        return array_map(fn ($column) => [
+        return array_map(fn ($column): array => [
             'label' => is_array($column) ? $column['label'] : $column,
             'align' => is_array($column) ? ($column['align'] ?? 'left') : 'left',
             'alignClass' => $this->alignClass(

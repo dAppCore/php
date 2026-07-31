@@ -200,7 +200,7 @@ class StorageMetrics
             'driver' => $driver,
             'operation' => $operation,
             'error' => $error->getMessage(),
-            'exception' => get_class($error),
+            'exception' => $error::class,
         ]);
     }
 
@@ -527,6 +527,6 @@ class StorageMetrics
             return;
         }
 
-        Log::log($level, "[StorageMetrics] {$message}", $context);
+        Log::log($level, '[StorageMetrics] ' . $message, $context);
     }
 }

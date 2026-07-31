@@ -20,15 +20,12 @@ namespace Core\Front\Components;
  */
 class Text extends Component
 {
-    protected string $content = '';
-
     protected string $tag = 'span';
 
     protected string $variant = 'default';
 
-    public function __construct(string $content = '')
+    public function __construct(protected string $content = '')
     {
-        $this->content = $content;
     }
 
     /**

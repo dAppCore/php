@@ -72,11 +72,6 @@ class SearchHighlighter
     protected string $class = self::DEFAULT_CLASS;
 
     /**
-     * Whether to escape HTML in the input text.
-     */
-    protected bool $escapeHtml = true;
-
-    /**
      * Minimum word length to highlight.
      */
     protected int $minWordLength = self::MIN_WORD_LENGTH;
@@ -87,15 +82,18 @@ class SearchHighlighter
     public function __construct(
         ?string $tag = null,
         ?string $class = null,
-        bool $escapeHtml = true
+        /**
+         * Whether to escape HTML in the input text.
+         */
+        protected bool $escapeHtml = true
     ) {
         if ($tag !== null) {
             $this->tag = $tag;
         }
+
         if ($class !== null) {
             $this->class = $class;
         }
-        $this->escapeHtml = $escapeHtml;
     }
 
     /**
@@ -155,14 +153,14 @@ class SearchHighlighter
      */
     public function highlight(string $text, string $query): string
     {
-        if (empty($text) || empty($query)) {
+        if ($text === '' || $text === '0' || ($query === '' || $query === '0')) {
             return $this->escapeHtml ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : $text;
         }
 
         // Extract words from the query
         $words = $this->extractWords($query);
 
-        if (empty($words)) {
+        if ($words === []) {
             return $this->escapeHtml ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : $text;
         }
 
@@ -177,7 +175,7 @@ class SearchHighlighter
         // Replace matches with highlighted version
         return preg_replace_callback(
             $pattern,
-            fn (array $matches) => $this->wrapMatch($matches[0]),
+            fn (array $matches): string => $this->wrapMatch($matches[0]),
             $text
         ) ?? $text;
     }
@@ -192,13 +190,13 @@ class SearchHighlighter
      */
     public function snippet(string $text, string $query, int $contextLength = self::DEFAULT_CONTEXT_LENGTH): string
     {
-        if (empty($text) || empty($query)) {
+        if ($text === '' || $text === '0' || ($query === '' || $query === '0')) {
             return $this->escapeHtml ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : $text;
         }
 
         $words = $this->extractWords($query);
 
-        if (empty($words)) {
+        if ($words === []) {
             return $this->truncate($text, $contextLength * 2);
         }
 
@@ -230,7 +228,7 @@ class SearchHighlighter
         $matches = [];
         $count = 0;
 
-        if (empty($text) || empty($query)) {
+        if ($text === '' || $text === '0' || ($query === '' || $query === '0')) {
             return [
                 'text' => $this->escapeHtml ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : $text,
                 'matches' => $matches,
@@ -240,7 +238,7 @@ class SearchHighlighter
 
         $words = $this->extractWords($query);
 
-        if (empty($words)) {
+        if ($words === []) {
             return [
                 'text' => $this->escapeHtml ? htmlspecialchars($text, ENT_QUOTES, 'UTF-8') : $text,
                 'matches' => $matches,
@@ -248,7 +246,7 @@ class SearchHighlighter
             ];
         }
 
-        $pattern = $this->buildPattern($words);
+        $this->buildPattern($words);
         $lowerText = mb_strtolower($text);
 
         // Find all match positions
@@ -266,7 +264,7 @@ class SearchHighlighter
         }
 
         // Sort matches by position
-        usort($matches, fn (array $a, array $b) => $a['position'] <=> $b['position']);
+        usort($matches, fn (array $a, array $b): int => $a['position'] <=> $b['position']);
 
         return [
             'text' => $this->highlight($text, $query),
@@ -285,7 +283,7 @@ class SearchHighlighter
     {
         $query = trim($query);
 
-        if (empty($query)) {
+        if ($query === '' || $query === '0') {
             return [];
         }
 
@@ -294,7 +292,7 @@ class SearchHighlighter
 
         return array_values(array_filter(
             $words,
-            fn (string $word) => mb_strlen($word) >= $this->minWordLength
+            fn (string $word): bool => mb_strlen($word) >= $this->minWordLength
         ));
     }
 
@@ -307,7 +305,7 @@ class SearchHighlighter
     protected function buildPattern(array $words): string
     {
         // Escape regex special characters and join with alternation
-        $escaped = array_map(fn (string $word) => preg_quote($word, '/'), $words);
+        $escaped = array_map(fn (string $word): string => preg_quote($word, '/'), $words);
 
         // Use word boundary where possible, case-insensitive
         return '/('.implode('|', $escaped).')/iu';
@@ -323,7 +321,7 @@ class SearchHighlighter
     {
         $classAttr = $this->class ? ' class="'.htmlspecialchars($this->class, ENT_QUOTES, 'UTF-8').'"' : '';
 
-        return "<{$this->tag}{$classAttr}>{$match}</{$this->tag}>";
+        return sprintf('<%s%s>%s</%s>', $this->tag, $classAttr, $match, $this->tag);
     }
 
     /**

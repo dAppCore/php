@@ -159,7 +159,7 @@ class BlocklistService
 
             return DB::table('blocked_ips')
                 ->where('status', self::STATUS_APPROVED)
-                ->where(function ($query) {
+                ->where(function ($query): void {
                     $query->whereNull('expires_at')
                         ->orWhere('expires_at', '>', now());
                 })
@@ -198,9 +198,7 @@ class BlocklistService
      */
     protected function tableExists(): bool
     {
-        return Cache::remember('bouncer:blocked_ips_table_exists', 3600, function (): bool {
-            return DB::getSchemaBuilder()->hasTable('blocked_ips');
-        });
+        return Cache::remember('bouncer:blocked_ips_table_exists', 3600, fn (): bool => DB::getSchemaBuilder()->hasTable('blocked_ips'));
     }
 
     /**
@@ -324,7 +322,7 @@ class BlocklistService
             'total_blocked' => DB::table('blocked_ips')->count(),
             'active_blocked' => DB::table('blocked_ips')
                 ->where('status', self::STATUS_APPROVED)
-                ->where(function ($query) {
+                ->where(function ($query): void {
                     $query->whereNull('expires_at')
                         ->orWhere('expires_at', '>', now());
                 })

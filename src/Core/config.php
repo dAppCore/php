@@ -61,7 +61,7 @@ return [
         'tld' => env('APP_TLD', '.test'),
 
         // Domains to exclude from workspace resolution (always serve main app)
-        'excluded' => array_filter(array_map('trim', explode(',', env('DOMAIN_EXCLUDED', '')))),
+        'excluded' => array_filter(array_map(trim(...), explode(',', env('DOMAIN_EXCLUDED', '')))),
     ],
 
     /*

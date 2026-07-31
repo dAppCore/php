@@ -65,11 +65,6 @@ use Core\Front\Admin\Contracts\AdminMenuProvider;
 class MenuItemBuilder
 {
     /**
-     * The menu item label.
-     */
-    protected string $label;
-
-    /**
      * The menu item icon (FontAwesome name).
      */
     protected ?string $icon = null;
@@ -164,9 +159,8 @@ class MenuItemBuilder
      *
      * @param  string  $label  The menu item display text
      */
-    public function __construct(string $label)
+    public function __construct(protected string $label)
     {
-        $this->label = $label;
     }
 
     /**
@@ -196,7 +190,6 @@ class MenuItemBuilder
      * Set the icon name (FontAwesome).
      *
      * @param  string  $icon  Icon name (e.g., 'home', 'gear', 'fa-solid fa-user')
-     * @return $this
      */
     public function icon(string $icon): static
     {
@@ -209,7 +202,6 @@ class MenuItemBuilder
      * Set the URL/href for the menu item.
      *
      * @param  string  $href  The URL path
-     * @return $this
      */
     public function href(string $href): static
     {
@@ -225,7 +217,6 @@ class MenuItemBuilder
      *
      * @param  string  $route  The route name
      * @param  array<string, mixed>  $params  Optional route parameters
-     * @return $this
      */
     public function route(string $route, array $params = []): static
     {
@@ -239,7 +230,6 @@ class MenuItemBuilder
      * Set the menu group.
      *
      * @param  string  $group  Group key (dashboard, workspaces, services, settings, admin)
-     * @return $this
      */
     public function inGroup(string $group): static
     {
@@ -250,8 +240,6 @@ class MenuItemBuilder
 
     /**
      * Place in the dashboard group.
-     *
-     * @return $this
      */
     public function inDashboard(): static
     {
@@ -260,8 +248,6 @@ class MenuItemBuilder
 
     /**
      * Place in the workspaces group.
-     *
-     * @return $this
      */
     public function inWorkspaces(): static
     {
@@ -270,8 +256,6 @@ class MenuItemBuilder
 
     /**
      * Place in the services group (default).
-     *
-     * @return $this
      */
     public function inServices(): static
     {
@@ -280,8 +264,6 @@ class MenuItemBuilder
 
     /**
      * Place in the settings group.
-     *
-     * @return $this
      */
     public function inSettings(): static
     {
@@ -290,8 +272,6 @@ class MenuItemBuilder
 
     /**
      * Place in the admin group.
-     *
-     * @return $this
      */
     public function inAdmin(): static
     {
@@ -302,7 +282,6 @@ class MenuItemBuilder
      * Set the priority within the group.
      *
      * @param  int  $priority  Use AdminMenuProvider::PRIORITY_* constants
-     * @return $this
      */
     public function withPriority(int $priority): static
     {
@@ -315,7 +294,6 @@ class MenuItemBuilder
      * Alias for withPriority().
      *
      * @param  int  $priority  Priority value
-     * @return $this
      */
     public function priority(int $priority): static
     {
@@ -324,8 +302,6 @@ class MenuItemBuilder
 
     /**
      * Set to highest priority (first in group).
-     *
-     * @return $this
      */
     public function first(): static
     {
@@ -334,8 +310,6 @@ class MenuItemBuilder
 
     /**
      * Set to high priority.
-     *
-     * @return $this
      */
     public function high(): static
     {
@@ -344,8 +318,6 @@ class MenuItemBuilder
 
     /**
      * Set to low priority.
-     *
-     * @return $this
      */
     public function low(): static
     {
@@ -354,8 +326,6 @@ class MenuItemBuilder
 
     /**
      * Set to lowest priority (last in group).
-     *
-     * @return $this
      */
     public function last(): static
     {
@@ -366,7 +336,6 @@ class MenuItemBuilder
      * Set the entitlement code for workspace-level access control.
      *
      * @param  string  $entitlement  The feature code (e.g., 'core.srv.commerce')
-     * @return $this
      */
     public function entitlement(string $entitlement): static
     {
@@ -379,7 +348,6 @@ class MenuItemBuilder
      * Alias for entitlement().
      *
      * @param  string  $entitlement  The feature code
-     * @return $this
      */
     public function requiresEntitlement(string $entitlement): static
     {
@@ -390,7 +358,6 @@ class MenuItemBuilder
      * Set required permissions.
      *
      * @param  array<string>  $permissions  Array of permission keys
-     * @return $this
      */
     public function permissions(array $permissions): static
     {
@@ -403,7 +370,6 @@ class MenuItemBuilder
      * Add a single required permission.
      *
      * @param  string  $permission  The permission key
-     * @return $this
      */
     public function permission(string $permission): static
     {
@@ -416,7 +382,6 @@ class MenuItemBuilder
      * Alias for permissions().
      *
      * @param  array<string>  $permissions  Array of permission keys
-     * @return $this
      */
     public function requiresPermissions(array $permissions): static
     {
@@ -427,7 +392,6 @@ class MenuItemBuilder
      * Require admin access (Hades user).
      *
      * @param  bool  $required  Whether admin is required
-     * @return $this
      */
     public function requireAdmin(bool $required = true): static
     {
@@ -438,8 +402,6 @@ class MenuItemBuilder
 
     /**
      * Alias for requireAdmin().
-     *
-     * @return $this
      */
     public function adminOnly(): static
     {
@@ -450,7 +412,6 @@ class MenuItemBuilder
      * Set the color theme.
      *
      * @param  string  $color  Color name (e.g., 'blue', 'green', 'amber')
-     * @return $this
      */
     public function color(string $color): static
     {
@@ -464,7 +425,6 @@ class MenuItemBuilder
      *
      * @param  string  $text  Badge text
      * @param  string|null  $color  Optional badge color
-     * @return $this
      */
     public function badge(string $text, ?string $color = null): static
     {
@@ -482,7 +442,6 @@ class MenuItemBuilder
      *
      * @param  int  $count  The count to display
      * @param  string|null  $color  Optional badge color
-     * @return $this
      */
     public function badgeCount(int $count, ?string $color = null): static
     {
@@ -493,7 +452,6 @@ class MenuItemBuilder
      * Set a configurable badge.
      *
      * @param  array<string, mixed>  $config  Badge configuration
-     * @return $this
      */
     public function badgeConfig(array $config): static
     {
@@ -506,7 +464,6 @@ class MenuItemBuilder
      * Set child menu items.
      *
      * @param  array<int, MenuItemBuilder|array>  $children  Child items or builders
-     * @return $this
      */
     public function children(array $children): static
     {
@@ -519,7 +476,6 @@ class MenuItemBuilder
      * Add a child menu item.
      *
      * @param  MenuItemBuilder|array  $child  Child item or builder
-     * @return $this
      */
     public function addChild(MenuItemBuilder|array $child): static
     {
@@ -530,8 +486,6 @@ class MenuItemBuilder
 
     /**
      * Add a separator to children.
-     *
-     * @return $this
      */
     public function separator(): static
     {
@@ -545,7 +499,6 @@ class MenuItemBuilder
      *
      * @param  string  $label  Section label
      * @param  string|null  $icon  Optional icon
-     * @return $this
      */
     public function section(string $label, ?string $icon = null): static
     {
@@ -558,7 +511,6 @@ class MenuItemBuilder
      * Add a divider to children.
      *
      * @param  string|null  $label  Optional divider label
-     * @return $this
      */
     public function divider(?string $label = null): static
     {
@@ -571,7 +523,6 @@ class MenuItemBuilder
      * Set whether the item is active.
      *
      * @param  bool  $active  Active state
-     * @return $this
      */
     public function active(bool $active = true): static
     {
@@ -586,7 +537,6 @@ class MenuItemBuilder
      * The callback is evaluated at build time in the item closure.
      *
      * @param  \Closure  $callback  Callback returning bool
-     * @return $this
      */
     public function activeWhen(\Closure $callback): static
     {
@@ -599,7 +549,6 @@ class MenuItemBuilder
      * Set active when the current route matches a pattern.
      *
      * @param  string  $pattern  Route pattern (e.g., 'hub.commerce.*')
-     * @return $this
      */
     public function activeOnRoute(string $pattern): static
     {
@@ -610,7 +559,6 @@ class MenuItemBuilder
      * Set the service key for service-specific lookups.
      *
      * @param  string  $key  Service key (e.g., 'commerce', 'bio')
-     * @return $this
      */
     public function service(string $key): static
     {
@@ -624,7 +572,6 @@ class MenuItemBuilder
      *
      * @param  string  $key  Attribute key
      * @param  mixed  $value  Attribute value
-     * @return $this
      */
     public function with(string $key, mixed $value): static
     {
@@ -637,7 +584,6 @@ class MenuItemBuilder
      * Set multiple custom attributes.
      *
      * @param  array<string, mixed>  $attributes  Attributes array
-     * @return $this
      */
     public function withAttributes(array $attributes): static
     {
@@ -673,7 +619,7 @@ class MenuItemBuilder
             $registration['entitlement'] = $this->entitlement;
         }
 
-        if (! empty($this->permissions)) {
+        if ($this->permissions !== []) {
             $registration['permissions'] = $this->permissions;
         }
 
@@ -693,7 +639,7 @@ class MenuItemBuilder
      */
     protected function buildItemClosure(): \Closure
     {
-        return function () {
+        return function (): array {
             $item = [
                 'label' => $this->label,
             ];
@@ -713,7 +659,7 @@ class MenuItemBuilder
             }
 
             // Resolve active state
-            if ($this->activeCallback !== null) {
+            if ($this->activeCallback instanceof \Closure) {
                 $item['active'] = ($this->activeCallback)();
             } elseif ($this->active !== null) {
                 $item['active'] = $this->active;
@@ -732,7 +678,7 @@ class MenuItemBuilder
             }
 
             // Build children
-            if (! empty($this->children)) {
+            if ($this->children !== []) {
                 $item['children'] = $this->buildChildren();
             }
 
@@ -790,7 +736,7 @@ class MenuItemBuilder
             $item['icon'] = $this->icon;
         }
 
-        if ($this->activeCallback !== null) {
+        if ($this->activeCallback instanceof \Closure) {
             $item['active'] = ($this->activeCallback)();
         } elseif ($this->active !== null) {
             $item['active'] = $this->active;

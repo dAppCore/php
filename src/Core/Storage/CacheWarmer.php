@@ -209,7 +209,7 @@ class CacheWarmer
 
         // Sort by priority
         $sortedItems = $this->items;
-        uasort($sortedItems, fn ($a, $b) => $a['priority'] <=> $b['priority']);
+        uasort($sortedItems, fn ($a, $b): int => $a['priority'] <=> $b['priority']);
 
         // Warm regular items
         foreach ($sortedItems as $key => $item) {
@@ -226,8 +226,8 @@ class CacheWarmer
         $this->log('info', 'Cache warming completed', [
             'total_duration' => round($totalDuration, 3),
             'items_warmed' => count($this->lastResults),
-            'successes' => count(array_filter($this->lastResults, fn ($r) => $r['status'] === 'success')),
-            'failures' => count(array_filter($this->lastResults, fn ($r) => $r['status'] === 'failed')),
+            'successes' => count(array_filter($this->lastResults, fn (array $r): bool => $r['status'] === 'success')),
+            'failures' => count(array_filter($this->lastResults, fn (array $r): bool => $r['status'] === 'failed')),
         ]);
 
         return $this->lastResults;
@@ -464,23 +464,23 @@ class CacheWarmer
                 'duration' => round($duration, 4),
             ];
 
-            $this->log('debug', "Warmed cache key: {$key}", [
+            $this->log('debug', 'Warmed cache key: ' . $key, [
                 'duration' => round($duration, 4),
                 'ttl' => $item['ttl'],
             ]);
 
             return $this->lastResults[$key];
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             $duration = microtime(true) - $startTime;
 
             $this->lastResults[$key] = [
                 'status' => 'failed',
                 'duration' => round($duration, 4),
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ];
 
-            $this->log('error', "Failed to warm cache key: {$key}", [
-                'error' => $e->getMessage(),
+            $this->log('error', 'Failed to warm cache key: ' . $key, [
+                'error' => $throwable->getMessage(),
                 'duration' => round($duration, 4),
             ]);
 
@@ -499,7 +499,7 @@ class CacheWarmer
         $batchNumber = 0;
 
         while (true) {
-            $batchKey = "{$keyPrefix}:{$offset}";
+            $batchKey = sprintf('%s:%d', $keyPrefix, $offset);
             $startTime = microtime(true);
 
             try {
@@ -554,7 +554,7 @@ class CacheWarmer
                     'error' => $e->getMessage(),
                 ];
 
-                $this->log('error', "Failed to warm batch key: {$batchKey}", [
+                $this->log('error', 'Failed to warm batch key: ' . $batchKey, [
                     'error' => $e->getMessage(),
                 ]);
 
@@ -568,7 +568,7 @@ class CacheWarmer
             }
         }
 
-        $this->log('debug', "Warmed batch: {$keyPrefix}", [
+        $this->log('debug', 'Warmed batch: ' . $keyPrefix, [
             'batches' => $batchNumber,
             'total_offset' => $offset,
         ]);
@@ -593,6 +593,6 @@ class CacheWarmer
             return;
         }
 
-        Log::log($level, "[CacheWarmer] {$message}", $context);
+        Log::log($level, '[CacheWarmer] ' . $message, $context);
     }
 }

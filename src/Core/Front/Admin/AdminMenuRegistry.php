@@ -209,9 +209,7 @@ class AdminMenuRegistry
 
         $cacheKey = $this->buildCacheKey($workspace, $isAdmin, $user);
 
-        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($workspace, $isAdmin, $user) {
-            return $this->collectItems($workspace, $isAdmin, $user);
-        });
+        return Cache::remember($cacheKey, $this->cacheTtl, fn () => $this->collectItems($workspace, $isAdmin, $user));
     }
 
     /**
@@ -280,6 +278,7 @@ class AdminMenuRegistry
             if (! isset($static[$group])) {
                 $static[$group] = [];
             }
+
             $static[$group] = array_merge($static[$group], $items);
         }
 
@@ -310,7 +309,7 @@ class AdminMenuRegistry
             }
 
             // Sort by priority
-            usort($groupItems, fn ($a, $b) => $a['priority'] <=> $b['priority']);
+            usort($groupItems, fn (array $a, array $b): int => $a['priority'] <=> $b['priority']);
 
             // Evaluate closures and extract items
             $evaluatedItems = [];
@@ -321,7 +320,7 @@ class AdminMenuRegistry
                 }
             }
 
-            if (empty($evaluatedItems)) {
+            if ($evaluatedItems === []) {
                 continue;
             }
 
@@ -329,6 +328,7 @@ class AdminMenuRegistry
             if (! $firstGroup) {
                 $menu[] = ['divider' => true];
             }
+
             $firstGroup = false;
 
             // Standalone groups add items directly
@@ -472,7 +472,7 @@ class AdminMenuRegistry
      */
     protected function checkPermissions(?object $user, array $permissions, ?object $workspace): bool
     {
-        if (empty($permissions)) {
+        if ($permissions === []) {
             return true;
         }
 
@@ -582,7 +582,7 @@ class AdminMenuRegistry
      */
     public function validateIcon(string $icon): bool
     {
-        if (! $this->validateIcons || $this->iconValidator === null) {
+        if (! $this->validateIcons || !$this->iconValidator instanceof IconValidator) {
             return true;
         }
 
@@ -599,7 +599,7 @@ class AdminMenuRegistry
     {
         $errors = [];
 
-        if (! $this->validateIcons || $this->iconValidator === null) {
+        if (! $this->validateIcons || !$this->iconValidator instanceof IconValidator) {
             return $errors;
         }
 
@@ -616,7 +616,7 @@ class AdminMenuRegistry
                 if ($childIcon !== null && ! empty($childIcon)) {
                     $childErrors = $this->iconValidator->validate($childIcon);
                     foreach ($childErrors as $error) {
-                        $errors[] = "Child item {$index}: {$error}";
+                        $errors[] = sprintf('Child item %s: %s', $index, $error);
                     }
                 }
             }
@@ -692,7 +692,7 @@ class AdminMenuRegistry
         }
 
         // Sort by priority
-        uasort($services, fn ($a, $b) => ($a['priority'] ?? 50) <=> ($b['priority'] ?? 50));
+        uasort($services, fn ($a, $b): int => ($a['priority'] ?? 50) <=> ($b['priority'] ?? 50));
 
         return $services;
     }

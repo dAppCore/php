@@ -21,14 +21,14 @@ return new class () extends Migration {
      */
     public function up(): void
     {
-        Schema::table('config_profiles', function (Blueprint $table) {
+        Schema::table('config_profiles', function (Blueprint $table): void {
             $table->softDeletes();
         });
     }
 
     public function down(): void
     {
-        Schema::table('config_profiles', function (Blueprint $table) {
+        Schema::table('config_profiles', function (Blueprint $table): void {
             $table->dropSoftDeletes();
         });
     }

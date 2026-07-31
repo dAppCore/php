@@ -71,7 +71,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
         $entries = $this->loadLocalePair($localePair);
 
         // Check for existing entry with same ID
-        $existingIndex = $entries->search(fn (TranslationMemoryEntry $e) => $e->getId() === $entry->getId());
+        $existingIndex = $entries->search(fn (TranslationMemoryEntry $e): bool => $e->getId() === $entry->getId());
 
         if ($existingIndex !== false) {
             $entries[$existingIndex] = $entry;
@@ -102,7 +102,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
 
             // Check for existing entry with same ID
             $existingIndex = $localePairUpdates[$localePair]->search(
-                fn (TranslationMemoryEntry $e) => $e->getId() === $entry->getId()
+                fn (TranslationMemoryEntry $e): bool => $e->getId() === $entry->getId()
             );
 
             if ($existingIndex !== false) {
@@ -132,7 +132,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
         $localePair = $this->getLocalePairKey($sourceLocale, $targetLocale);
         $entries = $this->loadLocalePair($localePair);
 
-        return $entries->first(fn (TranslationMemoryEntry $entry) => $entry->getSource() === $source);
+        return $entries->first(fn (TranslationMemoryEntry $entry): bool => $entry->getSource() === $source);
     }
 
     /**
@@ -142,7 +142,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
     {
         foreach ($this->getAllLocalePairs() as $localePair) {
             $entries = $this->loadLocalePair($localePair);
-            $entry = $entries->first(fn (TranslationMemoryEntry $e) => $e->getId() === $id);
+            $entry = $entries->first(fn (TranslationMemoryEntry $e): bool => $e->getId() === $id);
 
             if ($entry !== null) {
                 return $entry;
@@ -177,11 +177,12 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
         foreach ($localePairs as $localePair) {
             $entries = $this->loadLocalePair($localePair);
 
-            $matches = $entries->filter(function (TranslationMemoryEntry $entry) use ($query, $sourceLocale, $targetLocale) {
+            $matches = $entries->filter(function (TranslationMemoryEntry $entry) use ($query, $sourceLocale, $targetLocale): bool {
                 // Apply locale filters if specified individually
                 if ($sourceLocale && $entry->getSourceLocale() !== $sourceLocale) {
                     return false;
                 }
+
                 if ($targetLocale && $entry->getTargetLocale() !== $targetLocale) {
                     return false;
                 }
@@ -225,7 +226,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
             $entries = $this->loadLocalePair($localePair);
             $initialCount = $entries->count();
 
-            $entries = $entries->reject(fn (TranslationMemoryEntry $e) => $e->getId() === $id);
+            $entries = $entries->reject(fn (TranslationMemoryEntry $e): bool => $e->getId() === $id);
 
             if ($entries->count() < $initialCount) {
                 $this->cache[$localePair] = $entries->values();
@@ -295,10 +296,11 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
             $entries = $this->loadLocalePair($localePair);
 
             if ($sourceLocale || $targetLocale) {
-                $entries = $entries->filter(function (TranslationMemoryEntry $entry) use ($sourceLocale, $targetLocale) {
+                $entries = $entries->filter(function (TranslationMemoryEntry $entry) use ($sourceLocale, $targetLocale): bool {
                     if ($sourceLocale && $entry->getSourceLocale() !== $sourceLocale) {
                         return false;
                     }
+
                     if ($targetLocale && $entry->getTargetLocale() !== $targetLocale) {
                         return false;
                     }
@@ -350,6 +352,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
                 if ($entry->isHighQuality()) {
                     $highQualityCount++;
                 }
+
                 if ($entry->needsReview()) {
                     $needsReviewCount++;
                 }
@@ -373,7 +376,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
     {
         $entry = $this->findById($id);
 
-        if ($entry === null) {
+        if (!$entry instanceof TranslationMemoryEntry) {
             return false;
         }
 
@@ -387,7 +390,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
     {
         $entry = $this->findById($id);
 
-        if ($entry === null) {
+        if (!$entry instanceof TranslationMemoryEntry) {
             return false;
         }
 
@@ -422,12 +425,12 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
                 return $this->cache[$localePair];
             }
 
-            $entries = collect($data)->map(fn (array $item) => TranslationMemoryEntry::fromArray($item));
+            $entries = collect($data)->map(fn (array $item): TranslationMemoryEntry => TranslationMemoryEntry::fromArray($item));
 
             $this->cache[$localePair] = $entries;
 
             return $entries;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $this->cache[$localePair] = collect();
 
             return $this->cache[$localePair];
@@ -447,12 +450,12 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
         $filePath = $this->getFilePath($localePair);
 
         try {
-            $data = $entries->map(fn (TranslationMemoryEntry $entry) => $entry->toArray())->all();
+            $data = $entries->map(fn (TranslationMemoryEntry $entry): array => $entry->toArray())->all();
             File::put($filePath, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             $this->dirty[$localePair] = false;
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -491,7 +494,7 @@ class JsonTranslationMemoryRepository implements TranslationMemoryRepository
      */
     protected function getLocalePairKey(string $sourceLocale, string $targetLocale): string
     {
-        return "{$sourceLocale}-{$targetLocale}";
+        return sprintf('%s-%s', $sourceLocale, $targetLocale);
     }
 
     /**

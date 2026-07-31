@@ -93,38 +93,9 @@ class Sanitiser
     public const PRESET_SLUG = 'slug';
 
     /**
-     * Schema for per-field filter rules.
-     *
-     * Format: ['field_name' => ['filters' => [...], 'options' => [...]]]
-     *
-     * @var array<string, array{filters?: int[], options?: int[], skip_control_strip?: bool, skip_normalize?: bool, allow_html?: string|bool, max_length?: int}>
-     */
-    protected array $schema = [];
-
-    /**
-     * Optional logger for audit logging.
-     */
-    protected ?LoggerInterface $logger = null;
-
-    /**
      * Whether to enable audit logging.
      */
     protected bool $auditEnabled = false;
-
-    /**
-     * Whether to normalize Unicode to NFC form.
-     */
-    protected bool $normalizeUnicode = true;
-
-    /**
-     * Global maximum input length (0 = unlimited).
-     */
-    protected int $maxLength = 0;
-
-    /**
-     * Global allowed HTML tags (empty string = strip all HTML).
-     */
-    protected string $allowedHtmlTags = '';
 
     /**
      * Global before-filter transformation hooks.
@@ -194,19 +165,19 @@ class Sanitiser
      * @param  string  $allowedHtmlTags  Global allowed HTML tags (empty = strip all)
      */
     public function __construct(
-        array $schema = [],
-        ?LoggerInterface $logger = null,
+        /**
+         * Schema for per-field filter rules.
+         *
+         * Format: ['field_name' => ['filters' => [...], 'options' => [...]]]
+         */
+        protected array $schema = [],
+        protected ?LoggerInterface $logger = null,
         bool $auditEnabled = false,
-        bool $normalizeUnicode = true,
-        int $maxLength = 0,
-        string $allowedHtmlTags = ''
+        protected bool $normalizeUnicode = true,
+        protected int $maxLength = 0,
+        protected string $allowedHtmlTags = ''
     ) {
-        $this->schema = $schema;
-        $this->logger = $logger;
-        $this->auditEnabled = $auditEnabled && $logger !== null;
-        $this->normalizeUnicode = $normalizeUnicode;
-        $this->maxLength = $maxLength;
-        $this->allowedHtmlTags = $allowedHtmlTags;
+        $this->auditEnabled = $auditEnabled && $this->logger instanceof LoggerInterface;
     }
 
     /**
@@ -433,7 +404,7 @@ class Sanitiser
     {
         $clone = clone $this;
 
-        if (empty($fields)) {
+        if ($fields === []) {
             // Apply globally by setting a default preset
             $clone->schema['*'] = array_merge(
                 $clone->schema['*'] ?? [],
@@ -599,9 +570,9 @@ class Sanitiser
      */
     public function hasTransformationHooks(): bool
     {
-        return ! empty($this->beforeHooks)
-            || ! empty($this->afterHooks)
-            || ! empty($this->fieldHooks);
+        return $this->beforeHooks !== []
+            || $this->afterHooks !== []
+            || $this->fieldHooks !== [];
     }
 
     /**
@@ -634,7 +605,7 @@ class Sanitiser
      */
     public function filter(array $input): array
     {
-        if (empty($input)) {
+        if ($input === []) {
             return [];
         }
 
@@ -743,7 +714,7 @@ class Sanitiser
         $value = $this->applyAfterHooks($value, $fieldName);
 
         // Step 8: Audit logging if content was modified
-        if ($this->auditEnabled && $this->logger !== null && $value !== $original) {
+        if ($this->auditEnabled && $this->logger instanceof LoggerInterface && $value !== $original) {
             $this->logSanitisation($path, $original, $value);
         }
 
@@ -807,10 +778,12 @@ class Sanitiser
             if ($allowHtml === true) {
                 // Allow default safe HTML tags
                 return strip_tags($value, self::SAFE_HTML_TAGS);
-            } elseif ($allowHtml === false) {
+            }
+            if ($allowHtml === false) {
                 // Strip all HTML
                 return strip_tags($value);
-            } elseif (is_string($allowHtml) && $allowHtml !== '') {
+            }
+            if (is_string($allowHtml) && $allowHtml !== '') {
                 // Use custom allowed tags
                 return strip_tags($value, $allowHtml);
             }
@@ -893,7 +866,7 @@ class Sanitiser
         // Replace control characters (0x00-0x1F) with Unicode Control Pictures (U+2400-U+241F)
         return preg_replace_callback(
             '/[\x00-\x1F]/',
-            fn ($matches) => mb_chr(0x2400 + ord($matches[0])),
+            fn ($matches): string => mb_chr(0x2400 + ord($matches[0])),
             $value
         ) ?? $value;
     }

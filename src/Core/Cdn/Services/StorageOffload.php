@@ -103,7 +103,7 @@ class StorageOffload
     {
         // Check cache first
         if ($this->cacheEnabled) {
-            $cached = Cache::get("offload_url:{$localPath}");
+            $cached = Cache::get('offload_url:' . $localPath);
             if ($cached !== null) {
                 return $cached ?: null; // Empty string means no record
             }
@@ -113,7 +113,7 @@ class StorageOffload
 
         if (! $record) {
             if ($this->cacheEnabled) {
-                Cache::put("offload_url:{$localPath}", '', 3600);
+                Cache::put('offload_url:' . $localPath, '', 3600);
             }
 
             return null;
@@ -127,7 +127,7 @@ class StorageOffload
         }
 
         if ($this->cacheEnabled) {
-            Cache::put("offload_url:{$localPath}", $url, 3600);
+            Cache::put('offload_url:' . $localPath, $url, 3600);
         }
 
         return $url;
@@ -189,7 +189,7 @@ class StorageOffload
         }
 
         // Generate remote path if not provided
-        $remotePath = $remotePath ?? $this->generateRemotePath($localPath, $category);
+        $remotePath ??= $this->generateRemotePath($localPath, $category);
 
         try {
             // Read file contents
@@ -239,10 +239,10 @@ class StorageOffload
             ]);
 
             return $record;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('StorageOffload: Exception during upload', [
                 'path' => $localPath,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return null;
@@ -273,7 +273,7 @@ class StorageOffload
 
             $record = $this->upload($path, null, $category);
 
-            if ($record) {
+            if ($record instanceof OffloadModel) {
                 $results['uploaded']++;
             } else {
                 $results['failed']++;
@@ -300,7 +300,7 @@ class StorageOffload
             $categoryPath .= 's';
         }
 
-        return "{$categoryPath}/{$datePath}/{$hash}.{$extension}";
+        return sprintf('%s/%s/%s.%s', $categoryPath, $datePath, $hash, $extension);
     }
 
     /**
@@ -333,14 +333,14 @@ class StorageOffload
 
             // Clear cache
             if ($this->cacheEnabled) {
-                Cache::forget("offload_url:{$localPath}");
+                Cache::forget('offload_url:' . $localPath);
             }
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('StorageOffload: Delete failed', [
                 'path' => $localPath,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return false;
@@ -363,10 +363,10 @@ class StorageOffload
             $remoteHash = hash('sha256', $remoteContents);
 
             return hash_equals($record->hash, $remoteHash);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('StorageOffload: Integrity check failed', [
                 'path' => $localPath,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return false;

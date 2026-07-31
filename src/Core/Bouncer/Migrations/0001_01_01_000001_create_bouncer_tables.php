@@ -22,7 +22,7 @@ return new class () extends Migration {
         Schema::disableForeignKeyConstraints();
 
         // 1. Blocked IPs
-        Schema::create('blocked_ips', function (Blueprint $table) {
+        Schema::create('blocked_ips', function (Blueprint $table): void {
             $table->id();
             $table->string('ip_address', 45);
             $table->string('ip_range', 18)->nullable();
@@ -40,7 +40,7 @@ return new class () extends Migration {
         });
 
         // 2. Rate Limit Buckets
-        Schema::create('rate_limit_buckets', function (Blueprint $table) {
+        Schema::create('rate_limit_buckets', function (Blueprint $table): void {
             $table->id();
             $table->string('key');
             $table->string('bucket_type', 32);

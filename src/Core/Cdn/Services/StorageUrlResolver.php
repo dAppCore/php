@@ -65,13 +65,10 @@ use Illuminate\Support\Facades\Storage;
  */
 class StorageUrlResolver
 {
-    protected BunnyStorageService $bunnyStorage;
-
     protected CdnUrlBuilder $urlBuilder;
 
-    public function __construct(BunnyStorageService $bunnyStorage, ?CdnUrlBuilder $urlBuilder = null)
+    public function __construct(protected BunnyStorageService $bunnyStorage, ?CdnUrlBuilder $urlBuilder = null)
     {
-        $this->bunnyStorage = $bunnyStorage;
         $this->urlBuilder = $urlBuilder ?? new CdnUrlBuilder();
     }
 
@@ -206,7 +203,7 @@ class StorageUrlResolver
             return rtrim($pullZone, '/');
         }
 
-        return "https://{$pullZone}";
+        return 'https://' . $pullZone;
     }
 
     /**
@@ -229,7 +226,7 @@ class StorageUrlResolver
      */
     public function asset(string $path, ?string $context = null): string
     {
-        $context = $context ?? $this->detectContext();
+        $context ??= $this->detectContext();
 
         return $this->urlBuilder->asset($path, $context);
     }
@@ -350,11 +347,11 @@ class StorageUrlResolver
             return $this->asset($path, $context);
         }
 
-        $context = $context ?? $this->detectContext();
+        $context ??= $this->detectContext();
         $cacheKey = config('cdn.cache.prefix', 'cdn_url').':'.$context.':'.md5($path);
         $ttl = config('cdn.cache.ttl', 3600);
 
-        return Cache::remember($cacheKey, $ttl, fn () => $this->asset($path, $context));
+        return Cache::remember($cacheKey, $ttl, fn (): string => $this->asset($path, $context));
     }
 
     /**

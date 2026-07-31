@@ -212,6 +212,7 @@ class Button extends Component
         if ($this->disabled) {
             $this->attr('disabled', true);
         }
+
         $this->attr('type', $this->type);
         $attrs = $this->buildAttributes($classes);
 

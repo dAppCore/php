@@ -113,6 +113,7 @@ class InstallCommand extends Command
 
                 return self::FAILURE;
             }
+
             $progressBar->advance();
 
             // Step 2: Application settings
@@ -128,6 +129,7 @@ class InstallCommand extends Command
             if ($this->option('no-interaction') || $this->isDryRun || $this->confirm(__('core::core.installer.prompts.run_migrations'), true)) {
                 $this->runMigrations();
             }
+
             $progressBar->advance();
 
             // Step 4: Generate app key if needed
@@ -150,6 +152,7 @@ class InstallCommand extends Command
             } else {
                 $this->info('  '.__('core::core.installer.complete'));
             }
+
             $this->info('');
             $this->info('  '.__('core::core.installer.next_steps').':');
             $this->info('    1. Run: valet link core');
@@ -157,10 +160,10 @@ class InstallCommand extends Command
             $this->info('');
 
             return self::SUCCESS;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             $this->newLine();
             $this->error('');
-            $this->error('  Installation failed: '.$e->getMessage());
+            $this->error('  Installation failed: '.$throwable->getMessage());
             $this->error('');
 
             if (! $this->isDryRun) {
@@ -187,7 +190,7 @@ class InstallCommand extends Command
     protected function dryRunOrExecute(string $description, callable $action): mixed
     {
         if ($this->isDryRun) {
-            $this->info("    [WOULD] {$description}");
+            $this->info('    [WOULD] ' . $description);
 
             return null;
         }
@@ -278,6 +281,7 @@ class InstallCommand extends Command
             File::copy($envExamplePath, $envPath);
             $this->completedSteps['env_created'] = true;
         }
+
         $this->info('  [✓] '.__('core::core.installer.env_created'));
 
         return true;
@@ -309,7 +313,7 @@ class InstallCommand extends Command
         // Domain
         $domain = $this->ask(__('core::core.installer.prompts.domain'), 'core.test');
         $this->updateEnv('APP_DOMAIN', $domain);
-        $this->updateEnv('APP_URL', "http://{$domain}");
+        $this->updateEnv('APP_URL', 'http://' . $domain);
 
         // Database
         $this->info('');
@@ -344,10 +348,10 @@ class InstallCommand extends Command
             // Display masked confirmation (never show actual credentials)
             $this->info('');
             $this->info('  Database settings configured:');
-            $this->info("    Driver:   {$dbConnection}");
-            $this->info("    Host:     {$dbHost}");
-            $this->info("    Port:     {$dbPort}");
-            $this->info("    Database: {$dbName}");
+            $this->info('    Driver:   ' . $dbConnection);
+            $this->info('    Host:     ' . $dbHost);
+            $this->info('    Port:     ' . $dbPort);
+            $this->info('    Database: ' . $dbName);
             $this->info('    Username: '.$this->maskValue($dbUser));
             $this->info('    Password: '.$this->maskValue($dbPass ?? '', true));
         }
@@ -459,21 +463,21 @@ class InstallCommand extends Command
 
         // Quote value if it contains spaces
         if (str_contains($value, ' ')) {
-            $value = "\"{$value}\"";
+            $value = sprintf('"%s"', $value);
         }
 
         // Check if key exists (escape regex special chars in key)
         $escapedKey = preg_quote($key, '/');
-        if (preg_match("/^{$escapedKey}=/m", $content)) {
+        if (preg_match(sprintf('/^%s=/m', $escapedKey), $content)) {
             // Update existing key
             $content = preg_replace(
-                "/^{$escapedKey}=.*/m",
-                "{$key}={$value}",
+                sprintf('/^%s=.*/m', $escapedKey),
+                sprintf('%s=%s', $key, $value),
                 $content
             );
         } else {
             // Add new key
-            $content .= "\n{$key}={$value}";
+            $content .= sprintf('%s%s=%s', PHP_EOL, $key, $value);
         }
 
         File::put($envPath, $content);

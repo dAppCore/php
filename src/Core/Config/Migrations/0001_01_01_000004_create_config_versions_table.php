@@ -19,7 +19,7 @@ return new class () extends Migration {
      */
     public function up(): void
     {
-        Schema::create('config_versions', function (Blueprint $table) {
+        Schema::create('config_versions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('profile_id')
                 ->constrained('config_profiles')

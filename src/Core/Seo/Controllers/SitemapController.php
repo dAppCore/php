@@ -60,7 +60,7 @@ class SitemapController extends Controller
     public function text(): Response
     {
         $urls = $this->getAllUrls();
-        $lines = array_map(fn ($url) => $url['loc'], $urls);
+        $lines = array_map(fn (array $url) => $url['loc'], $urls);
 
         return response(implode("\n", $lines), 200, [
             'Content-Type' => 'text/plain',
@@ -195,7 +195,7 @@ class SitemapController extends Controller
             'server',
         ];
 
-        return array_map(fn ($slug) => [
+        return array_map(fn (string $slug): array => [
             'loc' => url('/oss/'.$slug),
             'priority' => '0.5',
             'changefreq' => 'monthly',

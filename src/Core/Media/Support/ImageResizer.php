@@ -116,7 +116,7 @@ class ImageResizer
 
         $image = $this->createImageFromContent();
 
-        if ($image === null) {
+        if (!$image instanceof \GdImage) {
             return $this->saveOriginal();
         }
 
@@ -259,17 +259,12 @@ class ImageResizer
 
         $unit = substr($limit, -1);
 
-        switch ($unit) {
-            case 'g':
-                $value *= 1024 * 1024 * 1024;
-                break;
-            case 'm':
-                $value *= 1024 * 1024;
-                break;
-            case 'k':
-                $value *= 1024;
-                break;
-        }
+        match ($unit) {
+            'g' => $value *= 1024 * 1024 * 1024,
+            'm' => $value *= 1024 * 1024,
+            'k' => $value *= 1024,
+            default => $value,
+        };
 
         return $value;
     }

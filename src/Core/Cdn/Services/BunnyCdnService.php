@@ -120,7 +120,7 @@ class BunnyCdnService
             foreach ($urls as $url) {
                 $response = Http::withHeaders([
                     'AccessKey' => $this->apiKey,
-                ])->post("{$this->baseUrl}/purge", [
+                ])->post($this->baseUrl . '/purge', [
                     'url' => $url,
                 ]);
 
@@ -136,8 +136,8 @@ class BunnyCdnService
             }
 
             return true;
-        } catch (\Exception $e) {
-            Log::error('BunnyCDN: Purge exception', ['error' => $this->sanitizeErrorMessage($e->getMessage())]);
+        } catch (\Exception $exception) {
+            Log::error('BunnyCDN: Purge exception', ['error' => $this->sanitizeErrorMessage($exception->getMessage())]);
 
             return false;
         }
@@ -157,11 +157,11 @@ class BunnyCdnService
         try {
             $response = Http::withHeaders([
                 'AccessKey' => $this->apiKey,
-            ])->post("{$this->baseUrl}/pullzone/{$this->pullZoneId}/purgeCache");
+            ])->post(sprintf('%s/pullzone/%s/purgeCache', $this->baseUrl, $this->pullZoneId));
 
             return $response->successful();
-        } catch (\Exception $e) {
-            Log::error('BunnyCDN: PurgeAll exception', ['error' => $this->sanitizeErrorMessage($e->getMessage())]);
+        } catch (\Exception $exception) {
+            Log::error('BunnyCDN: PurgeAll exception', ['error' => $this->sanitizeErrorMessage($exception->getMessage())]);
 
             return false;
         }
@@ -182,15 +182,15 @@ class BunnyCdnService
         try {
             $response = Http::withHeaders([
                 'AccessKey' => $this->apiKey,
-            ])->post("{$this->baseUrl}/pullzone/{$this->pullZoneId}/purgeCache", [
+            ])->post(sprintf('%s/pullzone/%s/purgeCache', $this->baseUrl, $this->pullZoneId), [
                 'CacheTag' => $tag,
             ]);
 
             return $response->successful();
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('BunnyCDN: PurgeByTag exception', [
                 'tag' => $tag,
-                'error' => $this->sanitizeErrorMessage($e->getMessage()),
+                'error' => $this->sanitizeErrorMessage($exception->getMessage()),
             ]);
 
             return false;
@@ -205,7 +205,7 @@ class BunnyCdnService
      */
     public function purgeWorkspace(object $workspace): bool
     {
-        return $this->purgeByTag("workspace-{$workspace->uuid}");
+        return $this->purgeByTag('workspace-' . $workspace->uuid);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -233,21 +233,22 @@ class BunnyCdnService
             if ($dateFrom) {
                 $params['dateFrom'] = $dateFrom;
             }
+
             if ($dateTo) {
                 $params['dateTo'] = $dateTo;
             }
 
             $response = Http::withHeaders([
                 'AccessKey' => $this->apiKey,
-            ])->get("{$this->baseUrl}/statistics", $params);
+            ])->get($this->baseUrl . '/statistics', $params);
 
             if ($response->successful()) {
                 return $response->json();
             }
 
             return null;
-        } catch (\Exception $e) {
-            Log::error('BunnyCDN: GetStats exception', ['error' => $this->sanitizeErrorMessage($e->getMessage())]);
+        } catch (\Exception $exception) {
+            Log::error('BunnyCDN: GetStats exception', ['error' => $this->sanitizeErrorMessage($exception->getMessage())]);
 
             return null;
         }
@@ -298,7 +299,7 @@ class BunnyCdnService
             $storageApiKey = $this->config->get('cdn.bunny.storage.public.api_key');
             $region = $this->config->get('cdn.bunny.storage.public.hostname', 'storage.bunnycdn.com');
 
-            $url = "https://{$region}/{$storageZoneName}/{$path}";
+            $url = sprintf('https://%s/%s/%s', $region, $storageZoneName, $path);
 
             $response = Http::withHeaders([
                 'AccessKey' => $storageApiKey,
@@ -309,8 +310,8 @@ class BunnyCdnService
             }
 
             return null;
-        } catch (\Exception $e) {
-            Log::error('BunnyCDN: ListStorageFiles exception', ['error' => $this->sanitizeErrorMessage($e->getMessage())]);
+        } catch (\Exception $exception) {
+            Log::error('BunnyCDN: ListStorageFiles exception', ['error' => $this->sanitizeErrorMessage($exception->getMessage())]);
 
             return null;
         }
@@ -336,7 +337,7 @@ class BunnyCdnService
             $storageApiKey = $this->config->get('cdn.bunny.storage.public.api_key');
             $region = $this->config->get('cdn.bunny.storage.public.hostname', 'storage.bunnycdn.com');
 
-            $url = "https://{$region}/{$storageZoneName}/{$path}";
+            $url = sprintf('https://%s/%s/%s', $region, $storageZoneName, $path);
 
             $response = Http::withHeaders([
                 'AccessKey' => $storageApiKey,
@@ -344,8 +345,8 @@ class BunnyCdnService
             ])->withBody($contents, 'application/octet-stream')->put($url);
 
             return $response->successful();
-        } catch (\Exception $e) {
-            Log::error('BunnyCDN: UploadFile exception', ['error' => $this->sanitizeErrorMessage($e->getMessage())]);
+        } catch (\Exception $exception) {
+            Log::error('BunnyCDN: UploadFile exception', ['error' => $this->sanitizeErrorMessage($exception->getMessage())]);
 
             return false;
         }
@@ -370,15 +371,15 @@ class BunnyCdnService
             $storageApiKey = $this->config->get('cdn.bunny.storage.public.api_key');
             $region = $this->config->get('cdn.bunny.storage.public.hostname', 'storage.bunnycdn.com');
 
-            $url = "https://{$region}/{$storageZoneName}/{$path}";
+            $url = sprintf('https://%s/%s/%s', $region, $storageZoneName, $path);
 
             $response = Http::withHeaders([
                 'AccessKey' => $storageApiKey,
             ])->delete($url);
 
             return $response->successful();
-        } catch (\Exception $e) {
-            Log::error('BunnyCDN: DeleteFile exception', ['error' => $this->sanitizeErrorMessage($e->getMessage())]);
+        } catch (\Exception $exception) {
+            Log::error('BunnyCDN: DeleteFile exception', ['error' => $this->sanitizeErrorMessage($exception->getMessage())]);
 
             return false;
         }

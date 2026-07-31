@@ -86,9 +86,7 @@ class RateLimit
         // Filter requests within the sliding window
         $minutesAgo = Carbon::now()->subMinutes($this->timeframeInMinutes);
 
-        return array_filter($requests, function ($timestamp) use ($minutesAgo) {
-            return $timestamp > $minutesAgo;
-        });
+        return array_filter($requests, fn ($timestamp) => $timestamp > $minutesAgo);
     }
 
     /**
@@ -96,6 +94,6 @@ class RateLimit
      */
     private function getCacheKey(): string
     {
-        return "social:{$this->key}:requests";
+        return sprintf('social:%s:requests', $this->key);
     }
 }

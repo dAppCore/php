@@ -212,13 +212,13 @@ class ActionGateService
             $reflection = new ReflectionMethod($controller, $method);
             $attributes = $reflection->getAttributes(Action::class);
 
-            if (empty($attributes)) {
+            if ($attributes === []) {
                 // Check class-level attribute as fallback
                 $classReflection = new ReflectionClass($controller);
                 $attributes = $classReflection->getAttributes(Action::class);
             }
 
-            if (! empty($attributes)) {
+            if ($attributes !== []) {
                 /** @var Action $action */
                 $action = $attributes[0]->newInstance();
 
@@ -251,7 +251,7 @@ class ActionGateService
 
             // Remove 'Controller' suffix and convert to dot notation
             $parts = explode('\\', $controllerClass);
-            $parts = array_map(function ($part) {
+            $parts = array_map(function ($part): string {
                 // Remove 'Controller' suffix
                 if (str_ends_with($part, 'Controller')) {
                     $part = substr($part, 0, -10);
@@ -262,7 +262,7 @@ class ActionGateService
             }, $parts);
 
             // Filter out common namespace prefixes
-            $parts = array_filter($parts, fn ($p) => ! in_array($p, ['app', 'http', 'controllers']));
+            $parts = array_filter($parts, fn (string $p): bool => ! in_array($p, ['app', 'http', 'controllers'], true));
 
             $parts[] = strtolower($method);
 

@@ -61,7 +61,7 @@ class MakeModCommand extends Command
 
         if (File::isDirectory($modulePath) && ! $this->option('force')) {
             $this->newLine();
-            $this->components->error("Module [{$name}] already exists!");
+            $this->components->error(sprintf('Module [%s] already exists!', $name));
             $this->newLine();
             $this->components->warn('Use --force to overwrite the existing module.');
             $this->newLine();
@@ -70,7 +70,7 @@ class MakeModCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Creating module: <comment>{$name}</comment>");
+        $this->components->info(sprintf('Creating module: <comment>%s</comment>', $name));
         $this->newLine();
 
         // Create directory structure
@@ -87,15 +87,15 @@ class MakeModCommand extends Command
         $this->components->twoColumnDetail('<fg=green;options=bold>Created Files</>', '<fg=gray>Description</>');
         foreach ($this->createdFiles as $file) {
             $this->components->twoColumnDetail(
-                "<fg=cyan>{$file['file']}</>",
-                "<fg=gray>{$file['description']}</>"
+                sprintf('<fg=cyan>%s</>', $file['file']),
+                sprintf('<fg=gray>%s</>', $file['description'])
             );
         }
 
         $this->newLine();
-        $this->components->info("Module [{$name}] created successfully!");
+        $this->components->info(sprintf('Module [%s] created successfully!', $name));
         $this->newLine();
-        $this->components->twoColumnDetail('Location', "<fg=yellow>{$modulePath}</>");
+        $this->components->twoColumnDetail('Location', sprintf('<fg=yellow>%s</>', $modulePath));
         $this->newLine();
 
         $this->components->info('Next steps:');
@@ -112,13 +112,13 @@ class MakeModCommand extends Command
     protected function getModulePath(string $name): string
     {
         // Check for packages structure first (monorepo)
-        $packagesPath = base_path("packages/core-php/src/Mod/{$name}");
+        $packagesPath = base_path('packages/core-php/src/Mod/' . $name);
         if (File::isDirectory(dirname($packagesPath))) {
             return $packagesPath;
         }
 
         // Fall back to app/Mod for consuming applications
-        return base_path("app/Mod/{$name}");
+        return base_path('app/Mod/' . $name);
     }
 
     /**
@@ -128,25 +128,25 @@ class MakeModCommand extends Command
     {
         $directories = [
             $modulePath,
-            "{$modulePath}/Models",
-            "{$modulePath}/View",
-            "{$modulePath}/View/Blade",
+            $modulePath . '/Models',
+            $modulePath . '/View',
+            $modulePath . '/View/Blade',
         ];
 
         if ($this->hasRoutes()) {
-            $directories[] = "{$modulePath}/Routes";
+            $directories[] = $modulePath . '/Routes';
         }
 
         if ($this->option('console') || $this->option('all')) {
-            $directories[] = "{$modulePath}/Console";
-            $directories[] = "{$modulePath}/Console/Commands";
+            $directories[] = $modulePath . '/Console';
+            $directories[] = $modulePath . '/Console/Commands';
         }
 
         foreach ($directories as $directory) {
             File::ensureDirectoryExists($directory);
         }
 
-        $this->components->task('Creating directory structure', fn () => true);
+        $this->components->task('Creating directory structure', fn (): true => true);
     }
 
     /**
@@ -154,10 +154,16 @@ class MakeModCommand extends Command
      */
     protected function hasRoutes(): bool
     {
-        return $this->option('web')
-            || $this->option('admin')
-            || $this->option('api')
-            || $this->option('all');
+        if ($this->option('web')) {
+            return true;
+        }
+        if ($this->option('admin')) {
+            return true;
+        }
+        if ($this->option('api')) {
+            return true;
+        }
+        return (bool) $this->option('all');
     }
 
     /**
@@ -199,9 +205,9 @@ class Boot
 
 PHP;
 
-        File::put("{$modulePath}/Boot.php", $content);
+        File::put($modulePath . '/Boot.php', $content);
         $this->createdFiles[] = ['file' => 'Boot.php', 'description' => 'Event-driven module loader'];
-        $this->components->task('Creating Boot.php', fn () => true);
+        $this->components->task('Creating Boot.php', fn (): true => true);
     }
 
     /**
@@ -210,10 +216,10 @@ PHP;
     protected function resolveNamespace(string $modulePath, string $name): string
     {
         if (str_contains($modulePath, 'packages/core-php/src/Mod')) {
-            return "Core\\Mod\\{$name}";
+            return 'Core\Mod\\' . $name;
         }
 
-        return "Mod\\{$name}";
+        return 'Mod\\' . $name;
     }
 
     /**
@@ -239,7 +245,7 @@ PHP;
             $statements[] = 'use Core\Events\ConsoleBooting;';
         }
 
-        if (empty($statements)) {
+        if ($statements === []) {
             $statements[] = 'use Core\Events\WebRoutesRegistering;';
         }
 
@@ -277,11 +283,19 @@ PHP;
      */
     protected function hasAnyOption(): bool
     {
-        return $this->option('web')
-            || $this->option('admin')
-            || $this->option('api')
-            || $this->option('console')
-            || $this->option('all');
+        if ($this->option('web')) {
+            return true;
+        }
+        if ($this->option('admin')) {
+            return true;
+        }
+        if ($this->option('api')) {
+            return true;
+        }
+        if ($this->option('console')) {
+            return true;
+        }
+        return (bool) $this->option('all');
     }
 
     /**
@@ -411,9 +425,9 @@ Route::prefix('{$moduleName}')->group(function () {
 
 PHP;
 
-        File::put("{$modulePath}/Routes/web.php", $content);
+        File::put($modulePath . '/Routes/web.php', $content);
         $this->createdFiles[] = ['file' => 'Routes/web.php', 'description' => 'Public web routes'];
-        $this->components->task('Creating Routes/web.php', fn () => true);
+        $this->components->task('Creating Routes/web.php', fn (): true => true);
     }
 
     /**
@@ -445,9 +459,9 @@ Route::prefix('{$moduleName}')->name('{$moduleName}.admin.')->group(function () 
 
 PHP;
 
-        File::put("{$modulePath}/Routes/admin.php", $content);
+        File::put($modulePath . '/Routes/admin.php', $content);
         $this->createdFiles[] = ['file' => 'Routes/admin.php', 'description' => 'Admin panel routes'];
-        $this->components->task('Creating Routes/admin.php', fn () => true);
+        $this->components->task('Creating Routes/admin.php', fn (): true => true);
     }
 
     /**
@@ -479,9 +493,9 @@ Route::prefix('{$moduleName}')->name('api.{$moduleName}.')->group(function () {
 
 PHP;
 
-        File::put("{$modulePath}/Routes/api.php", $content);
+        File::put($modulePath . '/Routes/api.php', $content);
         $this->createdFiles[] = ['file' => 'Routes/api.php', 'description' => 'REST API routes'];
-        $this->components->task('Creating Routes/api.php', fn () => true);
+        $this->components->task('Creating Routes/api.php', fn (): true => true);
     }
 
     /**
@@ -501,9 +515,9 @@ PHP;
 
 BLADE;
 
-        File::put("{$modulePath}/View/Blade/index.blade.php", $content);
+        File::put($modulePath . '/View/Blade/index.blade.php', $content);
         $this->createdFiles[] = ['file' => 'View/Blade/index.blade.php', 'description' => 'Sample index view'];
-        $this->components->task('Creating View/Blade/index.blade.php', fn () => true);
+        $this->components->task('Creating View/Blade/index.blade.php', fn (): true => true);
     }
 
     /**

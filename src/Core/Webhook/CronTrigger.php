@@ -48,7 +48,7 @@ class CronTrigger
                 try {
                     Http::timeout(30)->get($url);
                 } catch (\Throwable $e) {
-                    logger()->warning("Cron trigger failed for {$product}{$endpoint}: {$e->getMessage()}");
+                    logger()->warning(sprintf('Cron trigger failed for %s%s: %s', $product, $endpoint, $e->getMessage()));
                 }
             }
         }

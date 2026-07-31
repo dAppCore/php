@@ -140,10 +140,10 @@ class VersionDiff
      */
     public function hasDifferences(): bool
     {
-        return ! empty($this->added)
-            || ! empty($this->removed)
-            || ! empty($this->changed)
-            || ! empty($this->lockChanged);
+        return $this->added !== []
+            || $this->removed !== []
+            || $this->changed !== []
+            || $this->lockChanged !== [];
     }
 
     /**
@@ -176,19 +176,19 @@ class VersionDiff
 
         $parts = [];
 
-        if (count($this->added) > 0) {
+        if ($this->added !== []) {
             $parts[] = count($this->added).' added';
         }
 
-        if (count($this->removed) > 0) {
+        if ($this->removed !== []) {
             $parts[] = count($this->removed).' removed';
         }
 
-        if (count($this->changed) > 0) {
+        if ($this->changed !== []) {
             $parts[] = count($this->changed).' changed';
         }
 
-        if (count($this->lockChanged) > 0) {
+        if ($this->lockChanged !== []) {
             $parts[] = count($this->lockChanged).' lock changes';
         }
 

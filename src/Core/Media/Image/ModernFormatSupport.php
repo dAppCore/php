@@ -318,11 +318,11 @@ class ModernFormatSupport
             }
 
             return null;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('ModernFormatSupport: Conversion failed', [
                 'format' => $format,
                 'path' => $sourcePath,
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
             return null;
@@ -355,11 +355,11 @@ class ModernFormatSupport
             }
 
             return null;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('ModernFormatSupport: WebP conversion failed', [
                 'format' => $format,
                 'path' => $sourcePath,
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
             return null;

@@ -88,7 +88,7 @@ class ImageOptimization extends Model
      */
     public function scopeForWorkspace($query, ?Model $workspace)
     {
-        if ($workspace === null) {
+        if (!$workspace instanceof Model) {
             return $query;
         }
 
@@ -102,9 +102,6 @@ class ImageOptimization extends Model
      */
     public function getSavingsHumanAttribute(): string
     {
-        $originalKb = round($this->original_size / 1024, 1);
-        $optimizedKb = round($this->optimized_size / 1024, 1);
-
         // Format with appropriate unit
         $original = $this->formatBytes($this->original_size);
         $optimized = $this->formatBytes($this->optimized_size);
@@ -156,7 +153,7 @@ class ImageOptimization extends Model
     {
         $query = static::query();
 
-        if ($workspace) {
+        if ($workspace instanceof Model) {
             $query->where('workspace_id', $workspace->id);
         }
 

@@ -55,10 +55,10 @@ class LocalCdnMiddleware
     {
         $host = $request->getHost();
         $cdnSubdomain = config('core.cdn.subdomain', 'cdn');
-        $baseDomain = config('core.domain.base', 'core.test');
+        config('core.domain.base', 'core.test');
 
         // Check for cdn.{domain} pattern
-        return str_starts_with($host, "{$cdnSubdomain}.");
+        return str_starts_with($host, $cdnSubdomain . '.');
     }
 
     /**
@@ -76,7 +76,7 @@ class LocalCdnMiddleware
         $immutable = config('core.cdn.cache_immutable', true);
 
         // Build Cache-Control header
-        $cacheControl = "public, max-age={$maxAge}";
+        $cacheControl = 'public, max-age=' . $maxAge;
         if ($immutable) {
             $cacheControl .= ', immutable';
         }
@@ -88,7 +88,7 @@ class LocalCdnMiddleware
             $file = $response->getFile();
             if ($file && $file->isFile()) {
                 $etag = md5($file->getMTime().$file->getSize());
-                $response->headers->set('ETag', "\"{$etag}\"");
+                $response->headers->set('ETag', sprintf('"%s"', $etag));
             }
         }
 

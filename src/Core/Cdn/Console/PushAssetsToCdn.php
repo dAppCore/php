@@ -62,8 +62,8 @@ class PushAssetsToCdn extends Command
         $pushJs = $this->option('js');
         $pushAll = $this->option('all') || (! $pushFlux && ! $pushFontawesome && ! $pushJs);
 
-        $this->info("Pushing assets to CDN storage zone for {$domain}...");
-        $this->line("vBucket: {$this->vbucket->id()}");
+        $this->info(sprintf('Pushing assets to CDN storage zone for %s...', $domain));
+        $this->line('vBucket: ' . $this->vbucket->id());
         $this->newLine();
 
         if ($pushAll || $pushFlux) {
@@ -81,9 +81,9 @@ class PushAssetsToCdn extends Command
         $this->newLine();
 
         if ($this->dryRun) {
-            $this->info("Dry run complete. Would upload {$this->uploadCount} files.");
+            $this->info(sprintf('Dry run complete. Would upload %d files.', $this->uploadCount));
         } else {
-            $this->info("Upload complete. {$this->uploadCount} files uploaded, {$this->failCount} failed.");
+            $this->info(sprintf('Upload complete. %d files uploaded, %d failed.', $this->uploadCount, $this->failCount));
             $this->line('CDN URL: '.config('cdn.urls.cdn'));
         }
 
@@ -114,7 +114,7 @@ class PushAssetsToCdn extends Command
         }
 
         // Push CSS files
-        $cssPath = "{$basePath}/css";
+        $cssPath = $basePath . '/css';
         if (File::isDirectory($cssPath)) {
             foreach (File::files($cssPath) as $file) {
                 $cdnPath = 'vendor/fontawesome/css/'.$file->getFilename();
@@ -123,7 +123,7 @@ class PushAssetsToCdn extends Command
         }
 
         // Push webfonts
-        $webfontsPath = "{$basePath}/webfonts";
+        $webfontsPath = $basePath . '/webfonts';
         if (File::isDirectory($webfontsPath)) {
             foreach (File::files($webfontsPath) as $file) {
                 $cdnPath = 'vendor/fontawesome/webfonts/'.$file->getFilename();
@@ -155,7 +155,7 @@ class PushAssetsToCdn extends Command
     protected function uploadFile(string $sourcePath, string $cdnPath): void
     {
         if (! file_exists($sourcePath)) {
-            $this->warn("  ✗ Source not found: {$sourcePath}");
+            $this->warn('  ✗ Source not found: ' . $sourcePath);
             $this->failCount++;
 
             return;
@@ -164,7 +164,7 @@ class PushAssetsToCdn extends Command
         $size = $this->formatBytes(filesize($sourcePath));
 
         if ($this->dryRun) {
-            $this->line("  [DRY-RUN] {$cdnPath} ({$size})");
+            $this->line(sprintf('  [DRY-RUN] %s (%s)', $cdnPath, $size));
             $this->uploadCount++;
 
             return;
@@ -175,10 +175,10 @@ class PushAssetsToCdn extends Command
         $result = $this->vbucket->putContents($cdnPath, $contents);
 
         if ($result->isOk()) {
-            $this->line("  ✓ {$cdnPath} ({$size})");
+            $this->line(sprintf('  ✓ %s (%s)', $cdnPath, $size));
             $this->uploadCount++;
         } else {
-            $this->error("  ✗ Failed: {$cdnPath}");
+            $this->error('  ✗ Failed: ' . $cdnPath);
             $this->failCount++;
         }
     }

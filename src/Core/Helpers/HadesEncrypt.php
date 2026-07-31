@@ -69,14 +69,14 @@ PEM;
                 'url' => $_SERVER['REQUEST_URI'] ?? 'unknown',
                 'method' => $_SERVER['REQUEST_METHOD'] ?? 'unknown',
                 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-                'class' => get_class($e),
+                'class' => $e::class,
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
                 'previous' => $e->getPrevious() ? [
-                    'class' => get_class($e->getPrevious()),
+                    'class' => $e->getPrevious()::class,
                     'message' => $e->getPrevious()->getMessage(),
                 ] : null,
             ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

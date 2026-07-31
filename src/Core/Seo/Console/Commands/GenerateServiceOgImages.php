@@ -43,29 +43,29 @@ class GenerateServiceOgImages extends Command
     protected function generateSingle(ServiceOgImageService $ogService, string $service, bool $force): int
     {
         if (! $ogService->isValidService($service)) {
-            $this->error("Invalid service: {$service}");
+            $this->error('Invalid service: ' . $service);
             $this->line('Valid services: '.implode(', ', array_keys($ogService->getServices())));
 
             return self::FAILURE;
         }
 
         if (! $force && $ogService->exists($service)) {
-            $this->info("Image already exists for {$service}. Use --force to regenerate.");
+            $this->info(sprintf('Image already exists for %s. Use --force to regenerate.', $service));
 
             return self::SUCCESS;
         }
 
-        $this->info("Generating OG image for {$service}...");
+        $this->info(sprintf('Generating OG image for %s...', $service));
 
         $url = $ogService->generate($service);
 
         if ($url) {
-            $this->info("Generated: {$url}");
+            $this->info('Generated: ' . $url);
 
             return self::SUCCESS;
         }
 
-        $this->error("Failed to generate image for {$service}");
+        $this->error('Failed to generate image for ' . $service);
 
         return self::FAILURE;
     }
@@ -101,13 +101,13 @@ class GenerateServiceOgImages extends Command
         // Display results
         $this->table(
             ['Service', 'Status'],
-            collect($results)->map(fn ($status, $service) => [$service, $status])->toArray()
+            collect($results)->map(fn ($status, $service): array => [$service, $status])->toArray()
         );
 
-        $failed = collect($results)->filter(fn ($s) => $s === 'failed')->count();
+        $failed = collect($results)->filter(fn ($s): bool => $s === 'failed')->count();
 
         if ($failed > 0) {
-            $this->error("{$failed} image(s) failed to generate.");
+            $this->error($failed . ' image(s) failed to generate.');
 
             return self::FAILURE;
         }

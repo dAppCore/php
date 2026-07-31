@@ -22,7 +22,7 @@ return new class () extends Migration {
      */
     public function up(): void
     {
-        Schema::table('config_keys', function (Blueprint $table) {
+        Schema::table('config_keys', function (Blueprint $table): void {
             $table->boolean('is_sensitive')->default(false)->after('default_value');
             $table->index('is_sensitive');
         });
@@ -30,7 +30,7 @@ return new class () extends Migration {
 
     public function down(): void
     {
-        Schema::table('config_keys', function (Blueprint $table) {
+        Schema::table('config_keys', function (Blueprint $table): void {
             $table->dropIndex(['is_sensitive']);
             $table->dropColumn('is_sensitive');
         });

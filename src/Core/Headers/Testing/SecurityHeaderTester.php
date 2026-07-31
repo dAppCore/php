@@ -120,7 +120,7 @@ class SecurityHeaderTester
         if (($options['check_csp'] ?? true) && (isset($headers['content-security-policy']) || isset($headers['content-security-policy-report-only']))) {
             $cspIssues = self::validateCsp($headers, $options);
             foreach ($cspIssues as $directive => $issue) {
-                $issues["CSP:{$directive}"] = $issue;
+                $issues['CSP:' . $directive] = $issue;
             }
         }
 
@@ -174,6 +174,7 @@ class SecurityHeaderTester
             if (str_contains($hsts, 'includeSubDomains')) {
                 $score += 5;
             }
+
             if (str_contains($hsts, 'preload')) {
                 $score += 5;
             }
@@ -186,6 +187,7 @@ class SecurityHeaderTester
             if (! str_contains($cspHeader, "'unsafe-inline'")) {
                 $score += 10;
             }
+
             if (! str_contains($cspHeader, "'unsafe-eval'")) {
                 $score += 5;
             }
@@ -250,7 +252,7 @@ class SecurityHeaderTester
         $headers = self::getHeaders($response);
         $issues = self::validateCsp($headers, $options);
 
-        return empty($issues);
+        return $issues === [];
     }
 
     /**
@@ -302,7 +304,7 @@ class SecurityHeaderTester
         }
 
         if (strtolower($value) !== 'nosniff') {
-            return "Should be 'nosniff', got '{$value}'";
+            return sprintf("Should be 'nosniff', got '%s'", $value);
         }
 
         return null;
@@ -320,7 +322,7 @@ class SecurityHeaderTester
         }
 
         if (! in_array(strtoupper($value), self::VALID_X_FRAME_OPTIONS, true)) {
-            return "Should be DENY or SAMEORIGIN, got '{$value}'";
+            return sprintf("Should be DENY or SAMEORIGIN, got '%s'", $value);
         }
 
         return null;
@@ -361,7 +363,7 @@ class SecurityHeaderTester
 
         $maxAge = (int) $matches[1];
         if ($maxAge < self::RECOMMENDED_HSTS_MAX_AGE) {
-            return 'max-age should be at least '.self::RECOMMENDED_HSTS_MAX_AGE." (1 year), got {$maxAge}";
+            return 'max-age should be at least '.self::RECOMMENDED_HSTS_MAX_AGE.(' (1 year), got ' . $maxAge);
         }
 
         return null;
@@ -415,7 +417,7 @@ class SecurityHeaderTester
         }
 
         // Basic syntax check
-        if (empty(trim($value))) {
+        if (in_array(trim($value), ['', '0'], true)) {
             return 'Permissions-Policy header is empty';
         }
 
@@ -433,7 +435,10 @@ class SecurityHeaderTester
 
         foreach (explode(';', $csp) as $part) {
             $part = trim($part);
-            if (empty($part)) {
+            if ($part === '') {
+                continue;
+            }
+            if ($part === '0') {
                 continue;
             }
 

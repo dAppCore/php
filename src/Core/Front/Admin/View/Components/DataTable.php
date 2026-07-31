@@ -32,7 +32,7 @@ class DataTable extends Component
 
     protected function processColumns(): array
     {
-        return array_map(fn ($col) => [
+        return array_map(fn ($col): array => [
             'label' => is_array($col) ? ($col['label'] ?? $col) : $col,
             'align' => is_array($col) ? ($col['align'] ?? 'left') : 'left',
         ], $this->columns);

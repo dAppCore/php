@@ -20,7 +20,7 @@ use Illuminate\Contracts\Support\Htmlable;
  * Provides fluent interface for building HTML components programmatically.
  * Used by MCP tools and agents to compose UIs without Blade templates.
  */
-abstract class Component implements Htmlable
+abstract class Component implements Htmlable, \Stringable
 {
     protected array $attributes = [];
 
@@ -80,7 +80,7 @@ abstract class Component implements Htmlable
         $attrs = $this->attributes;
         $allClasses = array_merge($this->classes, $extraClasses);
 
-        if (! empty($allClasses)) {
+        if ($allClasses !== []) {
             $existing = $attrs['class'] ?? '';
             $attrs['class'] = trim($existing.' '.implode(' ', array_unique($allClasses)));
         }
@@ -89,7 +89,7 @@ abstract class Component implements Htmlable
         foreach ($attrs as $key => $value) {
             if ($value === true) {
                 $parts[] = e($key);
-            } elseif ($value !== false && $value !== null && $value !== '') {
+            } elseif (!in_array($value, [false, null, ''], true)) {
                 $parts[] = e($key).'="'.e($value).'"';
             }
         }
@@ -115,7 +115,7 @@ abstract class Component implements Htmlable
         }
 
         if (is_array($content)) {
-            return implode('', array_map(fn ($item) => $this->resolve($item), $content));
+            return implode('', array_map($this->resolve(...), $content));
         }
 
         return e((string) $content);
@@ -139,7 +139,7 @@ abstract class Component implements Htmlable
         }
 
         if (is_array($content)) {
-            return implode('', array_map(fn ($item) => $this->raw($item), $content));
+            return implode('', array_map($this->raw(...), $content));
         }
 
         return (string) $content;

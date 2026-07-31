@@ -97,7 +97,7 @@ abstract class Config
             }
 
             $payload = \Core\Mod\Social\Models\Config::get(
-                property: "{$this->group()}.{$name}",
+                property: sprintf('%s.%s', $this->group(), $name),
                 default: $default
             );
 
@@ -114,9 +114,7 @@ abstract class Config
      */
     public function all(): array
     {
-        return Arr::map($this->form(), function ($_, $name) {
-            return $this->get($name);
-        });
+        return Arr::map($this->form(), fn ($_, $name) => $this->get($name));
     }
 
     /**
@@ -168,6 +166,6 @@ abstract class Config
     {
         $prefix = config('social.cache_prefix', 'social');
 
-        return "{$prefix}.configs.{$this->group()}.{$key}";
+        return sprintf('%s.configs.%s.%s', $prefix, $this->group(), $key);
     }
 }

@@ -93,7 +93,7 @@ class IcuMessageFormatter
 
         $formatter = $this->getFormatter($pattern);
 
-        if ($formatter === null) {
+        if (!$formatter instanceof \MessageFormatter) {
             // If pattern is invalid, try fallback formatting
             return $this->fallbackFormat($pattern, $args);
         }
@@ -157,7 +157,7 @@ class IcuMessageFormatter
             // Remove oldest entries (first half)
             $this->formatterCache = array_slice(
                 $this->formatterCache,
-                (int) (self::MAX_CACHE_SIZE / 2),
+                self::MAX_CACHE_SIZE / 2,
                 null,
                 true
             );
@@ -179,7 +179,7 @@ class IcuMessageFormatter
         // Simple placeholder replacement for {name} syntax
         return preg_replace_callback(
             '/\{(\w+)(?:,[^}]*)?\}/',
-            function ($matches) use ($args) {
+            function ($matches) use ($args): string {
                 $key = $matches[1];
 
                 if (isset($args[$key])) {
@@ -264,9 +264,9 @@ class IcuMessageFormatter
         foreach ($forms as $key => $text) {
             // Support both =0 style and named (zero, one, other) styles
             if (is_numeric($key)) {
-                $parts[] = "={$key}{{$text}}";
+                $parts[] = sprintf('=%s{%s}', $key, $text);
             } else {
-                $parts[] = "{$key}{{$text}}";
+                $parts[] = sprintf('%s{%s}', $key, $text);
             }
         }
 
@@ -287,7 +287,7 @@ class IcuMessageFormatter
         $parts = [];
 
         foreach ($options as $key => $text) {
-            $parts[] = "{$key}{{$text}}";
+            $parts[] = sprintf('%s{%s}', $key, $text);
         }
 
         return '{'.$variable.', select, '.implode(' ', $parts).'}';

@@ -70,11 +70,12 @@ class AuditCanonicalUrls extends Command
         if ($audit['duplicates']->isNotEmpty()) {
             $this->warn('Duplicate Canonical URLs:');
             foreach ($audit['duplicates'] as $url => $records) {
-                $this->line("  [$url]:");
+                $this->line(sprintf('  [%s]:', $url));
                 foreach ($records as $record) {
-                    $this->line("    - {$record->seoable_type} #{$record->seoable_id}");
+                    $this->line(sprintf('    - %s #%d', $record->seoable_type, $record->seoable_id));
                 }
             }
+
             $this->newLine();
         }
 
@@ -82,8 +83,9 @@ class AuditCanonicalUrls extends Command
         if ($audit['protocol_issues']->isNotEmpty()) {
             $this->warn('Protocol Issues (HTTP instead of HTTPS):');
             foreach ($audit['protocol_issues'] as $record) {
-                $this->line("  - {$record->seoable_type} #{$record->seoable_id}: {$record->canonical_url}");
+                $this->line(sprintf('  - %s #%d: %s', $record->seoable_type, $record->seoable_id, $record->canonical_url));
             }
+
             $this->newLine();
         }
 
@@ -91,8 +93,9 @@ class AuditCanonicalUrls extends Command
         if ($audit['www_inconsistencies']->isNotEmpty()) {
             $this->warn('WWW Inconsistencies:');
             foreach ($audit['www_inconsistencies'] as $record) {
-                $this->line("  - {$record->seoable_type} #{$record->seoable_id}: {$record->canonical_url}");
+                $this->line(sprintf('  - %s #%d: %s', $record->seoable_type, $record->seoable_id, $record->canonical_url));
             }
+
             $this->newLine();
         }
 
@@ -100,8 +103,9 @@ class AuditCanonicalUrls extends Command
         if ($audit['self_referencing']->isNotEmpty()) {
             $this->warn('Self-Referencing Issues (canonical differs from resource URL):');
             foreach ($audit['self_referencing'] as $record) {
-                $this->line("  - {$record->seoable_type} #{$record->seoable_id}: {$record->canonical_url}");
+                $this->line(sprintf('  - %s #%d: %s', $record->seoable_type, $record->seoable_id, $record->canonical_url));
             }
+
             $this->newLine();
         }
 
@@ -112,7 +116,7 @@ class AuditCanonicalUrls extends Command
             return self::SUCCESS;
         }
 
-        $this->error("{$summary['issue_count']} issue(s) detected.");
+        $this->error($summary['issue_count'] . ' issue(s) detected.');
 
         if ($this->option('fix')) {
             $this->attemptFixes($audit, $validator);
@@ -141,7 +145,7 @@ class AuditCanonicalUrls extends Command
             $record->canonical_url = $newUrl;
             $record->save();
 
-            $this->line("  Fixed protocol: {$oldUrl} -> {$newUrl}");
+            $this->line(sprintf('  Fixed protocol: %s -> %s', $oldUrl, $newUrl));
             $fixed++;
         }
 
@@ -155,7 +159,7 @@ class AuditCanonicalUrls extends Command
         }
 
         $this->newLine();
-        $this->info("Fixed {$fixed} issue(s).");
+        $this->info(sprintf('Fixed %d issue(s).', $fixed));
     }
 
     /**
@@ -165,19 +169,19 @@ class AuditCanonicalUrls extends Command
     {
         $output = [
             'summary' => $audit['summary'],
-            'duplicates' => $audit['duplicates']->map(fn ($group) => $group->map(fn ($r) => [
+            'duplicates' => $audit['duplicates']->map(fn ($group) => $group->map(fn ($r): array => [
                 'id' => $r->id,
                 'seoable_type' => $r->seoable_type,
                 'seoable_id' => $r->seoable_id,
                 'canonical_url' => $r->canonical_url,
             ])->values())->toArray(),
-            'protocol_issues' => $audit['protocol_issues']->map(fn ($r) => [
+            'protocol_issues' => $audit['protocol_issues']->map(fn ($r): array => [
                 'id' => $r->id,
                 'seoable_type' => $r->seoable_type,
                 'seoable_id' => $r->seoable_id,
                 'canonical_url' => $r->canonical_url,
             ])->values()->toArray(),
-            'www_inconsistencies' => $audit['www_inconsistencies']->map(fn ($r) => [
+            'www_inconsistencies' => $audit['www_inconsistencies']->map(fn ($r): array => [
                 'id' => $r->id,
                 'seoable_type' => $r->seoable_type,
                 'seoable_id' => $r->seoable_id,

@@ -242,6 +242,7 @@ class LthnHash
         if ($hashLength < 64) {
             $computed = substr($computed, 0, $hashLength);
         }
+
         if (hash_equals($computed, $hash)) {
             return true;
         }
@@ -256,6 +257,7 @@ class LthnHash
             if ($hashLength < 64) {
                 $computed = substr($computed, 0, $hashLength);
             }
+
             if (hash_equals($computed, $hash)) {
                 return true;
             }
@@ -369,7 +371,7 @@ class LthnHash
     public static function setActiveKey(string $keyId): void
     {
         if (! isset(self::$keyMaps[$keyId])) {
-            throw new \InvalidArgumentException("Key map '{$keyId}' does not exist");
+            throw new \InvalidArgumentException(sprintf("Key map '%s' does not exist", $keyId));
         }
 
         self::$activeKey = $keyId;
@@ -478,6 +480,7 @@ class LthnHash
         for ($i = 0; $i < $iterations; $i++) {
             self::hash($testInput.$i);
         }
+
         $hashTime = (hrtime(true) - $start) / 1e6; // Convert to ms
 
         // Benchmark shortHash()
@@ -485,6 +488,7 @@ class LthnHash
         for ($i = 0; $i < $iterations; $i++) {
             self::shortHash($testInput.$i);
         }
+
         $shortHashTime = (hrtime(true) - $start) / 1e6;
 
         // Benchmark fastHash()
@@ -492,6 +496,7 @@ class LthnHash
         for ($i = 0; $i < $iterations; $i++) {
             self::fastHash($testInput.$i);
         }
+
         $fastHashTime = (hrtime(true) - $start) / 1e6;
 
         // Determine which algorithm fastHash is using

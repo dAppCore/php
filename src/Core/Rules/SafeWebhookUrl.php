@@ -95,7 +95,7 @@ class SafeWebhookUrl implements ValidationRule
 
             if (! $matched) {
                 $serviceName = ucfirst($this->service);
-                $fail("The :attribute must be a valid {$serviceName} webhook URL.");
+                $fail(sprintf('The :attribute must be a valid %s webhook URL.', $serviceName));
 
                 return;
             }
@@ -217,7 +217,7 @@ class SafeWebhookUrl implements ValidationRule
         }
 
         // Fallback
-        if (empty($ips)) {
+        if ($ips === []) {
             $fallback = @gethostbynamel($host);
             if (is_array($fallback)) {
                 $ips = $fallback;

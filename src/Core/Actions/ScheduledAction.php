@@ -92,7 +92,7 @@ class ScheduledAction extends Model
         }
 
         return array_map(
-            static fn (string $arg) => ctype_digit($arg) ? (int) $arg : $arg,
+            static fn (string $arg): int|string => ctype_digit($arg) ? (int) $arg : $arg,
             explode(',', $parts[1])
         );
     }

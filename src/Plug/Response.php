@@ -12,13 +12,13 @@ use Illuminate\Support\Arr;
  *
  * Provides consistent interface for success/error handling across all providers.
  */
-final class Response
+final readonly class Response
 {
     public function __construct(
-        private readonly Status $status,
-        private readonly array $context = [],
-        private readonly bool $rateLimitApproaching = false,
-        private readonly int $retryAfter = 0
+        private Status $status,
+        private array $context = [],
+        private bool $rateLimitApproaching = false,
+        private int $retryAfter = 0
     ) {
     }
 

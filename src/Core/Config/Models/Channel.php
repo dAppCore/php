@@ -101,7 +101,7 @@ class Channel extends Model
     public static function byCode(string $code, ?int $workspaceId = null): ?self
     {
         return static::where('code', $code)
-            ->where(function ($query) use ($workspaceId) {
+            ->where(function ($query) use ($workspaceId): void {
                 $query->whereNull('workspace_id');
                 if ($workspaceId !== null) {
                     $query->orWhere('workspace_id', $workspaceId);

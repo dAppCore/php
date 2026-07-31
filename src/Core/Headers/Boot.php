@@ -169,15 +169,11 @@ class Boot extends ServiceProvider
     {
         // @cspnonce - Outputs the nonce attribute
         // Usage: <script @cspnonce>...</script>
-        Blade::directive('cspnonce', function () {
-            return '<?php echo app(\Core\Headers\CspNonceService::class)->getNonceAttribute(); ?>';
-        });
+        Blade::directive('cspnonce', fn () => '<?php echo app(' . CspNonceService::class . '::class)->getNonceAttribute(); ?>');
 
         // @cspnoncevalue - Outputs just the nonce value (for use in nonce="...")
         // Usage: <script nonce="@cspnoncevalue">...</script>
-        Blade::directive('cspnoncevalue', function () {
-            return '<?php echo app(\Core\Headers\CspNonceService::class)->getNonce(); ?>';
-        });
+        Blade::directive('cspnoncevalue', fn () => '<?php echo app(' . CspNonceService::class . '::class)->getNonce(); ?>');
     }
 
     /**

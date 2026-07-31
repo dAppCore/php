@@ -35,13 +35,11 @@ use Illuminate\View\View;
  *     ->f('<footer>Links</footer>')
  *     ->render();
  */
-class Layout implements Htmlable, Renderable
+class Layout implements Htmlable, Renderable, \Stringable
 {
     protected string $variant;
 
-    protected array $attributes = [];
-
-    protected string $path = '';  // Hierarchical path (e.g., "L-" for nested in Left)
+    protected array $attributes = [];  // Hierarchical path (e.g., "L-" for nested in Left)
 
     protected array $header = [];
 
@@ -53,10 +51,9 @@ class Layout implements Htmlable, Renderable
 
     protected array $footer = [];
 
-    public function __construct(string $variant = 'HCF', string $path = '')
+    public function __construct(string $variant = 'HCF', protected string $path = '')
     {
         $this->variant = strtoupper($variant);
-        $this->path = $path;
     }
 
     /**
@@ -271,7 +268,7 @@ class Layout implements Htmlable, Renderable
         $html = '<div '.$this->buildAttributes().' data-layout="'.e($layoutId).'">';
 
         // Header
-        if ($this->has('H') && ! empty($this->header)) {
+        if ($this->has('H') && $this->header !== []) {
             $id = $this->slotId('H');
             $html .= '<header class="hlcrf-header" data-slot="'.e($id).'">'.$this->renderSlot($this->header, 'H').'</header>';
         }
@@ -280,7 +277,7 @@ class Layout implements Htmlable, Renderable
         if ($this->has('L') || $this->has('C') || $this->has('R')) {
             $html .= '<div class="hlcrf-body flex flex-1">';
 
-            if ($this->has('L') && ! empty($this->left)) {
+            if ($this->has('L') && $this->left !== []) {
                 $id = $this->slotId('L');
                 $html .= '<aside class="hlcrf-left shrink-0" data-slot="'.e($id).'">'.$this->renderSlot($this->left, 'L').'</aside>';
             }
@@ -290,7 +287,7 @@ class Layout implements Htmlable, Renderable
                 $html .= '<main class="hlcrf-content flex-1" data-slot="'.e($id).'">'.$this->renderSlot($this->content, 'C').'</main>';
             }
 
-            if ($this->has('R') && ! empty($this->right)) {
+            if ($this->has('R') && $this->right !== []) {
                 $id = $this->slotId('R');
                 $html .= '<aside class="hlcrf-right shrink-0" data-slot="'.e($id).'">'.$this->renderSlot($this->right, 'R').'</aside>';
             }
@@ -299,14 +296,12 @@ class Layout implements Htmlable, Renderable
         }
 
         // Footer
-        if ($this->has('F') && ! empty($this->footer)) {
+        if ($this->has('F') && $this->footer !== []) {
             $id = $this->slotId('F');
             $html .= '<footer class="hlcrf-footer" data-slot="'.e($id).'">'.$this->renderSlot($this->footer, 'F').'</footer>';
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**

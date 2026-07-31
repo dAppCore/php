@@ -71,7 +71,7 @@ class NewProjectCommand extends Command
         // Check if directory exists
         if (File::isDirectory($directory) && ! $this->option('force')) {
             $this->newLine();
-            $this->components->error("Directory [{$name}] already exists!");
+            $this->components->error(sprintf('Directory [%s] already exists!', $name));
             $this->newLine();
             $this->components->warn('Use --force to overwrite the existing directory.');
             $this->newLine();
@@ -93,20 +93,14 @@ class NewProjectCommand extends Command
 
         try {
             // Step 1: Create project from template
-            $this->components->task('Creating project from template', function () use ($directory, $template, $name) {
-                return $this->createFromTemplate($directory, $template, $name);
-            });
+            $this->components->task('Creating project from template', fn () => $this->createFromTemplate($directory, $template, $name));
 
             // Step 2: Install dependencies
             if (! $this->option('no-install')) {
-                $this->components->task('Installing Composer dependencies', function () use ($directory) {
-                    return $this->installDependencies($directory);
-                });
+                $this->components->task('Installing Composer dependencies', fn () => $this->installDependencies($directory));
 
                 // Step 3: Run core:install
-                $this->components->task('Running framework installation', function () use ($directory) {
-                    return $this->runCoreInstall($directory);
-                });
+                $this->components->task('Running framework installation', fn () => $this->runCoreInstall($directory));
             }
 
             // Success!
@@ -115,7 +109,7 @@ class NewProjectCommand extends Command
             $this->newLine();
 
             $this->components->info('  Next steps:');
-            $this->line("    <fg=gray>1.</> cd {$name}");
+            $this->line('    <fg=gray>1.</> cd ' . $name);
             if ($this->option('no-install')) {
                 $this->line('    <fg=gray>2.</> composer install');
                 $this->line('    <fg=gray>3.</> php artisan core:install');
@@ -123,14 +117,15 @@ class NewProjectCommand extends Command
             } else {
                 $this->line('    <fg=gray>2.</> php artisan serve');
             }
+
             $this->newLine();
 
             $this->showPackageInfo();
 
             return self::SUCCESS;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             $this->newLine();
-            $this->components->error('  Project creation failed: '.$e->getMessage());
+            $this->components->error('  Project creation failed: '.$throwable->getMessage());
             $this->newLine();
 
             // Cleanup on failure
@@ -151,7 +146,7 @@ class NewProjectCommand extends Command
      */
     protected function validateProjectName(string $name): bool
     {
-        if (empty($name)) {
+        if ($name === '' || $name === '0') {
             $this->components->error('Project name cannot be empty');
 
             return false;
@@ -163,8 +158,8 @@ class NewProjectCommand extends Command
             return false;
         }
 
-        if (in_array(strtolower($name), ['vendor', 'app', 'test', 'tests', 'src', 'public'])) {
-            $this->components->error("Project name '{$name}' is reserved");
+        if (in_array(strtolower($name), ['vendor', 'app', 'test', 'tests', 'src', 'public'], true)) {
+            $this->components->error(sprintf("Project name '%s' is reserved", $name));
 
             return false;
         }
@@ -188,22 +183,22 @@ class NewProjectCommand extends Command
         $templateUrl = $this->resolveTemplateUrl($template);
 
         // Clone the template
-        $result = Process::run("git clone --branch {$branch} --single-branch --depth 1 {$templateUrl} {$directory}");
+        $result = Process::run(sprintf('git clone --branch %s --single-branch --depth 1 %s %s', $branch, $templateUrl, $directory));
 
         if (! $result->successful()) {
-            throw new \RuntimeException("Failed to clone template: {$result->errorOutput()}");
+            throw new \RuntimeException('Failed to clone template: ' . $result->errorOutput());
         }
 
         // Remove .git directory to make it a fresh repo
-        File::deleteDirectory("{$directory}/.git");
+        File::deleteDirectory($directory . '/.git');
 
         // Update composer.json with project name
         $this->updateComposerJson($directory, $projectName);
 
         // Initialize new git repository
-        Process::run("cd {$directory} && git init");
-        Process::run("cd {$directory} && git add .");
-        Process::run("cd {$directory} && git commit -m \"Initial commit from Core PHP Framework template\"");
+        Process::run(sprintf('cd %s && git init', $directory));
+        Process::run(sprintf('cd %s && git add .', $directory));
+        Process::run(sprintf('cd %s && git commit -m "Initial commit from Core PHP Framework template"', $directory));
 
         return true;
     }
@@ -224,7 +219,7 @@ class NewProjectCommand extends Command
         }
 
         // Otherwise, assume GitHub slug
-        return "https://github.com/{$template}.git";
+        return sprintf('https://github.com/%s.git', $template);
     }
 
     /**
@@ -232,19 +227,19 @@ class NewProjectCommand extends Command
      */
     protected function updateComposerJson(string $directory, string $projectName): void
     {
-        $composerPath = "{$directory}/composer.json";
+        $composerPath = $directory . '/composer.json';
         if (! File::exists($composerPath)) {
             return;
         }
 
         $composer = json_decode(File::get($composerPath), true);
         $composer['name'] = $this->generateComposerName($projectName);
-        $composer['description'] = "Core PHP Framework application - {$projectName}";
+        $composer['description'] = 'Core PHP Framework application - ' . $projectName;
 
         // Update namespace if using default App namespace
         if (isset($composer['autoload']['psr-4']['App\\'])) {
             $studlyName = Str::studly($projectName);
-            $composer['autoload']['psr-4']["{$studlyName}\\"] = 'app/';
+            $composer['autoload']['psr-4'][$studlyName . '\\'] = 'app/';
             unset($composer['autoload']['psr-4']['App\\']);
         }
 
@@ -259,7 +254,7 @@ class NewProjectCommand extends Command
         $vendor = $this->ask('Composer vendor name', 'my-company');
         $package = Str::slug($projectName);
 
-        return "{$vendor}/{$package}";
+        return sprintf('%s/%s', $vendor, $package);
     }
 
     /**
@@ -270,13 +265,13 @@ class NewProjectCommand extends Command
         $composerBin = $this->findComposer();
 
         $command = $this->option('dev')
-            ? "{$composerBin} install --prefer-source"
-            : "{$composerBin} install";
+            ? $composerBin . ' install --prefer-source'
+            : $composerBin . ' install';
 
-        $result = Process::run("cd {$directory} && {$command}");
+        $result = Process::run(sprintf('cd %s && %s', $directory, $command));
 
         if (! $result->successful()) {
-            throw new \RuntimeException("Composer install failed: {$result->errorOutput()}");
+            throw new \RuntimeException('Composer install failed: ' . $result->errorOutput());
         }
 
         return true;
@@ -287,10 +282,10 @@ class NewProjectCommand extends Command
      */
     protected function runCoreInstall(string $directory): bool
     {
-        $result = Process::run("cd {$directory} && php artisan core:install --no-interaction");
+        $result = Process::run(sprintf('cd %s && php artisan core:install --no-interaction', $directory));
 
         if (! $result->successful()) {
-            throw new \RuntimeException("core:install failed: {$result->errorOutput()}");
+            throw new \RuntimeException('core:install failed: ' . $result->errorOutput());
         }
 
         return true;

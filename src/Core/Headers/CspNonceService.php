@@ -106,7 +106,7 @@ class CspNonceService
      */
     public function getCspNonceDirective(): string
     {
-        return "'nonce-{$this->getNonce()}'";
+        return sprintf("'nonce-%s'", $this->getNonce());
     }
 
     /**

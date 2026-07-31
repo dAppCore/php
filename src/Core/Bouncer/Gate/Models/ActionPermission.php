@@ -89,7 +89,7 @@ class ActionPermission extends Model
 
         // Check scope match (null matches any, or exact match)
         if ($scope !== null) {
-            $query->where(function ($q) use ($scope) {
+            $query->where(function ($q) use ($scope): void {
                 $q->whereNull('scope')
                     ->orWhere('scope', $scope);
             });
@@ -97,7 +97,7 @@ class ActionPermission extends Model
 
         // Check role match (null role in permission = any authenticated)
         if ($role !== null) {
-            $query->where(function ($q) use ($role) {
+            $query->where(function ($q) use ($role): void {
                 $q->whereNull('role')
                     ->orWhere('role', $role);
             });
@@ -194,7 +194,7 @@ class ActionPermission extends Model
             ->where('allowed', true);
 
         if ($role !== null) {
-            $query->where(function ($q) use ($role) {
+            $query->where(function ($q) use ($role): void {
                 $q->whereNull('role')
                     ->orWhere('role', $role);
             });

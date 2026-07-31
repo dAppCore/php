@@ -69,9 +69,9 @@ class Boot extends ServiceProvider
             return;
         }
 
-        foreach (glob("{$websitePath}/*/Boot.php") as $file) {
+        foreach (glob($websitePath . '/*/Boot.php') as $file) {
             $relative = str_replace([$websitePath.'/', '/Boot.php'], '', $file);
-            $class = "Mod\\{$relative}\\Boot";
+            $class = sprintf('Mod\%s\Boot', $relative);
 
             if (class_exists($class)) {
                 $this->app->register($class);

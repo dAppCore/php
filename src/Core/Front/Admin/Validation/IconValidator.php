@@ -242,7 +242,7 @@ class IconValidator
     {
         $errors = [];
 
-        if (empty($icon)) {
+        if ($icon === '' || $icon === '0') {
             $errors[] = 'Icon name cannot be empty';
 
             return $errors;
@@ -257,7 +257,7 @@ class IconValidator
             );
 
             if ($this->logWarnings) {
-                Log::warning("Unknown admin menu icon: {$icon}");
+                Log::warning('Unknown admin menu icon: ' . $icon);
             }
         }
 
@@ -276,7 +276,7 @@ class IconValidator
 
         foreach ($icons as $icon) {
             $errors = $this->validate($icon);
-            if (! empty($errors)) {
+            if ($errors !== []) {
                 $results[$icon] = $errors;
             }
         }
@@ -333,13 +333,8 @@ class IconValidator
                 return true;
             }
         }
-
         // If not strict mode, allow any icon (for extensibility)
-        if (! $this->strictMode) {
-            return true;
-        }
-
-        return false;
+        return ! $this->strictMode;
     }
 
     /**
@@ -377,7 +372,7 @@ class IconValidator
     public function registerIconPack(string $name, array $icons): self
     {
         $this->iconPacks[$name] = array_map(
-            fn ($icon) => $this->normalizeIcon($icon),
+            $this->normalizeIcon(...),
             $icons
         );
 

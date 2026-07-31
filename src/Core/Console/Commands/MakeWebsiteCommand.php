@@ -62,7 +62,7 @@ class MakeWebsiteCommand extends Command
 
         if (File::isDirectory($websitePath) && ! $this->option('force')) {
             $this->newLine();
-            $this->components->error("Website [{$name}] already exists!");
+            $this->components->error(sprintf('Website [%s] already exists!', $name));
             $this->newLine();
             $this->components->warn('Use --force to overwrite the existing website.');
             $this->newLine();
@@ -71,8 +71,8 @@ class MakeWebsiteCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Creating website: <comment>{$name}</comment>");
-        $this->components->twoColumnDetail('Domain', "<fg=yellow>{$domain}</>");
+        $this->components->info(sprintf('Creating website: <comment>%s</comment>', $name));
+        $this->components->twoColumnDetail('Domain', sprintf('<fg=yellow>%s</>', $domain));
         $this->newLine();
 
         // Create directory structure
@@ -89,21 +89,21 @@ class MakeWebsiteCommand extends Command
         $this->components->twoColumnDetail('<fg=green;options=bold>Created Files</>', '<fg=gray>Description</>');
         foreach ($this->createdFiles as $file) {
             $this->components->twoColumnDetail(
-                "<fg=cyan>{$file['file']}</>",
-                "<fg=gray>{$file['description']}</>"
+                sprintf('<fg=cyan>%s</>', $file['file']),
+                sprintf('<fg=gray>%s</>', $file['description'])
             );
         }
 
         $this->newLine();
-        $this->components->info("Website [{$name}] created successfully!");
+        $this->components->info(sprintf('Website [%s] created successfully!', $name));
         $this->newLine();
-        $this->components->twoColumnDetail('Location', "<fg=yellow>{$websitePath}</>");
+        $this->components->twoColumnDetail('Location', sprintf('<fg=yellow>%s</>', $websitePath));
         $this->newLine();
 
         $this->components->info('Next steps:');
-        $this->line("  <fg=gray>1.</> Configure your local dev server to serve <fg=yellow>{$domain}</>");
+        $this->line(sprintf('  <fg=gray>1.</> Configure your local dev server to serve <fg=yellow>%s</>', $domain));
         $this->line('     <fg=gray>(e.g.,</> valet link '.Str::snake($name, '-').'<fg=gray>)</>');
-        $this->line("  <fg=gray>2.</> Visit <fg=cyan>http://{$domain}</> to see your website");
+        $this->line(sprintf('  <fg=gray>2.</> Visit <fg=cyan>http://%s</> to see your website', $domain));
         $this->line('  <fg=gray>3.</> Add routes, views, and controllers as needed');
         $this->newLine();
 
@@ -116,7 +116,7 @@ class MakeWebsiteCommand extends Command
     protected function getWebsitePath(string $name): string
     {
         // Websites go in app/Website for consuming applications
-        return base_path("app/Website/{$name}");
+        return base_path('app/Website/' . $name);
     }
 
     /**
@@ -126,20 +126,20 @@ class MakeWebsiteCommand extends Command
     {
         $directories = [
             $websitePath,
-            "{$websitePath}/View",
-            "{$websitePath}/View/Blade",
-            "{$websitePath}/View/Blade/layouts",
+            $websitePath . '/View',
+            $websitePath . '/View/Blade',
+            $websitePath . '/View/Blade/layouts',
         ];
 
         if ($this->hasRoutes()) {
-            $directories[] = "{$websitePath}/Routes";
+            $directories[] = $websitePath . '/Routes';
         }
 
         foreach ($directories as $directory) {
             File::ensureDirectoryExists($directory);
         }
 
-        $this->components->task('Creating directory structure', fn () => true);
+        $this->components->task('Creating directory structure', fn (): true => true);
     }
 
     /**
@@ -147,11 +147,19 @@ class MakeWebsiteCommand extends Command
      */
     protected function hasRoutes(): bool
     {
-        return $this->option('web')
-            || $this->option('admin')
-            || $this->option('api')
-            || $this->option('all')
-            || ! $this->hasAnyOption();
+        if ($this->option('web')) {
+            return true;
+        }
+        if ($this->option('admin')) {
+            return true;
+        }
+        if ($this->option('api')) {
+            return true;
+        }
+        if ($this->option('all')) {
+            return true;
+        }
+        return ! $this->hasAnyOption();
     }
 
     /**
@@ -159,10 +167,16 @@ class MakeWebsiteCommand extends Command
      */
     protected function hasAnyOption(): bool
     {
-        return $this->option('web')
-            || $this->option('admin')
-            || $this->option('api')
-            || $this->option('all');
+        if ($this->option('web')) {
+            return true;
+        }
+        if ($this->option('admin')) {
+            return true;
+        }
+        if ($this->option('api')) {
+            return true;
+        }
+        return (bool) $this->option('all');
     }
 
     /**
@@ -170,7 +184,7 @@ class MakeWebsiteCommand extends Command
      */
     protected function createBootFile(string $websitePath, string $name, string $domain): void
     {
-        $namespace = "Website\\{$name}";
+        $namespace = 'Website\\' . $name;
         $domainPattern = $this->buildDomainPattern($domain);
         $listeners = $this->buildListenersArray();
         $handlers = $this->buildHandlerMethods($name);
@@ -252,9 +266,9 @@ class Boot extends ServiceProvider
 
 PHP;
 
-        File::put("{$websitePath}/Boot.php", $content);
+        File::put($websitePath . '/Boot.php', $content);
         $this->createdFiles[] = ['file' => 'Boot.php', 'description' => 'Domain-isolated website provider'];
-        $this->components->task('Creating Boot.php', fn () => true);
+        $this->components->task('Creating Boot.php', fn (): true => true);
     }
 
     /**
@@ -419,9 +433,9 @@ Route::get('/', function () {
 
 PHP;
 
-        File::put("{$websitePath}/Routes/web.php", $content);
+        File::put($websitePath . '/Routes/web.php', $content);
         $this->createdFiles[] = ['file' => 'Routes/web.php', 'description' => 'Public web routes'];
-        $this->components->task('Creating Routes/web.php', fn () => true);
+        $this->components->task('Creating Routes/web.php', fn (): true => true);
     }
 
     /**
@@ -453,9 +467,9 @@ Route::prefix('admin/{$websiteName}')->name('{$websiteName}.admin.')->group(func
 
 PHP;
 
-        File::put("{$websitePath}/Routes/admin.php", $content);
+        File::put($websitePath . '/Routes/admin.php', $content);
         $this->createdFiles[] = ['file' => 'Routes/admin.php', 'description' => 'Admin panel routes'];
-        $this->components->task('Creating Routes/admin.php', fn () => true);
+        $this->components->task('Creating Routes/admin.php', fn (): true => true);
     }
 
     /**
@@ -487,9 +501,9 @@ Route::prefix('{$websiteName}')->name('api.{$websiteName}.')->group(function () 
 
 PHP;
 
-        File::put("{$websitePath}/Routes/api.php", $content);
+        File::put($websitePath . '/Routes/api.php', $content);
         $this->createdFiles[] = ['file' => 'Routes/api.php', 'description' => 'REST API routes'];
-        $this->components->task('Creating Routes/api.php', fn () => true);
+        $this->components->task('Creating Routes/api.php', fn (): true => true);
     }
 
     /**
@@ -535,9 +549,9 @@ PHP;
 
 BLADE;
 
-        File::put("{$websitePath}/View/Blade/layouts/app.blade.php", $content);
+        File::put($websitePath . '/View/Blade/layouts/app.blade.php', $content);
         $this->createdFiles[] = ['file' => 'View/Blade/layouts/app.blade.php', 'description' => 'Base layout template'];
-        $this->components->task('Creating View/Blade/layouts/app.blade.php', fn () => true);
+        $this->components->task('Creating View/Blade/layouts/app.blade.php', fn (): true => true);
     }
 
     /**
@@ -567,9 +581,9 @@ BLADE;
 
 BLADE;
 
-        File::put("{$websitePath}/View/Blade/home.blade.php", $content);
+        File::put($websitePath . '/View/Blade/home.blade.php', $content);
         $this->createdFiles[] = ['file' => 'View/Blade/home.blade.php', 'description' => 'Homepage view'];
-        $this->components->task('Creating View/Blade/home.blade.php', fn () => true);
+        $this->components->task('Creating View/Blade/home.blade.php', fn (): true => true);
     }
 
     /**

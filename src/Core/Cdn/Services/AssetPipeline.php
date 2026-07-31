@@ -51,17 +51,13 @@ use Illuminate\Support\Str;
  */
 class AssetPipeline
 {
-    protected StorageUrlResolver $urlResolver;
-
-    /**
-     * Storage manager instance (Core\Plug\Storage\StorageManager when available).
-     */
-    protected ?object $storage = null;
-
-    public function __construct(StorageUrlResolver $urlResolver, ?object $storage = null)
-    {
-        $this->urlResolver = $urlResolver;
-        $this->storage = $storage;
+    public function __construct(
+        protected StorageUrlResolver $urlResolver,
+        /**
+         * Storage manager instance (Core\Plug\Storage\StorageManager when available).
+         */
+        protected ?object $storage = null
+    ) {
     }
 
     /**
@@ -75,7 +71,7 @@ class AssetPipeline
      */
     public function store(UploadedFile $file, string $category, ?string $filename = null, array $options = []): array
     {
-        $filename = $filename ?? $this->generateFilename($file);
+        $filename ??= $this->generateFilename($file);
         $path = $this->buildPath($category, $filename, $options);
 
         // Store to public bucket
@@ -86,7 +82,7 @@ class AssetPipeline
         );
 
         if (! $stored) {
-            throw new \RuntimeException("Failed to store file at: {$path}");
+            throw new \RuntimeException('Failed to store file at: ' . $path);
         }
 
         // Queue CDN push if enabled
@@ -117,7 +113,7 @@ class AssetPipeline
         $stored = $this->urlResolver->publicDisk()->put($path, $contents);
 
         if (! $stored) {
-            throw new \RuntimeException("Failed to store content at: {$path}");
+            throw new \RuntimeException('Failed to store content at: ' . $path);
         }
 
         $this->queueCdnPush('hetzner-public', $path, 'public');
@@ -141,7 +137,7 @@ class AssetPipeline
     public function storePrivate($content, string $category, ?string $filename = null, array $options = []): array
     {
         if ($content instanceof UploadedFile) {
-            $filename = $filename ?? $this->generateFilename($content);
+            $filename ??= $this->generateFilename($content);
             $path = $this->buildPath($category, $filename, $options);
 
             $stored = $this->urlResolver->privateDisk()->putFileAs(
@@ -159,7 +155,7 @@ class AssetPipeline
         }
 
         if (! $stored) {
-            throw new \RuntimeException("Failed to store private content at: {$path}");
+            throw new \RuntimeException('Failed to store private content at: ' . $path);
         }
 
         $this->queueCdnPush('hetzner-private', $path, 'private');
@@ -191,18 +187,18 @@ class AssetPipeline
             ? $this->urlResolver->privateDisk()
             : $this->urlResolver->publicDisk();
 
-        $destPath = $destPath ?? $sourcePath;
+        $destPath ??= $sourcePath;
 
         $contents = $sourceDisk->get($sourcePath);
 
         if ($contents === null) {
-            throw new \RuntimeException("Source file not found: {$sourcePath}");
+            throw new \RuntimeException('Source file not found: ' . $sourcePath);
         }
 
         $stored = $destDisk->put($destPath, $contents);
 
         if (! $stored) {
-            throw new \RuntimeException("Failed to copy to: {$destPath}");
+            throw new \RuntimeException('Failed to copy to: ' . $destPath);
         }
 
         $hetznerDisk = $destBucket === 'private' ? 'hetzner-private' : 'hetzner-public';
@@ -294,7 +290,7 @@ class AssetPipeline
         }
 
         // Add date partitioning for media files
-        if (in_array($category, ['media', 'social', 'content'])) {
+        if (in_array($category, ['media', 'social', 'content'], true)) {
             $parts[] = date('Y/m');
         }
 
@@ -314,7 +310,7 @@ class AssetPipeline
         $extension = $file->getClientOriginalExtension();
         $hash = Str::random(16);
 
-        return "{$hash}.{$extension}";
+        return sprintf('%s.%s', $hash, $extension);
     }
 
     /**

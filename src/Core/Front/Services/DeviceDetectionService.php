@@ -117,7 +117,7 @@ class DeviceDetectionService
      */
     public function detectInAppBrowser(?string $userAgent): ?string
     {
-        if (empty($userAgent)) {
+        if (in_array($userAgent, [null, '', '0'], true)) {
             return null;
         }
 
@@ -150,7 +150,7 @@ class DeviceDetectionService
      */
     protected function isGenericWebView(?string $userAgent): bool
     {
-        if (empty($userAgent)) {
+        if (in_array($userAgent, [null, '', '0'], true)) {
             return false;
         }
 
@@ -158,14 +158,9 @@ class DeviceDetectionService
         if (preg_match('/\bwv\b/', $userAgent)) {
             return true;
         }
-
         // iOS WebView markers
-        if (stripos($userAgent, 'AppleWebKit') !== false
-            && stripos($userAgent, 'Safari') === false) {
-            return true;
-        }
-
-        return false;
+        return stripos($userAgent, 'AppleWebKit') !== false
+            && stripos($userAgent, 'Safari') === false;
     }
 
     // -------------------------------------------------------------------------
@@ -267,7 +262,7 @@ class DeviceDetectionService
      */
     public function detectDeviceType(?string $userAgent): string
     {
-        if (empty($userAgent)) {
+        if (in_array($userAgent, [null, '', '0'], true)) {
             return 'desktop';
         }
 
@@ -289,7 +284,7 @@ class DeviceDetectionService
      */
     public function detectOS(?string $userAgent): ?string
     {
-        if (empty($userAgent)) {
+        if (in_array($userAgent, [null, '', '0'], true)) {
             return null;
         }
 
@@ -316,7 +311,7 @@ class DeviceDetectionService
      */
     public function detectBrowser(?string $userAgent): ?string
     {
-        if (empty($userAgent)) {
+        if (in_array($userAgent, [null, '', '0'], true)) {
             return null;
         }
 
@@ -353,7 +348,7 @@ class DeviceDetectionService
      */
     public function isBot(?string $userAgent): bool
     {
-        if (empty($userAgent)) {
+        if (in_array($userAgent, [null, '', '0'], true)) {
             return false;
         }
 

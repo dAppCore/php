@@ -121,7 +121,7 @@ class EventAuditLog
             return;
         }
 
-        $key = "{$eventClass}:{$handlerClass}";
+        $key = sprintf('%s:%s', $eventClass, $handlerClass);
         self::$pendingEvents[$key] = microtime(true);
     }
 
@@ -134,7 +134,7 @@ class EventAuditLog
             return;
         }
 
-        $key = "{$eventClass}:{$handlerClass}";
+        $key = sprintf('%s:%s', $eventClass, $handlerClass);
         $startTime = self::$pendingEvents[$key] ?? microtime(true);
         $duration = (microtime(true) - $startTime) * 1000;
 
@@ -164,7 +164,7 @@ class EventAuditLog
             return;
         }
 
-        $key = "{$eventClass}:{$handlerClass}";
+        $key = sprintf('%s:%s', $eventClass, $handlerClass);
         $startTime = self::$pendingEvents[$key] ?? microtime(true);
         $duration = (microtime(true) - $startTime) * 1000;
 
@@ -204,7 +204,7 @@ class EventAuditLog
     public static function entriesFor(string $eventClass): array
     {
         return array_values(
-            array_filter(self::$entries, fn ($entry) => $entry['event'] === $eventClass)
+            array_filter(self::$entries, fn (array $entry): bool => $entry['event'] === $eventClass)
         );
     }
 
@@ -216,7 +216,7 @@ class EventAuditLog
     public static function failures(): array
     {
         return array_values(
-            array_filter(self::$entries, fn ($entry) => $entry['failed'])
+            array_filter(self::$entries, fn (array $entry) => $entry['failed'])
         );
     }
 

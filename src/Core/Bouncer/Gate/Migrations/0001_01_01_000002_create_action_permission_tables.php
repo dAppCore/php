@@ -25,7 +25,7 @@ return new class () extends Migration {
         Schema::disableForeignKeyConstraints();
 
         // 1. Action Permissions (whitelist)
-        Schema::create('core_action_permissions', function (Blueprint $table) {
+        Schema::create('core_action_permissions', function (Blueprint $table): void {
             $table->id();
             $table->string('action');                     // product.create, order.refund
             $table->string('scope')->nullable();          // Resource type or specific ID
@@ -44,7 +44,7 @@ return new class () extends Migration {
         });
 
         // 2. Action Requests (audit log)
-        Schema::create('core_action_requests', function (Blueprint $table) {
+        Schema::create('core_action_requests', function (Blueprint $table): void {
             $table->id();
             $table->string('method', 10);                 // GET, POST, etc.
             $table->string('route');                      // /admin/products

@@ -127,7 +127,7 @@ class SecurityHeaders
         }
 
         $maxAge = $config['max_age'] ?? 31536000;
-        $value = "max-age={$maxAge}";
+        $value = 'max-age=' . $maxAge;
 
         if ($config['include_subdomains'] ?? true) {
             $value .= '; includeSubDomains';
@@ -229,7 +229,7 @@ class SecurityHeaders
                 // Nonces are more secure than unsafe-inline
                 $directives[$directive] = array_filter(
                     $directives[$directive],
-                    fn ($value) => $value !== "'unsafe-inline'"
+                    fn ($value): bool => $value !== "'unsafe-inline'"
                 );
                 $directives[$directive][] = $nonce;
             }
@@ -292,7 +292,7 @@ class SecurityHeaders
         $cdnSubdomain = config('core.cdn.subdomain', 'cdn');
 
         if ($cdnSubdomain !== '' && $cdnSubdomain !== null) {
-            $cdnUrl = "https://{$cdnSubdomain}.{$baseDomain}";
+            $cdnUrl = sprintf('https://%s.%s', $cdnSubdomain, $baseDomain);
             $cdnConfig = $config['external']['cdn'] ?? [];
 
             foreach ($cdnConfig as $directive => $enabled) {
@@ -304,9 +304,9 @@ class SecurityHeaders
 
         // Add base domain for connect-src (WebSocket, API calls)
         if (isset($directives['connect-src'])) {
-            $directives['connect-src'][] = "https://*.{$baseDomain}";
-            $directives['connect-src'][] = "wss://*.{$baseDomain}";
-            $directives['connect-src'][] = "wss://{$baseDomain}:8080";
+            $directives['connect-src'][] = 'https://*.' . $baseDomain;
+            $directives['connect-src'][] = 'wss://*.' . $baseDomain;
+            $directives['connect-src'][] = sprintf('wss://%s:8080', $baseDomain);
         }
 
         return $directives;
@@ -332,10 +332,12 @@ class SecurityHeaders
             }
 
             foreach ($serviceConfig as $directive => $sources) {
-                if ($directive === 'enabled' || ! is_array($sources)) {
+                if ($directive === 'enabled') {
                     continue;
                 }
-
+                if (! is_array($sources)) {
+                    continue;
+                }
                 if (isset($directives[$directive])) {
                     $directives[$directive] = array_merge($directives[$directive], $sources);
                 }
@@ -399,10 +401,10 @@ class SecurityHeaders
 
         foreach ($features as $feature => $allowList) {
             if (empty($allowList)) {
-                $parts[] = "{$feature}=()";
+                $parts[] = $feature . '=()';
             } else {
-                $formatted = array_map(fn ($origin) => $origin === 'self' ? 'self' : "\"{$origin}\"", $allowList);
-                $parts[] = "{$feature}=(".implode(' ', $formatted).')';
+                $formatted = array_map(fn ($origin): string => $origin === 'self' ? 'self' : sprintf('"%s"', $origin), $allowList);
+                $parts[] = $feature . '=('.implode(' ', $formatted).')';
             }
         }
 

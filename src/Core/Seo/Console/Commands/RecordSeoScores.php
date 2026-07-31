@@ -64,7 +64,7 @@ class RecordSeoScores extends Command
         if ($this->option('prune')) {
             $retention = (int) $this->option('retention');
 
-            $this->components->info("Pruning records older than {$retention} days...");
+            $this->components->info(sprintf('Pruning records older than %d days...', $retention));
 
             $pruned = $trend->prune($retention);
 

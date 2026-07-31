@@ -163,7 +163,7 @@ class TranslationMemory
     {
         $entry = $this->repository->findExact($source, $sourceLocale, $targetLocale);
 
-        if ($entry === null) {
+        if (!$entry instanceof TranslationMemoryEntry) {
             return null;
         }
 
@@ -300,7 +300,7 @@ class TranslationMemory
     ): bool {
         $entry = $this->repository->findExact($source, $sourceLocale, $targetLocale);
 
-        if ($entry === null) {
+        if (!$entry instanceof TranslationMemoryEntry) {
             return false;
         }
 
@@ -319,7 +319,7 @@ class TranslationMemory
     {
         $entry = $this->repository->findExact($source, $sourceLocale, $targetLocale);
 
-        if ($entry === null) {
+        if (!$entry instanceof TranslationMemoryEntry) {
             return false;
         }
 
@@ -335,7 +335,7 @@ class TranslationMemory
      */
     public function has(string $source, string $sourceLocale, string $targetLocale): bool
     {
-        return $this->repository->findExact($source, $sourceLocale, $targetLocale) !== null;
+        return $this->repository->findExact($source, $sourceLocale, $targetLocale) instanceof TranslationMemoryEntry;
     }
 
     /**
@@ -381,7 +381,7 @@ class TranslationMemory
             ? $this->repository->findByLocalePair($sourceLocale, $targetLocale)
             : $this->repository->all();
 
-        return $entries->filter(fn (TranslationMemoryEntry $e) => $e->needsReview());
+        return $entries->filter(fn (TranslationMemoryEntry $e): bool => $e->needsReview());
     }
 
     /**

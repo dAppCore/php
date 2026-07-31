@@ -62,7 +62,7 @@ class ConfigVersionCommand extends Command
             $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
-                $this->components->error("Workspace not found: {$workspaceSlug}");
+                $this->components->error('Workspace not found: ' . $workspaceSlug);
 
                 return self::FAILURE;
             }
@@ -88,8 +88,8 @@ class ConfigVersionCommand extends Command
         $limit = (int) $this->option('limit');
         $versions = $versioning->getVersions($workspace, $limit);
 
-        $scope = $workspace ? "workspace: {$workspace->slug}" : 'system';
-        $this->components->info("Config versions for {$scope}:");
+        $scope = $workspace ? 'workspace: ' . $workspace->slug : 'system';
+        $this->components->info(sprintf('Config versions for %s:', $scope));
 
         if ($versions->isEmpty()) {
             $this->components->warn('No versions found.');
@@ -97,7 +97,7 @@ class ConfigVersionCommand extends Command
             return self::SUCCESS;
         }
 
-        $rows = $versions->map(fn (ConfigVersion $v) => [
+        $rows = $versions->map(fn (ConfigVersion $v): array => [
             $v->id,
             $v->label,
             $v->author ?? '<fg=gray>-</>',
@@ -118,14 +118,14 @@ class ConfigVersionCommand extends Command
      */
     protected function createVersion(ConfigVersioning $versioning, ?object $workspace, ?string $label): int
     {
-        $label = $label ?? 'Manual snapshot';
+        $label ??= 'Manual snapshot';
 
         $version = null;
-        $this->components->task("Creating version: {$label}", function () use ($versioning, $workspace, $label, &$version) {
+        $this->components->task('Creating version: ' . $label, function () use ($versioning, $workspace, $label, &$version): void {
             $version = $versioning->createVersion($workspace, $label);
         });
 
-        $this->components->info("Version created: ID {$version->id}");
+        $this->components->info('Version created: ID ' . $version->id);
 
         return self::SUCCESS;
     }
@@ -143,13 +143,13 @@ class ConfigVersionCommand extends Command
 
         $version = $versioning->getVersion((int) $versionId);
 
-        if ($version === null) {
-            $this->components->error("Version not found: {$versionId}");
+        if (!$version instanceof ConfigVersion) {
+            $this->components->error('Version not found: ' . $versionId);
 
             return self::FAILURE;
         }
 
-        $this->components->info("Version #{$version->id}: {$version->label}");
+        $this->components->info(sprintf('Version #%d: %s', $version->id, $version->label));
         $this->components->twoColumnDetail('Created', $version->created_at->format('Y-m-d H:i:s'));
         $this->components->twoColumnDetail('Author', $version->author ?? '-');
         $this->components->twoColumnDetail('Workspace ID', $version->workspace_id ?? 'system');
@@ -158,7 +158,7 @@ class ConfigVersionCommand extends Command
         $this->newLine();
         $this->components->info('Values ('.count($values).' items):');
 
-        $rows = array_map(function ($v) {
+        $rows = array_map(function (array $v): array {
             $displayValue = match (true) {
                 is_array($v['value']) => '<fg=cyan>[array]</>',
                 is_null($v['value']) => '<fg=gray>null</>',
@@ -192,17 +192,17 @@ class ConfigVersionCommand extends Command
 
         $version = $versioning->getVersion((int) $versionId);
 
-        if ($version === null) {
-            $this->components->error("Version not found: {$versionId}");
+        if (!$version instanceof ConfigVersion) {
+            $this->components->error('Version not found: ' . $versionId);
 
             return self::FAILURE;
         }
 
-        $scope = $workspace ? "workspace: {$workspace->slug}" : 'system';
+        $scope = $workspace ? 'workspace: ' . $workspace->slug : 'system';
 
         if (! $this->option('force')) {
-            $this->components->warn("This will restore config to version #{$version->id}: {$version->label}");
-            $this->components->warn("Scope: {$scope}");
+            $this->components->warn(sprintf('This will restore config to version #%d: %s', $version->id, $version->label));
+            $this->components->warn('Scope: ' . $scope);
 
             if (! $this->confirm('Are you sure you want to rollback?')) {
                 $this->components->info('Rollback cancelled.');
@@ -214,12 +214,12 @@ class ConfigVersionCommand extends Command
         $createBackup = ! $this->option('no-backup');
         $result = null;
 
-        $this->components->task('Rolling back config', function () use ($versioning, $workspace, $versionId, $createBackup, &$result) {
+        $this->components->task('Rolling back config', function () use ($versioning, $workspace, $versionId, $createBackup, &$result): void {
             $result = $versioning->rollback((int) $versionId, $workspace, $createBackup);
         });
 
         $this->newLine();
-        $this->components->info("Rollback complete: {$result->getSummary()}");
+        $this->components->info('Rollback complete: ' . $result->getSummary());
 
         if ($createBackup) {
             $this->components->info('A backup version was created before rollback.');
@@ -241,7 +241,7 @@ class ConfigVersionCommand extends Command
 
         $diff = $versioning->compare($workspace, (int) $oldId, (int) $newId);
 
-        $this->components->info("Comparing version #{$oldId} to #{$newId}:");
+        $this->components->info(sprintf('Comparing version #%s to #%s:', $oldId, $newId));
         $this->newLine();
 
         if ($diff->isEmpty()) {
@@ -268,7 +268,7 @@ class ConfigVersionCommand extends Command
 
         $diff = $versioning->compareWithCurrent($workspace, (int) $versionId);
 
-        $this->components->info("Comparing version #{$versionId} to current state:");
+        $this->components->info(sprintf('Comparing version #%s to current state:', $versionId));
         $this->newLine();
 
         if ($diff->isEmpty()) {
@@ -287,47 +287,50 @@ class ConfigVersionCommand extends Command
      */
     protected function displayDiff(VersionDiff $diff): void
     {
-        $this->components->info("Summary: {$diff->getSummary()}");
+        $this->components->info('Summary: ' . $diff->getSummary());
         $this->newLine();
 
         // Added
-        if (count($diff->getAdded()) > 0) {
+        if ($diff->getAdded() !== []) {
             $this->components->twoColumnDetail('<fg=green>Added</>', count($diff->getAdded()).' keys');
             foreach ($diff->getAdded() as $item) {
-                $this->line("  <fg=green>+</> {$item['key']}");
+                $this->line('  <fg=green>+</> ' . $item['key']);
             }
+
             $this->newLine();
         }
 
         // Removed
-        if (count($diff->getRemoved()) > 0) {
+        if ($diff->getRemoved() !== []) {
             $this->components->twoColumnDetail('<fg=red>Removed</>', count($diff->getRemoved()).' keys');
             foreach ($diff->getRemoved() as $item) {
-                $this->line("  <fg=red>-</> {$item['key']}");
+                $this->line('  <fg=red>-</> ' . $item['key']);
             }
+
             $this->newLine();
         }
 
         // Changed
-        if (count($diff->getChanged()) > 0) {
+        if ($diff->getChanged() !== []) {
             $this->components->twoColumnDetail('<fg=yellow>Changed</>', count($diff->getChanged()).' keys');
             foreach ($diff->getChanged() as $item) {
                 $oldDisplay = $this->formatValue($item['old']);
                 $newDisplay = $this->formatValue($item['new']);
-                $this->line("  <fg=yellow>~</> {$item['key']}");
-                $this->line("    <fg=gray>old:</> {$oldDisplay}");
-                $this->line("    <fg=gray>new:</> {$newDisplay}");
+                $this->line('  <fg=yellow>~</> ' . $item['key']);
+                $this->line('    <fg=gray>old:</> ' . $oldDisplay);
+                $this->line('    <fg=gray>new:</> ' . $newDisplay);
             }
+
             $this->newLine();
         }
 
         // Lock changes
-        if (count($diff->getLockChanged()) > 0) {
+        if ($diff->getLockChanged() !== []) {
             $this->components->twoColumnDetail('<fg=cyan>Lock Changed</>', count($diff->getLockChanged()).' keys');
             foreach ($diff->getLockChanged() as $item) {
                 $oldLock = $item['old'] ? 'LOCKED' : 'unlocked';
                 $newLock = $item['new'] ? 'LOCKED' : 'unlocked';
-                $this->line("  <fg=cyan>*</> {$item['key']}: {$oldLock} -> {$newLock}");
+                $this->line(sprintf('  <fg=cyan>*</> %s: %s -> %s', $item['key'], $oldLock, $newLock));
             }
         }
     }
@@ -359,14 +362,14 @@ class ConfigVersionCommand extends Command
 
         $version = $versioning->getVersion((int) $versionId);
 
-        if ($version === null) {
-            $this->components->error("Version not found: {$versionId}");
+        if (!$version instanceof ConfigVersion) {
+            $this->components->error('Version not found: ' . $versionId);
 
             return self::FAILURE;
         }
 
         if (! $this->option('force')) {
-            $this->components->warn("This will permanently delete version #{$version->id}: {$version->label}");
+            $this->components->warn(sprintf('This will permanently delete version #%d: %s', $version->id, $version->label));
 
             if (! $this->confirm('Are you sure you want to delete this version?')) {
                 $this->components->info('Delete cancelled.');
@@ -376,7 +379,7 @@ class ConfigVersionCommand extends Command
         }
 
         $versioning->deleteVersion((int) $versionId);
-        $this->components->info("Version #{$versionId} deleted.");
+        $this->components->info(sprintf('Version #%s deleted.', $versionId));
 
         return self::SUCCESS;
     }
@@ -386,7 +389,7 @@ class ConfigVersionCommand extends Command
      */
     protected function invalidAction(string $action): int
     {
-        $this->components->error("Invalid action: {$action}");
+        $this->components->error('Invalid action: ' . $action);
         $this->newLine();
         $this->components->info('Available actions:');
         $this->components->bulletList([

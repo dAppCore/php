@@ -73,7 +73,7 @@ class EncryptArrayObject implements CastsAttributes
 
             if ($encoded === false) {
                 throw new \RuntimeException(
-                    "Failed to encode value for encryption [{$key}]: ".json_last_error_msg()
+                    sprintf('Failed to encode value for encryption [%s]: ', $key).json_last_error_msg()
                 );
             }
 

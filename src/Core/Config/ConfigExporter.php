@@ -180,20 +180,18 @@ class ConfigExporter
 
         if ($category !== null) {
             $escapedCategory = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $category);
-            $query->where('code', 'LIKE', "{$escapedCategory}.%")
+            $query->where('code', 'LIKE', $escapedCategory . '.%')
                 ->orWhere('category', $category);
         }
 
-        return $query->get()->map(function (ConfigKey $key) {
-            return [
-                'code' => $key->code,
-                'type' => $key->type->value,
-                'category' => $key->category,
-                'description' => $key->description,
-                'default_value' => $key->default_value,
-                'is_sensitive' => $key->is_sensitive ?? false,
-            ];
-        })->toArray();
+        return $query->get()->map(fn (ConfigKey $key) => [
+            'code' => $key->code,
+            'type' => $key->type->value,
+            'category' => $key->category,
+            'description' => $key->description,
+            'default_value' => $key->default_value,
+            'is_sensitive' => $key->is_sensitive ?? false,
+        ])->toArray();
     }
 
     /**
@@ -203,7 +201,7 @@ class ConfigExporter
      */
     protected function exportValues(?ConfigProfile $profile, bool $includeSensitive, ?string $category): array
     {
-        if ($profile === null) {
+        if (!$profile instanceof ConfigProfile) {
             return [];
         }
 
@@ -214,18 +212,19 @@ class ConfigExporter
         $values = $query->get();
 
         return $values
-            ->filter(function (ConfigValue $value) use ($category) {
+            ->filter(function (ConfigValue $value) use ($category): bool {
                 if ($category === null) {
                     return true;
                 }
+
                 $key = $value->key;
                 if ($key === null) {
                     return false;
                 }
 
-                return str_starts_with($key->code, "{$category}.") || $key->category === $category;
+                return str_starts_with($key->code, $category . '.') || $key->category === $category;
             })
-            ->map(function (ConfigValue $value) use ($includeSensitive) {
+            ->map(function (ConfigValue $value) use ($includeSensitive): array {
                 $key = $value->key;
 
                 // Mask sensitive values unless explicitly included
@@ -280,8 +279,8 @@ class ConfigExporter
     {
         try {
             $data = Yaml::parse($yaml);
-        } catch (\Exception $e) {
-            throw new \InvalidArgumentException('Invalid YAML: '.$e->getMessage());
+        } catch (\Exception $exception) {
+            throw new \InvalidArgumentException('Invalid YAML: '.$exception->getMessage(), $exception->getCode(), $exception);
         }
 
         return $this->importData($data, $workspace, $dryRun);
@@ -301,7 +300,7 @@ class ConfigExporter
         // Validate version
         $version = $data['version'] ?? '1.0';
         if (! $this->isVersionCompatible($version)) {
-            $result->addError("Incompatible export version: {$version} (expected {FORMAT_VERSION})");
+            $result->addError(sprintf('Incompatible export version: %s (expected {FORMAT_VERSION})', $version));
 
             return $result;
         }
@@ -347,7 +346,7 @@ class ConfigExporter
 
                 $existing = ConfigKey::byCode($code);
 
-                if ($existing !== null) {
+                if ($existing instanceof ConfigKey) {
                     // Update existing key
                     if (! $dryRun) {
                         $existing->update([
@@ -358,6 +357,7 @@ class ConfigExporter
                             'is_sensitive' => $keyData['is_sensitive'] ?? $existing->is_sensitive,
                         ]);
                     }
+
                     $result->addUpdated($code, 'key');
                 } else {
                     // Create new key
@@ -371,10 +371,11 @@ class ConfigExporter
                             'is_sensitive' => $keyData['is_sensitive'] ?? false,
                         ]);
                     }
+
                     $result->addCreated($code, 'key');
                 }
             } catch (\Exception $e) {
-                $result->addError("Failed to import key '{$code}': ".$e->getMessage());
+                $result->addError(sprintf("Failed to import key '%s': ", $code).$e->getMessage());
             }
         }
     }
@@ -396,15 +397,15 @@ class ConfigExporter
 
             // Skip sensitive placeholders
             if ($valueData['value'] === self::SENSITIVE_PLACEHOLDER) {
-                $result->addSkipped("{$keyCode} (sensitive placeholder)");
+                $result->addSkipped($keyCode . ' (sensitive placeholder)');
 
                 continue;
             }
 
             try {
                 $key = ConfigKey::byCode($keyCode);
-                if ($key === null) {
-                    $result->addSkipped("{$keyCode} (key not found)");
+                if (!$key instanceof ConfigKey) {
+                    $result->addSkipped($keyCode . ' (key not found)');
 
                     continue;
                 }
@@ -412,13 +413,14 @@ class ConfigExporter
                 $channelId = $valueData['channel_id'] ?? null;
                 $existing = ConfigValue::findValue($profile->id, $key->id, $channelId);
 
-                if ($existing !== null) {
+                if ($existing instanceof ConfigValue) {
                     // Update existing value
                     if (! $dryRun) {
                         $existing->value = $valueData['value'];
                         $existing->locked = $valueData['locked'] ?? false;
                         $existing->save();
                     }
+
                     $result->addUpdated($keyCode, 'value');
                 } else {
                     // Create new value
@@ -431,10 +433,11 @@ class ConfigExporter
                         $value->locked = $valueData['locked'] ?? false;
                         $value->save();
                     }
+
                     $result->addCreated($keyCode, 'value');
                 }
             } catch (\Exception $e) {
-                $result->addError("Failed to import value '{$keyCode}': ".$e->getMessage());
+                $result->addError(sprintf("Failed to import value '%s': ", $keyCode).$e->getMessage());
             }
         }
     }
@@ -499,7 +502,7 @@ class ConfigExporter
         $result = file_put_contents($path, $content);
 
         if ($result === false) {
-            throw new \RuntimeException("Failed to write config export to: {$path}");
+            throw new \RuntimeException('Failed to write config export to: ' . $path);
         }
     }
 
@@ -519,12 +522,12 @@ class ConfigExporter
         bool $dryRun = false,
     ): ImportResult {
         if (! file_exists($path)) {
-            throw new \RuntimeException("Config file not found: {$path}");
+            throw new \RuntimeException('Config file not found: ' . $path);
         }
 
         $content = file_get_contents($path);
         if ($content === false) {
-            throw new \RuntimeException("Failed to read config file: {$path}");
+            throw new \RuntimeException('Failed to read config file: ' . $path);
         }
 
         $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));

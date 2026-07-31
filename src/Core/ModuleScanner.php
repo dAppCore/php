@@ -86,10 +86,12 @@ class ModuleScanner
                 continue;
             }
 
-            foreach (glob("{$path}/*/Boot.php") as $file) {
+            foreach (glob($path . '/*/Boot.php') as $file) {
                 $class = $this->classFromFile($file, $path);
-
-                if (! $class || ! class_exists($class)) {
+                if (! $class) {
+                    continue;
+                }
+                if (! class_exists($class)) {
                     continue;
                 }
 
@@ -202,24 +204,24 @@ class ModuleScanner
 
         // Determine root namespace based on path
         if (str_contains($basePath, '/Core')) {
-            return "Core\\{$namespace}";
+            return 'Core\\' . $namespace;
         }
 
         if (str_contains($basePath, '/Mod')) {
-            return "Mod\\{$namespace}";
+            return 'Mod\\' . $namespace;
         }
 
         if (str_contains($basePath, '/Website')) {
-            return "Website\\{$namespace}";
+            return 'Website\\' . $namespace;
         }
 
         if (str_contains($basePath, '/Plug')) {
-            return "Plug\\{$namespace}";
+            return 'Plug\\' . $namespace;
         }
 
         // Fallback - try to determine from directory name
         $dirName = basename($basePath);
 
-        return "{$dirName}\\{$namespace}";
+        return sprintf('%s\%s', $dirName, $namespace);
     }
 }

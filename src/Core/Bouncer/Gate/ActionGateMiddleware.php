@@ -85,7 +85,7 @@ class ActionGateMiddleware
     {
         return response()->json([
             'error' => 'action_not_trained',
-            'message' => "Action '{$action}' is not trained. Approve this action to continue.",
+            'message' => sprintf("Action '%s' is not trained. Approve this action to continue.", $action),
             'action' => $action,
             'scope' => $scope,
             'route' => $request->path(),
@@ -100,7 +100,7 @@ class ActionGateMiddleware
      */
     protected function trainingWebResponse(Request $request, string $action, ?string $scope): RedirectResponse
     {
-        $message = "Action '{$action}' requires training approval.";
+        $message = sprintf("Action '%s' requires training approval.", $action);
 
         return redirect()
             ->back()
@@ -124,12 +124,12 @@ class ActionGateMiddleware
         if ($this->wantsJson($request)) {
             return response()->json([
                 'error' => 'action_denied',
-                'message' => "Action '{$action}' is not permitted.",
+                'message' => sprintf("Action '%s' is not permitted.", $action),
                 'action' => $action,
             ], 403);
         }
 
-        abort(403, "Action '{$action}' is not permitted.");
+        abort(403, sprintf("Action '%s' is not permitted.", $action));
     }
 
     /**
@@ -137,9 +137,13 @@ class ActionGateMiddleware
      */
     protected function wantsJson(Request $request): bool
     {
-        return $request->expectsJson()
-            || $request->is('api/*')
-            || $request->header('Accept') === 'application/json';
+        if ($request->expectsJson()) {
+            return true;
+        }
+        if ($request->is('api/*')) {
+            return true;
+        }
+        return $request->header('Accept') === 'application/json';
     }
 
     /**

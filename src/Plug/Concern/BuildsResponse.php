@@ -85,7 +85,7 @@ trait BuildsResponse
         }
 
         if ($response->status() === 429) {
-            return $this->rateLimit((int) $response->header('Retry-After', 60));
+            return $this->rateLimit((int) $response->header('Retry-After'));
         }
 
         $error = $response->json('error.message')

@@ -32,7 +32,7 @@ class Cdn
     {
         $url = self::buildUrl($path);
 
-        return $version ? "{$url}?v={$version}" : $url;
+        return $version ? sprintf('%s?v=%s', $url, $version) : $url;
     }
 
     /**
@@ -78,7 +78,7 @@ class Cdn
         $baseDomain = config('core.domain.base', 'core.test');
         $scheme = request()->secure() ? 'https' : 'http';
 
-        return "{$scheme}://{$subdomain}.{$baseDomain}";
+        return sprintf('%s://%s.%s', $scheme, $subdomain, $baseDomain);
     }
 
     /**
@@ -106,7 +106,7 @@ class Cdn
         $baseUrl = self::getBaseUrl();
         $path = ltrim($path, '/');
 
-        return "{$baseUrl}/{$path}";
+        return sprintf('%s/%s', $baseUrl, $path);
     }
 
     /**

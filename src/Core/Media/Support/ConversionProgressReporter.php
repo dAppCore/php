@@ -56,16 +56,6 @@ use Illuminate\Support\Facades\Event;
 class ConversionProgressReporter
 {
     /**
-     * The source file path being converted.
-     */
-    protected string $filepath;
-
-    /**
-     * The conversion engine name.
-     */
-    protected string $engine;
-
-    /**
      * Whether events should be dispatched.
      */
     protected bool $dispatchEvents = true;
@@ -75,7 +65,7 @@ class ConversionProgressReporter
      *
      * @var callable|null
      */
-    protected $callback = null;
+    protected $callback;
 
     /**
      * Additional context data.
@@ -100,17 +90,14 @@ class ConversionProgressReporter
      * @param  string  $filepath  Source file path
      * @param  string  $engine  Conversion engine name
      */
-    public function __construct(string $filepath, string $engine)
+    public function __construct(protected string $filepath, protected string $engine)
     {
-        $this->filepath = $filepath;
-        $this->engine = $engine;
     }
 
     /**
      * Set whether to dispatch events.
      *
      * @param  bool  $dispatch  Whether to dispatch events
-     * @return $this
      */
     public function withEvents(bool $dispatch = true): static
     {
@@ -125,7 +112,6 @@ class ConversionProgressReporter
      * Callback signature: fn(int $percent, string $stage, ?string $message)
      *
      * @param  callable  $callback  Progress callback
-     * @return $this
      */
     public function onProgress(callable $callback): static
     {
@@ -138,7 +124,6 @@ class ConversionProgressReporter
      * Set additional context data.
      *
      * @param  array<string, mixed>  $context  Context data
-     * @return $this
      */
     public function withContext(array $context): static
     {
@@ -152,7 +137,6 @@ class ConversionProgressReporter
      *
      * @param  string  $key  Context key
      * @param  mixed  $value  Context value
-     * @return $this
      */
     public function addContext(string $key, mixed $value): static
     {
@@ -165,7 +149,6 @@ class ConversionProgressReporter
      * Set minimum percent change before reporting.
      *
      * @param  int  $delta  Minimum change (default 1)
-     * @return $this
      */
     public function setMinDelta(int $delta): static
     {
@@ -224,7 +207,7 @@ class ConversionProgressReporter
         }
 
         $percent = (int) (($current / $total) * 100);
-        $this->progress($percent, $message ?? "Processing item {$current} of {$total}");
+        $this->progress($percent, $message ?? sprintf('Processing item %d of %d', $current, $total));
     }
 
     /**
@@ -263,8 +246,8 @@ class ConversionProgressReporter
     public function fail(string $error, ?\Throwable $exception = null): void
     {
         $context = $this->context;
-        if ($exception !== null) {
-            $context['exception_class'] = get_class($exception);
+        if ($exception instanceof \Throwable) {
+            $context['exception_class'] = $exception::class;
             $context['exception_trace'] = $exception->getTraceAsString();
         }
 

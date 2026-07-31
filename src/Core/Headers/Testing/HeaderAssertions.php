@@ -70,7 +70,6 @@ trait HeaderAssertions
      * - Referrer-Policy
      *
      * @param  TestResponse  $response  The HTTP response to check
-     * @return $this
      */
     public function assertHasSecurityHeaders(TestResponse $response): self
     {
@@ -89,7 +88,6 @@ trait HeaderAssertions
      * @param  int|null  $minMaxAge  Minimum max-age value (optional)
      * @param  bool|null  $includeSubdomains  Whether includeSubDomains should be present (optional)
      * @param  bool|null  $preload  Whether preload should be present (optional)
-     * @return $this
      */
     public function assertHasHstsHeader(
         TestResponse $response,
@@ -106,7 +104,7 @@ trait HeaderAssertions
         if ($minMaxAge !== null) {
             preg_match('/max-age=(\d+)/', $hsts, $matches);
             Assert::assertNotEmpty($matches, 'HSTS should contain max-age directive');
-            Assert::assertGreaterThanOrEqual($minMaxAge, (int) $matches[1], "HSTS max-age should be at least {$minMaxAge}");
+            Assert::assertGreaterThanOrEqual($minMaxAge, (int) $matches[1], 'HSTS max-age should be at least ' . $minMaxAge);
         }
 
         // Check includeSubDomains
@@ -131,7 +129,6 @@ trait HeaderAssertions
      *
      * @param  TestResponse  $response  The HTTP response to check
      * @param  bool  $reportOnly  Whether to check for report-only header
-     * @return $this
      */
     public function assertHasCspHeader(TestResponse $response, bool $reportOnly = false): self
     {
@@ -150,7 +147,6 @@ trait HeaderAssertions
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string  $directive  The CSP directive to check (e.g., 'default-src', 'script-src')
      * @param  bool  $reportOnly  Whether to check report-only header
-     * @return $this
      */
     public function assertCspContainsDirective(
         TestResponse $response,
@@ -158,7 +154,7 @@ trait HeaderAssertions
         bool $reportOnly = false
     ): self {
         $csp = $this->getCspHeader($response, $reportOnly);
-        Assert::assertStringContainsString($directive, $csp, "CSP should contain '{$directive}' directive");
+        Assert::assertStringContainsString($directive, $csp, sprintf("CSP should contain '%s' directive", $directive));
 
         return $this;
     }
@@ -170,7 +166,6 @@ trait HeaderAssertions
      * @param  string  $directive  The CSP directive (e.g., 'script-src')
      * @param  string  $source  The source to check for (e.g., "'self'", 'https://example.com')
      * @param  bool  $reportOnly  Whether to check report-only header
-     * @return $this
      */
     public function assertCspContainsSource(
         TestResponse $response,
@@ -180,11 +175,11 @@ trait HeaderAssertions
     ): self {
         $directives = $this->parseCspDirectives($response, $reportOnly);
 
-        Assert::assertArrayHasKey($directive, $directives, "CSP should contain '{$directive}' directive");
+        Assert::assertArrayHasKey($directive, $directives, sprintf("CSP should contain '%s' directive", $directive));
         Assert::assertContains(
             $source,
             $directives[$directive],
-            "CSP directive '{$directive}' should contain source '{$source}'"
+            sprintf("CSP directive '%s' should contain source '%s'", $directive, $source)
         );
 
         return $this;
@@ -197,7 +192,6 @@ trait HeaderAssertions
      * @param  string  $directive  The CSP directive (e.g., 'script-src')
      * @param  string  $source  The source that should not be present
      * @param  bool  $reportOnly  Whether to check report-only header
-     * @return $this
      */
     public function assertCspDoesNotContainSource(
         TestResponse $response,
@@ -211,7 +205,7 @@ trait HeaderAssertions
             Assert::assertNotContains(
                 $source,
                 $directives[$directive],
-                "CSP directive '{$directive}' should not contain source '{$source}'"
+                sprintf("CSP directive '%s' should not contain source '%s'", $directive, $source)
             );
         }
 
@@ -224,7 +218,6 @@ trait HeaderAssertions
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string  $directive  The directive to check for nonce (default: 'script-src')
      * @param  bool  $reportOnly  Whether to check report-only header
-     * @return $this
      */
     public function assertHasCspNonce(
         TestResponse $response,
@@ -232,12 +225,12 @@ trait HeaderAssertions
         bool $reportOnly = false
     ): self {
         $csp = $this->getCspHeader($response, $reportOnly);
-        $pattern = "/{$directive}[^;]*'nonce-[A-Za-z0-9+\/=]+'/";
+        $pattern = sprintf("/%s[^;]*'nonce-[A-Za-z0-9+\\/=]+'/", $directive);
 
         Assert::assertMatchesRegularExpression(
             $pattern,
             $csp,
-            "CSP '{$directive}' should contain a nonce directive"
+            sprintf("CSP '%s' should contain a nonce directive", $directive)
         );
 
         return $this;
@@ -249,7 +242,6 @@ trait HeaderAssertions
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string  $directive  The directive to check (default: 'script-src')
      * @param  bool  $reportOnly  Whether to check report-only header
-     * @return $this
      */
     public function assertNoCspUnsafeInline(
         TestResponse $response,
@@ -265,7 +257,6 @@ trait HeaderAssertions
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string  $directive  The directive to check (default: 'script-src')
      * @param  bool  $reportOnly  Whether to check report-only header
-     * @return $this
      */
     public function assertNoCspUnsafeEval(
         TestResponse $response,
@@ -279,7 +270,6 @@ trait HeaderAssertions
      * Assert that Permissions-Policy header is present.
      *
      * @param  TestResponse  $response  The HTTP response to check
-     * @return $this
      */
     public function assertHasPermissionsPolicy(TestResponse $response): self
     {
@@ -294,7 +284,6 @@ trait HeaderAssertions
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string  $feature  The feature name (e.g., 'geolocation', 'camera')
      * @param  array<string>  $allowList  Expected allow list (empty array for '()')
-     * @return $this
      */
     public function assertPermissionsPolicyFeature(
         TestResponse $response,
@@ -304,19 +293,19 @@ trait HeaderAssertions
         $policy = $response->headers->get('Permissions-Policy');
         Assert::assertNotNull($policy, 'Permissions-Policy header should be present');
 
-        if (empty($allowList)) {
+        if ($allowList === []) {
             // Feature should be disabled: feature=()
             Assert::assertMatchesRegularExpression(
-                "/{$feature}=\(\)/",
+                sprintf('/%s=\(\)/', $feature),
                 $policy,
-                "Permissions-Policy should disable '{$feature}'"
+                sprintf("Permissions-Policy should disable '%s'", $feature)
             );
         } else {
             // Feature should have specific origins
             Assert::assertStringContainsString(
-                "{$feature}=",
+                $feature . '=',
                 $policy,
-                "Permissions-Policy should contain '{$feature}' feature"
+                sprintf("Permissions-Policy should contain '%s' feature", $feature)
             );
         }
 
@@ -328,7 +317,6 @@ trait HeaderAssertions
      *
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string|null  $expected  Expected value ('DENY', 'SAMEORIGIN', etc.)
-     * @return $this
      */
     public function assertHasXFrameOptions(TestResponse $response, ?string $expected = null): self
     {
@@ -336,7 +324,7 @@ trait HeaderAssertions
 
         if ($expected !== null) {
             $actual = $response->headers->get('X-Frame-Options');
-            Assert::assertSame($expected, $actual, "X-Frame-Options should be '{$expected}'");
+            Assert::assertSame($expected, $actual, sprintf("X-Frame-Options should be '%s'", $expected));
         }
 
         return $this;
@@ -346,7 +334,6 @@ trait HeaderAssertions
      * Assert that X-Content-Type-Options header is present with 'nosniff'.
      *
      * @param  TestResponse  $response  The HTTP response to check
-     * @return $this
      */
     public function assertHasXContentTypeOptions(TestResponse $response): self
     {
@@ -360,7 +347,6 @@ trait HeaderAssertions
      *
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string|null  $expected  Expected value (e.g., 'strict-origin-when-cross-origin')
-     * @return $this
      */
     public function assertHasReferrerPolicy(TestResponse $response, ?string $expected = null): self
     {
@@ -368,7 +354,7 @@ trait HeaderAssertions
 
         if ($expected !== null) {
             $actual = $response->headers->get('Referrer-Policy');
-            Assert::assertSame($expected, $actual, "Referrer-Policy should be '{$expected}'");
+            Assert::assertSame($expected, $actual, sprintf("Referrer-Policy should be '%s'", $expected));
         }
 
         return $this;
@@ -379,7 +365,6 @@ trait HeaderAssertions
      *
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string|null  $expected  Expected value (e.g., '1; mode=block')
-     * @return $this
      */
     public function assertHasXssProtection(TestResponse $response, ?string $expected = null): self
     {
@@ -387,7 +372,7 @@ trait HeaderAssertions
 
         if ($expected !== null) {
             $actual = $response->headers->get('X-XSS-Protection');
-            Assert::assertSame($expected, $actual, "X-XSS-Protection should be '{$expected}'");
+            Assert::assertSame($expected, $actual, sprintf("X-XSS-Protection should be '%s'", $expected));
         }
 
         return $this;
@@ -398,7 +383,6 @@ trait HeaderAssertions
      *
      * @param  TestResponse  $response  The HTTP response to check
      * @param  string  $headerName  The header name to check
-     * @return $this
      */
     public function assertHeaderMissing(TestResponse $response, string $headerName): self
     {
@@ -421,7 +405,7 @@ trait HeaderAssertions
             : 'Content-Security-Policy';
 
         $csp = $response->headers->get($headerName);
-        Assert::assertNotNull($csp, "{$headerName} header should be present");
+        Assert::assertNotNull($csp, $headerName . ' header should be present');
 
         return $csp;
     }
@@ -440,7 +424,10 @@ trait HeaderAssertions
 
         foreach (explode(';', $csp) as $part) {
             $part = trim($part);
-            if (empty($part)) {
+            if ($part === '') {
+                continue;
+            }
+            if ($part === '0') {
                 continue;
             }
 
@@ -468,7 +455,7 @@ trait HeaderAssertions
         $csp = $this->getCspHeader($response, $reportOnly);
 
         // Match nonce in the specified directive
-        if (preg_match("/{$directive}[^;]*'nonce-([A-Za-z0-9+\/=]+)'/", $csp, $matches)) {
+        if (preg_match(sprintf("/%s[^;]*'nonce-([A-Za-z0-9+\\/=]+)'/", $directive), $csp, $matches)) {
             return $matches[1];
         }
 

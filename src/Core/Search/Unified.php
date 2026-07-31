@@ -125,16 +125,14 @@ class Unified
     {
         $query = strtolower(trim($query));
 
-        if (empty($query)) {
+        if ($query === '' || $query === '0') {
             return collect();
         }
 
         $cacheKey = $this->buildCacheKey($query, $types, $limit);
         $startTime = microtime(true);
 
-        $results = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($query, $types, $limit) {
-            return $this->executeSearch($query, $types, $limit);
-        });
+        $results = Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->executeSearch($query, $types, $limit));
 
         // Track search analytics
         $this->trackSearchAnalytics($query, $results->count(), $types, $startTime);
@@ -159,7 +157,7 @@ class Unified
             $suggestions = app(SearchSuggestions::class);
 
             return $suggestions->suggest($query, $limit, $sources);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return collect();
         }
     }
@@ -176,7 +174,7 @@ class Unified
         try {
             $suggestions = app(SearchSuggestions::class);
             $suggestions->recordRecentSearch($query);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // Don't let suggestion tracking break search
         }
     }
@@ -204,7 +202,7 @@ class Unified
                 $types,
                 $duration
             );
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // Don't let analytics failures break search
         }
     }
@@ -225,7 +223,7 @@ class Unified
         try {
             $analytics = app(SearchAnalytics::class);
             $analytics->trackClick($query, $resultType, $resultId, $position);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // Don't let analytics failures break the application
         }
     }
@@ -235,9 +233,9 @@ class Unified
      */
     protected function buildCacheKey(string $query, array $types, int $limit): string
     {
-        $typesHash = empty($types) ? 'all' : md5(implode(',', $types));
+        $typesHash = $types === [] ? 'all' : md5(implode(',', $types));
 
-        return "unified_search:{$typesHash}:{$limit}:".md5($query);
+        return sprintf('unified_search:%s:%d:', $typesHash, $limit).md5($query);
     }
 
     /**
@@ -247,7 +245,7 @@ class Unified
     {
         $results = collect();
 
-        $searchAll = empty($types);
+        $searchAll = $types === [];
 
         if ($searchAll || in_array(self::TYPE_MCP_TOOL, $types)) {
             $results = $results->merge($this->searchMcpTools($query));
@@ -294,12 +292,10 @@ class Unified
         $wildcardCount = substr_count($query, '%') + substr_count($query, '_');
 
         if ($wildcardCount > self::MAX_WILDCARDS) {
-            $query = str_replace(['%', '_'], '', $query);
-        } else {
-            $query = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query);
+            return str_replace(['%', '_'], '', $query);
         }
 
-        return $query;
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $query);
     }
 
     /**
@@ -393,7 +389,7 @@ class Unified
                 $results->push([
                     'type' => self::TYPE_API_ENDPOINT,
                     'icon' => 'globe-alt',
-                    'title' => "{$endpoint['method']} {$endpoint['path']}",
+                    'title' => sprintf('%s %s', $endpoint['method'], $endpoint['path']),
                     'subtitle' => 'API Endpoint',
                     'description' => $endpoint['description'],
                     'url' => '/docs/api',
@@ -421,12 +417,12 @@ class Unified
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return Pattern::where('name', 'like', "%{$escaped}%")
-                ->orWhere('description', 'like', "%{$escaped}%")
-                ->orWhere('category', 'like', "%{$escaped}%")
+            return Pattern::where('name', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('description', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('category', 'like', sprintf('%%%s%%', $escaped))
                 ->limit(20)
                 ->get()
-                ->map(fn ($pattern) => [
+                ->map(fn ($pattern): array => [
                     'type' => self::TYPE_PATTERN,
                     'icon' => 'puzzle-piece',
                     'title' => $pattern->name,
@@ -442,7 +438,7 @@ class Unified
                         'category' => $pattern->category,
                     ],
                 ]);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return collect();
         }
     }
@@ -459,12 +455,12 @@ class Unified
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return Asset::where('name', 'like', "%{$escaped}%")
-                ->orWhere('slug', 'like', "%{$escaped}%")
-                ->orWhere('description', 'like', "%{$escaped}%")
+            return Asset::where('name', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('slug', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('description', 'like', sprintf('%%%s%%', $escaped))
                 ->limit(20)
                 ->get()
-                ->map(fn ($asset) => [
+                ->map(fn ($asset): array => [
                     'type' => self::TYPE_ASSET,
                     'icon' => 'cube',
                     'title' => $asset->name,
@@ -481,7 +477,7 @@ class Unified
                         'version' => $asset->installed_version,
                     ],
                 ]);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return collect();
         }
     }
@@ -498,11 +494,11 @@ class Unified
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return UpstreamTodo::where('title', 'like', "%{$escaped}%")
-                ->orWhere('description', 'like', "%{$escaped}%")
+            return UpstreamTodo::where('title', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('description', 'like', sprintf('%%%s%%', $escaped))
                 ->limit(20)
                 ->get()
-                ->map(fn ($todo) => [
+                ->map(fn ($todo): array => [
                     'type' => self::TYPE_TODO,
                     'icon' => 'clipboard-list',
                     'title' => $todo->title,
@@ -519,7 +515,7 @@ class Unified
                         'priority' => $todo->priority,
                     ],
                 ]);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return collect();
         }
     }
@@ -536,16 +532,16 @@ class Unified
         $escaped = $this->escapeLikeQuery($query);
 
         try {
-            return AgentPlan::where('title', 'like', "%{$escaped}%")
-                ->orWhere('slug', 'like', "%{$escaped}%")
-                ->orWhere('description', 'like', "%{$escaped}%")
+            return AgentPlan::where('title', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('slug', 'like', sprintf('%%%s%%', $escaped))
+                ->orWhere('description', 'like', sprintf('%%%s%%', $escaped))
                 ->limit(20)
                 ->get()
-                ->map(fn ($plan) => [
+                ->map(fn ($plan): array => [
                     'type' => self::TYPE_PLAN,
                     'icon' => 'map',
                     'title' => $plan->title,
-                    'subtitle' => "Plan: {$plan->status}",
+                    'subtitle' => 'Plan: ' . $plan->status,
                     'description' => $plan->description ?? '',
                     'url' => '#',
                     'score' => $this->calculateScore($query, [
@@ -558,7 +554,7 @@ class Unified
                         'progress' => $plan->getProgress(),
                     ],
                 ]);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return collect();
         }
     }
@@ -577,7 +573,7 @@ class Unified
     protected function calculateScore(string $query, array $fields): float
     {
         $score = 0.0;
-        $words = array_filter(explode(' ', $query), fn ($w) => strlen($w) >= $this->scoringConfig['min_word_length']);
+        $words = array_filter(explode(' ', $query), fn ($w): bool => strlen($w) >= $this->scoringConfig['min_word_length']);
         $positionFactor = $this->scoringConfig['field_position_factor'];
 
         foreach ($fields as $index => $field) {
@@ -679,7 +675,7 @@ class Unified
      */
     protected function loadMcpServers(): array
     {
-        return Cache::remember('unified_search:mcp_servers', 300, function () {
+        return Cache::remember('unified_search:mcp_servers', 300, function (): array {
             $servers = [];
 
             $registryPath = resource_path('mcp/registry.yaml');
@@ -690,7 +686,7 @@ class Unified
             $registry = Yaml::parseFile($registryPath);
 
             foreach ($registry['servers'] ?? [] as $ref) {
-                $serverPath = resource_path("mcp/servers/{$ref['id']}.yaml");
+                $serverPath = resource_path(sprintf('mcp/servers/%s.yaml', $ref['id']));
                 if (file_exists($serverPath)) {
                     $servers[] = Yaml::parseFile($serverPath);
                 }

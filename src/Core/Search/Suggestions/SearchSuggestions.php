@@ -141,8 +141,8 @@ class SearchSuggestions
     public function suggest(string $query, ?int $limit = null, ?array $sources = null): Collection
     {
         $query = strtolower(trim($query));
-        $limit = $limit ?? $this->maxSuggestions;
-        $sources = $sources ?? $this->sources;
+        $limit ??= $this->maxSuggestions;
+        $sources ??= $this->sources;
 
         if (! $this->isEnabled() || strlen($query) < $this->minQueryLength) {
             return collect();
@@ -189,23 +189,23 @@ class SearchSuggestions
             return collect();
         }
 
-        $cacheKey = self::CACHE_PREFIX."popular:{$prefix}:{$limit}";
+        $cacheKey = self::CACHE_PREFIX.sprintf('popular:%s:%d', $prefix, $limit);
 
         return Cache::remember($cacheKey, $this->cacheTtl, function () use ($prefix, $limit) {
             $escaped = $this->escapeLikeQuery($prefix);
 
             return DB::table(self::ANALYTICS_TABLE)
                 ->select('query', DB::raw('COUNT(*) as search_count'))
-                ->where('query', 'like', "{$escaped}%")
+                ->where('query', 'like', $escaped . '%')
                 ->where('result_count', '>', 0) // Only suggest queries that had results
                 ->where('created_at', '>=', now()->subDays(30))
                 ->groupBy('query')
                 ->orderByDesc('search_count')
                 ->limit($limit * 2) // Get more to account for filtering
                 ->get()
-                ->filter(fn ($row) => ! $this->shouldExclude($row->query))
+                ->filter(fn ($row): bool => ! $this->shouldExclude($row->query))
                 ->take($limit)
-                ->map(fn ($row) => [
+                ->map(fn ($row): array => [
                     'text' => $row->query,
                     'type' => 'popular',
                     'score' => $this->calculatePopularityScore($row->search_count),
@@ -233,10 +233,10 @@ class SearchSuggestions
         $recentSearches = $this->getRecentSearches();
 
         return $recentSearches
-            ->filter(fn ($search) => str_starts_with(strtolower($search['query']), $prefix))
-            ->filter(fn ($search) => ! $this->shouldExclude($search['query']))
+            ->filter(fn ($search): bool => str_starts_with(strtolower($search['query']), $prefix))
+            ->filter(fn ($search): bool => ! $this->shouldExclude($search['query']))
             ->take($limit)
-            ->map(fn ($search, $index) => [
+            ->map(fn ($search, $index): array => [
                 'text' => $search['query'],
                 'type' => 'recent',
                 'score' => 100 - $index, // More recent = higher score
@@ -264,10 +264,10 @@ class SearchSuggestions
         // Search patterns if available
         if (class_exists(Pattern::class)) {
             try {
-                $patterns = Pattern::where('name', 'like', "{$escaped}%")
+                $patterns = Pattern::where('name', 'like', $escaped . '%')
                     ->limit($limit)
                     ->pluck('name')
-                    ->map(fn ($name) => [
+                    ->map(fn ($name): array => [
                         'text' => strtolower($name),
                         'type' => 'content',
                         'score' => 50,
@@ -275,7 +275,7 @@ class SearchSuggestions
                     ]);
 
                 $suggestions = $suggestions->merge($patterns);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // Ignore errors
             }
         }
@@ -283,10 +283,10 @@ class SearchSuggestions
         // Search assets if available
         if (class_exists(Asset::class)) {
             try {
-                $assets = Asset::where('name', 'like', "{$escaped}%")
+                $assets = Asset::where('name', 'like', $escaped . '%')
                     ->limit($limit)
                     ->pluck('name')
-                    ->map(fn ($name) => [
+                    ->map(fn ($name): array => [
                         'text' => strtolower($name),
                         'type' => 'content',
                         'score' => 50,
@@ -294,7 +294,7 @@ class SearchSuggestions
                     ]);
 
                 $suggestions = $suggestions->merge($assets);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 // Ignore errors
             }
         }
@@ -314,7 +314,7 @@ class SearchSuggestions
         }
 
         $query = trim($query);
-        if (empty($query) || $this->shouldExclude($query)) {
+        if ($query === '' || $query === '0' || $this->shouldExclude($query)) {
             return;
         }
 
@@ -322,7 +322,7 @@ class SearchSuggestions
         $recent = $this->getRecentSearches();
 
         // Remove if already exists (will be re-added at top)
-        $recent = $recent->filter(fn ($s) => strtolower($s['query']) !== strtolower($query));
+        $recent = $recent->filter(fn ($s): bool => strtolower($s['query']) !== strtolower($query));
 
         // Add to beginning
         $recent = $recent->prepend([
@@ -369,7 +369,7 @@ class SearchSuggestions
             return collect();
         }
 
-        $cacheKey = self::CACHE_PREFIX."trending:{$limit}:{$days}";
+        $cacheKey = self::CACHE_PREFIX.sprintf('trending:%d:%d', $limit, $days);
 
         return Cache::remember($cacheKey, $this->cacheTtl, function () use ($limit, $days) {
             $midpoint = now()->subDays($days / 2);
@@ -392,7 +392,7 @@ class SearchSuggestions
                 ->pluck('count', 'query');
 
             // Calculate growth
-            return $recent->map(function ($count, $query) use ($earlier) {
+            return $recent->map(function ($count, $query) use ($earlier): array {
                 $previousCount = $earlier->get($query, 0);
                 $growth = $previousCount > 0
                     ? (($count - $previousCount) / $previousCount) * 100
@@ -405,7 +405,7 @@ class SearchSuggestions
                     'growth' => round($growth, 2),
                 ];
             })
-                ->filter(fn ($item) => $item['growth'] > 0 && ! $this->shouldExclude($item['query']))
+                ->filter(fn ($item): bool => $item['growth'] > 0 && ! $this->shouldExclude($item['query']))
                 ->sortByDesc('growth')
                 ->take($limit)
                 ->values();
@@ -420,7 +420,7 @@ class SearchSuggestions
         $userId = auth()->id();
 
         if ($userId) {
-            return self::CACHE_PREFIX."recent:user:{$userId}";
+            return self::CACHE_PREFIX.('recent:user:' . $userId);
         }
 
         // Fall back to session ID for guests

@@ -93,7 +93,7 @@ class ConfigResolver
     {
         static::$values = array_filter(
             static::$values,
-            fn ($k) => ! str_contains($k, $pattern),
+            fn ($k): bool => ! str_contains($k, $pattern),
             ARRAY_FILTER_USE_KEY
         );
     }
@@ -154,7 +154,7 @@ class ConfigResolver
         // Get key definition (DB query - only during resolve, not normal reads)
         $key = ConfigKey::byCode($keyCode);
 
-        if ($key === null) {
+        if (!$key instanceof ConfigKey) {
             // Try JSON sub-key extraction
             return $this->resolveJsonSubKey($keyCode, $workspace, $channel);
         }
@@ -175,7 +175,7 @@ class ConfigResolver
 
         // First pass: check for FINAL locks (from least specific scope)
         $lockedResult = $this->findFinalLock($matrix, $values, $keyCode, $key);
-        if ($lockedResult !== null) {
+        if ($lockedResult instanceof ConfigResult) {
             return $lockedResult;
         }
 
@@ -183,7 +183,7 @@ class ConfigResolver
         foreach ($matrix as $combo) {
             $value = $this->findValueInBatch($values, $combo['profile_id'], $combo['channel_id']);
 
-            if ($value !== null) {
+            if ($value instanceof ConfigValue) {
                 return ConfigResult::found(
                     key: $keyCode,
                     value: $value->value,
@@ -295,7 +295,7 @@ class ConfigResolver
             $channel = Channel::byCode($channel, $workspace?->id);
         }
 
-        if ($channel !== null) {
+        if ($channel instanceof Channel) {
             // Add channel inheritance chain
             $chain = $chain->merge($channel->inheritanceChain());
         }
@@ -316,13 +316,13 @@ class ConfigResolver
     protected function batchLoadValues(int $keyId, array $profileIds, array $channelIds): Collection
     {
         // Separate null from actual channel IDs for query
-        $actualChannelIds = array_filter($channelIds, fn ($id) => $id !== null);
+        $actualChannelIds = array_filter($channelIds, fn (?int $id): bool => $id !== null);
 
         return ConfigValue::where('key_id', $keyId)
             ->whereIn('profile_id', $profileIds)
-            ->where(function ($query) use ($actualChannelIds) {
+            ->where(function ($query) use ($actualChannelIds): void {
                 $query->whereNull('channel_id');
-                if (! empty($actualChannelIds)) {
+                if ($actualChannelIds !== []) {
                     $query->orWhereIn('channel_id', $actualChannelIds);
                 }
             })
@@ -372,7 +372,7 @@ class ConfigResolver
         foreach ($reversed as $combo) {
             $value = $this->findValueInBatch($values, $combo['profile_id'], $combo['channel_id']);
 
-            if ($value !== null && $value->isLocked()) {
+            if ($value instanceof ConfigValue && $value->isLocked()) {
                 return ConfigResult::found(
                     key: $keyCode,
                     value: $value->value,
@@ -393,10 +393,8 @@ class ConfigResolver
      */
     protected function findValueInBatch(Collection $values, int $profileId, ?int $channelId): ?ConfigValue
     {
-        return $values->first(function (ConfigValue $value) use ($profileId, $channelId) {
-            return $value->profile_id === $profileId
-                && $value->channel_id === $channelId;
-        });
+        return $values->first(fn (ConfigValue $value) => $value->profile_id === $profileId
+            && $value->channel_id === $channelId);
     }
 
     /**
@@ -531,7 +529,7 @@ class ConfigResolver
         }
 
         // System profiles (least specific)
-        $systemProfiles = ConfigProfile::forScope(ScopeType::SYSTEM, null);
+        $systemProfiles = ConfigProfile::forScope(ScopeType::SYSTEM);
         $chain = $chain->merge($systemProfiles);
 
         // Add parent profile inheritance
@@ -621,18 +619,18 @@ class ConfigResolver
         // Get channel IDs
         $channelChain = $this->buildChannelChain($channel, $workspace);
         $channelIds = $channelChain->map(fn ($c) => $c?->id)->all();
-        $actualChannelIds = array_filter($channelIds, fn ($id) => $id !== null);
+        $actualChannelIds = array_filter($channelIds, fn (?int $id): bool => $id !== null);
 
         // Single EXISTS query
         return ConfigValue::whereIn('profile_id', $profileIds)
-            ->where(function ($query) use ($actualChannelIds) {
+            ->where(function ($query) use ($actualChannelIds): void {
                 $query->whereNull('channel_id');
-                if (! empty($actualChannelIds)) {
+                if ($actualChannelIds !== []) {
                     $query->orWhereIn('channel_id', $actualChannelIds);
                 }
             })
-            ->whereHas('key', function ($query) use ($prefix) {
-                $query->where('code', 'LIKE', "{$prefix}.%");
+            ->whereHas('key', function ($query) use ($prefix): void {
+                $query->where('code', 'LIKE', $prefix . '.%');
             })
             ->exists();
     }

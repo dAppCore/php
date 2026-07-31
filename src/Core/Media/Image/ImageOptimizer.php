@@ -95,20 +95,20 @@ class ImageOptimizer
     protected function optimizeFile(string $absolutePath, array $options = []): OptimizationResult
     {
         if (! file_exists($absolutePath)) {
-            throw new \InvalidArgumentException("File not found: {$absolutePath}");
+            throw new \InvalidArgumentException('File not found: ' . $absolutePath);
         }
 
         $originalSize = filesize($absolutePath);
 
         // Check size constraints
         if ($originalSize < ($this->minSizeKb * 1024)) {
-            Log::debug("ImageOptimizer: Skipping file smaller than {$this->minSizeKb}KB", ['path' => $absolutePath]);
+            Log::debug(sprintf('ImageOptimizer: Skipping file smaller than %dKB', $this->minSizeKb), ['path' => $absolutePath]);
 
             return $this->createNoOpResult($absolutePath);
         }
 
         if ($originalSize > ($this->maxSizeMb * 1024 * 1024)) {
-            Log::debug("ImageOptimizer: Skipping file larger than {$this->maxSizeMb}MB", ['path' => $absolutePath]);
+            Log::debug(sprintf('ImageOptimizer: Skipping file larger than %sMB', $this->maxSizeMb), ['path' => $absolutePath]);
 
             return $this->createNoOpResult($absolutePath);
         }
@@ -116,7 +116,7 @@ class ImageOptimizer
         // Detect image type
         $imageInfo = @getimagesize($absolutePath);
         if (! $imageInfo) {
-            throw new \InvalidArgumentException("Not a valid image: {$absolutePath}");
+            throw new \InvalidArgumentException('Not a valid image: ' . $absolutePath);
         }
 
         // Check memory before processing
@@ -149,7 +149,7 @@ class ImageOptimizer
             };
 
             if ($optimizedSize === null) {
-                Log::debug("ImageOptimizer: Unsupported mime type: {$mimeType}");
+                Log::debug('ImageOptimizer: Unsupported mime type: ' . $mimeType);
 
                 return $this->createNoOpResult($absolutePath);
             }
@@ -169,10 +169,10 @@ class ImageOptimizer
                 path: $absolutePath,
                 driver: $driver,
             );
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('ImageOptimizer: Optimization failed', [
                 'path' => $absolutePath,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             // Return no-op result on failure
@@ -314,17 +314,12 @@ class ImageOptimizer
 
         $unit = substr($limit, -1);
 
-        switch ($unit) {
-            case 'g':
-                $value *= 1024 * 1024 * 1024;
-                break;
-            case 'm':
-                $value *= 1024 * 1024;
-                break;
-            case 'k':
-                $value *= 1024;
-                break;
-        }
+        match ($unit) {
+            'g' => $value *= 1024 * 1024 * 1024,
+            'm' => $value *= 1024 * 1024,
+            'k' => $value *= 1024,
+            default => $value,
+        };
 
         return $value;
     }
@@ -421,7 +416,7 @@ class ImageOptimizer
             'driver' => $result->driver,
             'quality' => $this->defaultQuality,
             'workspace_id' => $workspace?->id,
-            'optimizable_type' => $optimizable !== null ? get_class($optimizable) : null,
+            'optimizable_type' => $optimizable instanceof Model ? $optimizable::class : null,
             'optimizable_id' => $optimizable?->id,
         ]);
     }

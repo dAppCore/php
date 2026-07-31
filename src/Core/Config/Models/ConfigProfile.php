@@ -141,7 +141,7 @@ class ConfigProfile extends Model
                 'scope_id' => $workspaceId,
             ],
             [
-                'name' => "Workspace {$workspaceId}",
+                'name' => 'Workspace ' . $workspaceId,
                 'parent_profile_id' => $parentProfileId,
                 'priority' => 0,
             ]

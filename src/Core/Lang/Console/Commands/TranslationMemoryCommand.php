@@ -103,15 +103,15 @@ class TranslationMemoryCommand extends Command
 
         // Show locale pairs
         $pairs = $tm->getLocalePairs();
-        if (! empty($pairs)) {
+        if ($pairs !== []) {
             $this->newLine();
             $this->components->twoColumnDetail('<fg=gray;options=bold>Locale Pairs</>', '');
 
             foreach ($pairs as $pair) {
                 $count = $tm->count($pair['source'], $pair['target']);
                 $this->components->twoColumnDetail(
-                    "{$pair['source']} -> {$pair['target']}",
-                    "{$count} entries"
+                    sprintf('%s -> %s', $pair['source'], $pair['target']),
+                    $count . ' entries'
                 );
             }
         }
@@ -138,7 +138,7 @@ class TranslationMemoryCommand extends Command
 
         if (isset($this->options()['min-quality']) && $this->option('min-quality') !== null) {
             $minQuality = (float) $this->option('min-quality');
-            $entries = $entries->filter(fn ($e) => $e->getQuality() >= $minQuality);
+            $entries = $entries->filter(fn ($e): bool => $e->getQuality() >= $minQuality);
         }
 
         $entries = $entries->take($max);
@@ -161,17 +161,17 @@ class TranslationMemoryCommand extends Command
 
         $this->table(
             ['Source', 'Target', 'Locales', 'Quality', 'Usage'],
-            $entries->map(fn ($e) => [
+            $entries->map(fn ($e): array => [
                 $this->truncate($e->getSource(), 40),
                 $this->truncate($e->getTarget(), 40),
-                "{$e->getSourceLocale()}->{$e->getTargetLocale()}",
+                sprintf('%s->%s', $e->getSourceLocale(), $e->getTargetLocale()),
                 sprintf('%.0f%%', $e->getQuality() * 100),
                 $e->getUsageCount(),
             ])->all()
         );
 
         $this->newLine();
-        $this->line("  <fg=gray>Showing {$entries->count()} of {$tm->count()} entries</>");
+        $this->line(sprintf('  <fg=gray>Showing %d of %d entries</>', $entries->count(), $tm->count()));
         $this->newLine();
 
         return self::SUCCESS;
@@ -191,7 +191,7 @@ class TranslationMemoryCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Importing from: {$filePath}");
+        $this->components->info('Importing from: ' . $filePath);
 
         $options = [
             'skip_existing' => $this->option('skip-existing'),
@@ -253,7 +253,7 @@ class TranslationMemoryCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Exporting to: {$filePath}");
+        $this->components->info('Exporting to: ' . $filePath);
 
         $options = [
             'include_metadata' => $this->option('include-metadata'),
@@ -319,7 +319,7 @@ class TranslationMemoryCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Search results for: {$query}");
+        $this->components->info('Search results for: ' . $query);
         $this->newLine();
 
         if ($results->isEmpty()) {
@@ -330,10 +330,10 @@ class TranslationMemoryCommand extends Command
 
         $this->table(
             ['Source', 'Target', 'Locales', 'Quality'],
-            $results->map(fn ($e) => [
+            $results->map(fn ($e): array => [
                 $this->truncate($e->getSource(), 45),
                 $this->truncate($e->getTarget(), 45),
-                "{$e->getSourceLocale()}->{$e->getTargetLocale()}",
+                sprintf('%s->%s', $e->getSourceLocale(), $e->getTargetLocale()),
                 sprintf('%.0f%%', $e->getQuality() * 100),
             ])->all()
         );
@@ -364,7 +364,7 @@ class TranslationMemoryCommand extends Command
         $suggestions = $tm->suggest($source, $sourceLocale, $targetLocale, $minSimilarity, $max);
 
         if ($this->option('json')) {
-            $this->line(json_encode($suggestions->map(fn ($s) => [
+            $this->line(json_encode($suggestions->map(fn ($s): array => [
                 'source' => $s['entry']->getSource(),
                 'target' => $s['entry']->getTarget(),
                 'similarity' => $s['similarity'],
@@ -375,8 +375,8 @@ class TranslationMemoryCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Suggestions for: {$source}");
-        $this->line("  <fg=gray>{$sourceLocale} -> {$targetLocale}</>");
+        $this->components->info('Suggestions for: ' . $source);
+        $this->line(sprintf('  <fg=gray>%s -> %s</>', $sourceLocale, $targetLocale));
         $this->newLine();
 
         if ($suggestions->isEmpty()) {
@@ -393,9 +393,9 @@ class TranslationMemoryCommand extends Command
             $similarityColor = $similarity >= 0.9 ? 'green' : ($similarity >= 0.75 ? 'yellow' : 'red');
             $category = FuzzyMatcher::categorizeSimilarity($similarity);
 
-            $this->line("  <fg={$similarityColor};options=bold>".sprintf('%.0f%%', $similarity * 100).'</> match ('.$category.')');
-            $this->line("    <fg=cyan>Source:</> {$entry->getSource()}");
-            $this->line("    <fg=cyan>Target:</> {$entry->getTarget()}");
+            $this->line(sprintf('  <fg=%s;options=bold>', $similarityColor).sprintf('%.0f%%', $similarity * 100).'</> match ('.$category.')');
+            $this->line('    <fg=cyan>Source:</> ' . $entry->getSource());
+            $this->line('    <fg=cyan>Target:</> ' . $entry->getTarget());
             $this->line('    <fg=gray>Confidence: '.sprintf('%.0f%%', $confidence * 100).', Quality: '.sprintf('%.0f%%', $entry->getQuality() * 100).'</>');
             $this->newLine();
         }
@@ -415,19 +415,19 @@ class TranslationMemoryCommand extends Command
             $count = $tm->count($sourceLocale, $targetLocale);
 
             if ($count === 0) {
-                $this->components->warn("No entries found for {$sourceLocale} -> {$targetLocale}");
+                $this->components->warn(sprintf('No entries found for %s -> %s', $sourceLocale, $targetLocale));
 
                 return self::SUCCESS;
             }
 
-            if (! $this->confirm("Delete {$count} entries for {$sourceLocale} -> {$targetLocale}?")) {
+            if (! $this->confirm(sprintf('Delete %s entries for %s -> %s?', $count, $sourceLocale, $targetLocale))) {
                 $this->components->info('Cancelled');
 
                 return self::SUCCESS;
             }
 
             $deleted = $tm->clearLocalePair($sourceLocale, $targetLocale);
-            $this->components->info("Deleted {$deleted} entries");
+            $this->components->info(sprintf('Deleted %d entries', $deleted));
         } else {
             $count = $tm->count();
 
@@ -437,14 +437,14 @@ class TranslationMemoryCommand extends Command
                 return self::SUCCESS;
             }
 
-            if (! $this->confirm("Delete ALL {$count} entries from translation memory?")) {
+            if (! $this->confirm(sprintf('Delete ALL %s entries from translation memory?', $count))) {
                 $this->components->info('Cancelled');
 
                 return self::SUCCESS;
             }
 
             $deleted = $tm->clearAll();
-            $this->components->info("Deleted {$deleted} entries");
+            $this->components->info(sprintf('Deleted %d entries', $deleted));
         }
 
         return self::SUCCESS;
@@ -472,7 +472,7 @@ class TranslationMemoryCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Validating: {$filePath}");
+        $this->components->info('Validating: ' . $filePath);
         $this->newLine();
 
         if (! $result['valid']) {

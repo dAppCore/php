@@ -67,7 +67,7 @@ class MakePlugCommand extends Command
 
         if (! in_array($category, self::CATEGORIES)) {
             $this->newLine();
-            $this->components->error("Invalid category [{$category}].");
+            $this->components->error(sprintf('Invalid category [%s].', $category));
             $this->newLine();
             $this->components->bulletList(self::CATEGORIES);
             $this->newLine();
@@ -79,7 +79,7 @@ class MakePlugCommand extends Command
 
         if (File::isDirectory($providerPath) && ! $this->option('force')) {
             $this->newLine();
-            $this->components->error("Provider [{$name}] already exists in [{$category}]!");
+            $this->components->error(sprintf('Provider [%s] already exists in [%s]!', $name, $category));
             $this->newLine();
             $this->components->warn('Use --force to overwrite the existing provider.');
             $this->newLine();
@@ -88,12 +88,12 @@ class MakePlugCommand extends Command
         }
 
         $this->newLine();
-        $this->components->info("Creating Plug provider: <comment>{$category}/{$name}</comment>");
+        $this->components->info(sprintf('Creating Plug provider: <comment>%s/%s</comment>', $category, $name));
         $this->newLine();
 
         // Create directory structure
         File::ensureDirectoryExists($providerPath);
-        $this->components->task('Creating provider directory', fn () => true);
+        $this->components->task('Creating provider directory', fn (): true => true);
 
         // Create operations based on flags
         $this->createOperations($providerPath, $category, $name);
@@ -103,19 +103,19 @@ class MakePlugCommand extends Command
         $this->components->twoColumnDetail('<fg=green;options=bold>Created Operations</>', '<fg=gray>Description</>');
         foreach ($this->createdOperations as $op) {
             $this->components->twoColumnDetail(
-                "<fg=cyan>{$op['operation']}</>",
-                "<fg=gray>{$op['description']}</>"
+                sprintf('<fg=cyan>%s</>', $op['operation']),
+                sprintf('<fg=gray>%s</>', $op['description'])
             );
         }
 
         $this->newLine();
-        $this->components->info("Plug provider [{$category}/{$name}] created successfully!");
+        $this->components->info(sprintf('Plug provider [%s/%s] created successfully!', $category, $name));
         $this->newLine();
-        $this->components->twoColumnDetail('Location', "<fg=yellow>{$providerPath}</>");
+        $this->components->twoColumnDetail('Location', sprintf('<fg=yellow>%s</>', $providerPath));
         $this->newLine();
 
         $this->components->info('Usage example:');
-        $this->line("  <fg=magenta>use</> Plug\\{$category}\\{$name}\\Auth;");
+        $this->line(sprintf('  <fg=magenta>use</> Plug\%s\%s\Auth;', $category, $name));
         $this->newLine();
         $this->line('  <fg=gray>$auth</> = <fg=cyan>new</> Auth(<fg=gray>\$clientId</>, <fg=gray>\$clientSecret</>, <fg=gray>\$redirectUrl</>);');
         $this->line('  <fg=gray>$authUrl</> = <fg=gray>\$auth</>-><fg=yellow>getAuthUrl</>();');
@@ -130,13 +130,13 @@ class MakePlugCommand extends Command
     protected function getProviderPath(string $category, string $name): string
     {
         // Check for packages structure first (monorepo)
-        $packagesPath = base_path("packages/core-php/src/Plug/{$category}/{$name}");
-        if (File::isDirectory(dirname(dirname($packagesPath)))) {
+        $packagesPath = base_path(sprintf('packages/core-php/src/Plug/%s/%s', $category, $name));
+        if (File::isDirectory(dirname($packagesPath, 2))) {
             return $packagesPath;
         }
 
         // Fall back to app/Plug for consuming applications
-        return base_path("app/Plug/{$category}/{$name}");
+        return base_path(sprintf('app/Plug/%s/%s', $category, $name));
     }
 
     /**
@@ -145,10 +145,10 @@ class MakePlugCommand extends Command
     protected function resolveNamespace(string $providerPath, string $category, string $name): string
     {
         if (str_contains($providerPath, 'packages/core-php/src/Plug')) {
-            return "Core\\Plug\\{$category}\\{$name}";
+            return sprintf('Core\Plug\%s\%s', $category, $name);
         }
 
-        return "Plug\\{$category}\\{$name}";
+        return sprintf('Plug\%s\%s', $category, $name);
     }
 
     /**
@@ -181,11 +181,19 @@ class MakePlugCommand extends Command
      */
     protected function hasAnyOperation(): bool
     {
-        return $this->option('auth')
-            || $this->option('post')
-            || $this->option('delete')
-            || $this->option('media')
-            || $this->option('all');
+        if ($this->option('auth')) {
+            return true;
+        }
+        if ($this->option('post')) {
+            return true;
+        }
+        if ($this->option('delete')) {
+            return true;
+        }
+        if ($this->option('media')) {
+            return true;
+        }
+        return (bool) $this->option('all');
     }
 
     /**
@@ -337,9 +345,9 @@ class Auth
 
 PHP;
 
-        File::put("{$providerPath}/Auth.php", $content);
+        File::put($providerPath . '/Auth.php', $content);
         $this->createdOperations[] = ['operation' => 'Auth.php', 'description' => 'OAuth 2.0 authentication'];
-        $this->components->task('Creating Auth.php', fn () => true);
+        $this->components->task('Creating Auth.php', fn (): true => true);
     }
 
     /**
@@ -431,9 +439,9 @@ class Post
 
 PHP;
 
-        File::put("{$providerPath}/Post.php", $content);
+        File::put($providerPath . '/Post.php', $content);
         $this->createdOperations[] = ['operation' => 'Post.php', 'description' => 'Content creation/publishing'];
-        $this->components->task('Creating Post.php', fn () => true);
+        $this->components->task('Creating Post.php', fn (): true => true);
     }
 
     /**
@@ -506,9 +514,9 @@ class Delete
 
 PHP;
 
-        File::put("{$providerPath}/Delete.php", $content);
+        File::put($providerPath . '/Delete.php', $content);
         $this->createdOperations[] = ['operation' => 'Delete.php', 'description' => 'Content deletion'];
-        $this->components->task('Creating Delete.php', fn () => true);
+        $this->components->task('Creating Delete.php', fn (): true => true);
     }
 
     /**
@@ -597,9 +605,9 @@ class Media
 
 PHP;
 
-        File::put("{$providerPath}/Media.php", $content);
+        File::put($providerPath . '/Media.php', $content);
         $this->createdOperations[] = ['operation' => 'Media.php', 'description' => 'Media file uploads'];
-        $this->components->task('Creating Media.php', fn () => true);
+        $this->components->task('Creating Media.php', fn (): true => true);
     }
 
     /**

@@ -270,13 +270,13 @@ class SeoScoreHistory extends Model
             ->where('recorded_at', '>=', $recentPeriod)
             ->groupBy('seoable_type', 'seoable_id')
             ->get()
-            ->keyBy(fn ($r) => $r->seoable_type.'|'.$r->seoable_id);
+            ->keyBy(fn ($r): string => $r->seoable_type.'|'.$r->seoable_id);
 
         $previous = static::selectRaw('seoable_type, seoable_id, AVG(score) as avg_score')
             ->whereBetween('recorded_at', [$previousPeriod, $recentPeriod])
             ->groupBy('seoable_type', 'seoable_id')
             ->get()
-            ->keyBy(fn ($r) => $r->seoable_type.'|'.$r->seoable_id);
+            ->keyBy(fn ($r): string => $r->seoable_type.'|'.$r->seoable_id);
 
         // Find improving models
         $improving = collect();
@@ -314,13 +314,13 @@ class SeoScoreHistory extends Model
             ->where('recorded_at', '>=', $recentPeriod)
             ->groupBy('seoable_type', 'seoable_id')
             ->get()
-            ->keyBy(fn ($r) => $r->seoable_type.'|'.$r->seoable_id);
+            ->keyBy(fn ($r): string => $r->seoable_type.'|'.$r->seoable_id);
 
         $previous = static::selectRaw('seoable_type, seoable_id, AVG(score) as avg_score')
             ->whereBetween('recorded_at', [$previousPeriod, $recentPeriod])
             ->groupBy('seoable_type', 'seoable_id')
             ->get()
-            ->keyBy(fn ($r) => $r->seoable_type.'|'.$r->seoable_id);
+            ->keyBy(fn ($r): string => $r->seoable_type.'|'.$r->seoable_id);
 
         $declining = collect();
 

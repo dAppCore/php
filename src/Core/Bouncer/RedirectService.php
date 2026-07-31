@@ -76,7 +76,7 @@ class RedirectService
                 ->where('active', true)
                 ->get()
                 ->keyBy('from_path')
-                ->map(fn ($row) => [
+                ->map(fn ($row): array => [
                     'to' => $row->to_path,
                     'status' => $row->status_code,
                 ])
@@ -125,8 +125,6 @@ class RedirectService
      */
     protected function tableExists(): bool
     {
-        return Cache::remember('bouncer:redirects_table_exists', 3600, function () {
-            return DB::getSchemaBuilder()->hasTable('seo_redirects');
-        });
+        return Cache::remember('bouncer:redirects_table_exists', 3600, fn () => DB::getSchemaBuilder()->hasTable('seo_redirects'));
     }
 }

@@ -264,8 +264,8 @@ class ConfigValue extends Model
     {
         return static::where('key_id', $keyId)
             ->whereIn('profile_id', $profileIds)
-            ->when($channelIds !== null, function ($query) use ($channelIds) {
-                $query->where(function ($q) use ($channelIds) {
+            ->when($channelIds !== null, function ($query) use ($channelIds): void {
+                $query->where(function ($q) use ($channelIds): void {
                     $q->whereIn('channel_id', $channelIds)
                         ->orWhereNull('channel_id');
                 });

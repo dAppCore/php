@@ -11,6 +11,13 @@ declare(strict_types=1);
 
 namespace Core\Config;
 
+use Core\Config\Console\ConfigExportCommand;
+use Core\Config\Console\ConfigImportCommand;
+use Core\Config\Console\ConfigListCommand;
+use Core\Config\Console\ConfigPrimeCommand;
+use Core\Config\Console\ConfigVersionCommand;
+use Core\Config\View\Modal\Admin\ConfigPanel;
+use Core\Config\View\Modal\Admin\WorkspaceConfig;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -69,25 +76,19 @@ class Boot extends ServiceProvider
     {
         $this->app->singleton(ConfigResolver::class);
 
-        $this->app->singleton(ConfigService::class, function ($app) {
-            return new ConfigService($app->make(ConfigResolver::class));
-        });
+        $this->app->singleton(ConfigService::class, fn ($app) => new ConfigService($app->make(ConfigResolver::class)));
 
         // Alias for convenience
         $this->app->alias(ConfigService::class, 'config.service');
 
         // Register exporter service
-        $this->app->singleton(ConfigExporter::class, function ($app) {
-            return new ConfigExporter($app->make(ConfigService::class));
-        });
+        $this->app->singleton(ConfigExporter::class, fn ($app) => new ConfigExporter($app->make(ConfigService::class)));
 
         // Register versioning service
-        $this->app->singleton(ConfigVersioning::class, function ($app) {
-            return new ConfigVersioning(
-                $app->make(ConfigService::class),
-                $app->make(ConfigExporter::class)
-            );
-        });
+        $this->app->singleton(ConfigVersioning::class, fn ($app) => new ConfigVersioning(
+            $app->make(ConfigService::class),
+            $app->make(ConfigExporter::class)
+        ));
     }
 
     /**
@@ -105,17 +106,17 @@ class Boot extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/Routes/admin.php');
 
         // Register Livewire components
-        Livewire::component('app.core.config.view.modal.admin.workspace-config', View\Modal\Admin\WorkspaceConfig::class);
-        Livewire::component('app.core.config.view.modal.admin.config-panel', View\Modal\Admin\ConfigPanel::class);
+        Livewire::component('app.core.config.view.modal.admin.workspace-config', WorkspaceConfig::class);
+        Livewire::component('app.core.config.view.modal.admin.config-panel', ConfigPanel::class);
 
         // Register console commands
         if ($this->app->runningInConsole()) {
             $this->commands([
-                Console\ConfigPrimeCommand::class,
-                Console\ConfigListCommand::class,
-                Console\ConfigExportCommand::class,
-                Console\ConfigImportCommand::class,
-                Console\ConfigVersionCommand::class,
+                ConfigPrimeCommand::class,
+                ConfigListCommand::class,
+                ConfigExportCommand::class,
+                ConfigImportCommand::class,
+                ConfigVersionCommand::class,
             ]);
         }
 

@@ -13,7 +13,6 @@ namespace Core\Cdn\Console;
 
 use Core\Cdn\Services\StorageOffload;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
 
 class OffloadMigrateCommand extends Command
 {
@@ -55,14 +54,14 @@ class OffloadMigrateCommand extends Command
         $onlyMissing = $this->option('only-missing');
 
         if (! is_dir($path)) {
-            $this->error("Directory not found: {$path}");
+            $this->error('Directory not found: ' . $path);
 
             return self::FAILURE;
         }
 
-        $this->info("Scanning directory: {$path}");
-        $this->info("Category: {$category}");
-        $this->info("Disk: {$this->offloadService->getDiskName()}");
+        $this->info('Scanning directory: ' . $path);
+        $this->info('Category: ' . $category);
+        $this->info('Disk: ' . $this->offloadService->getDiskName());
 
         if ($dryRun) {
             $this->warn('DRY RUN MODE - No files will be offloaded');
@@ -73,7 +72,7 @@ class OffloadMigrateCommand extends Command
         // Scan for files
         $files = $this->scanDirectory($path);
 
-        if (empty($files)) {
+        if ($files === []) {
             $this->info('No eligible files found.');
 
             return self::SUCCESS;
@@ -83,11 +82,9 @@ class OffloadMigrateCommand extends Command
 
         // Filter already offloaded files if requested
         if ($onlyMissing) {
-            $files = array_filter($files, function ($file) {
-                return ! $this->offloadService->isOffloaded($file);
-            });
+            $files = array_filter($files, fn ($file) => ! $this->offloadService->isOffloaded($file));
 
-            if (empty($files)) {
+            if ($files === []) {
                 $this->info('All files are already offloaded.');
 
                 return self::SUCCESS;
@@ -97,7 +94,7 @@ class OffloadMigrateCommand extends Command
         }
 
         // Calculate total size
-        $totalSize = array_sum(array_map('filesize', $files));
+        $totalSize = array_sum(array_map(filesize(...), $files));
         $this->info('Total size: '.$this->formatBytes($totalSize));
         $this->line('');
 
@@ -115,7 +112,7 @@ class OffloadMigrateCommand extends Command
         $failed = 0;
         $skipped = 0;
 
-        $this->withProgressBar($files, function ($file) use ($category, $dryRun, &$processed, &$failed, &$skipped) {
+        $this->withProgressBar($files, function ($file) use ($category, $dryRun, &$processed, &$failed, &$skipped): void {
             // Check if already offloaded
             if ($this->offloadService->isOffloaded($file)) {
                 $skipped++;
@@ -132,7 +129,7 @@ class OffloadMigrateCommand extends Command
             // Attempt to offload
             $result = $this->offloadService->upload($file, null, $category);
 
-            if ($result) {
+            if ($result instanceof \Core\Cdn\Models\StorageOffload) {
                 $processed++;
             } else {
                 $failed++;

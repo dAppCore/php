@@ -22,25 +22,19 @@ use RuntimeException;
 class CircularDependencyException extends RuntimeException
 {
     /**
-     * The seeders involved in the circular dependency.
-     *
-     * @var array<string>
-     */
-    public readonly array $cycle;
-
-    /**
      * Create a new exception instance.
      *
      * @param  array<string>  $cycle  The seeders forming the dependency cycle
      */
-    public function __construct(array $cycle)
-    {
-        $this->cycle = $cycle;
-
-        $cycleStr = implode(' -> ', $cycle);
+    public function __construct(/**
+     * The seeders involved in the circular dependency.
+     */
+        public readonly array $cycle
+    ) {
+        $cycleStr = implode(' -> ', $this->cycle);
 
         parent::__construct(
-            "Circular dependency detected in seeders: {$cycleStr}"
+            'Circular dependency detected in seeders: ' . $cycleStr
         );
     }
 

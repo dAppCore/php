@@ -66,9 +66,7 @@ class Boot extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/config.php', 'images');
 
         // Register LazyThumbnail as singleton
-        $this->app->singleton(LazyThumbnail::class, function () {
-            return new LazyThumbnail();
-        });
+        $this->app->singleton(LazyThumbnail::class, fn () => new LazyThumbnail());
     }
 
     /**

@@ -43,12 +43,12 @@ class ConfigListCommand extends Command
             $workspace = Workspace::where('slug', $workspaceSlug)->first();
 
             if (! $workspace) {
-                $this->error("Workspace not found: {$workspaceSlug}");
+                $this->error('Workspace not found: ' . $workspaceSlug);
 
                 return self::FAILURE;
             }
 
-            $this->info("Config for workspace: {$workspace->slug}");
+            $this->info('Config for workspace: ' . $workspace->slug);
         } else {
             $this->info('System config:');
         }
@@ -91,7 +91,7 @@ class ConfigListCommand extends Command
             ];
         }
 
-        if (empty($rows)) {
+        if ($rows === []) {
             $this->warn('No config keys found.');
 
             return self::SUCCESS;

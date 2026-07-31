@@ -57,7 +57,7 @@ class ActionGateTest extends TestCase
 
     public function test_action_permission_can_be_created(): void
     {
-        $permission = ActionPermission::create([
+        ActionPermission::create([
             'action' => 'product.create',
             'guard' => 'web',
             'allowed' => true,
@@ -139,7 +139,7 @@ class ActionGateTest extends TestCase
 
         $this->assertTrue(ActionPermission::isAllowed('product.view', 'web', 'admin'));
         $this->assertTrue(ActionPermission::isAllowed('product.view', 'web', 'editor'));
-        $this->assertTrue(ActionPermission::isAllowed('product.view', 'web', null));
+        $this->assertTrue(ActionPermission::isAllowed('product.view', 'web'));
     }
 
     public function test_train_creates_and_allows_action(): void
@@ -175,7 +175,7 @@ class ActionGateTest extends TestCase
 
     public function test_action_request_can_be_logged(): void
     {
-        $request = ActionRequest::log(
+        ActionRequest::log(
             method: 'POST',
             route: '/products',
             action: 'product.create',
@@ -324,7 +324,7 @@ class ActionGateTest extends TestCase
 
     public function test_route_action_macro_sets_action(): void
     {
-        $route = RouteFacade::get('/test', fn () => 'test')
+        $route = RouteFacade::get('/test', fn (): string => 'test')
             ->action('custom.action');
 
         $this->assertEquals('custom.action', $route->getAction('bouncer_action'));
@@ -332,7 +332,7 @@ class ActionGateTest extends TestCase
 
     public function test_route_action_macro_sets_scope(): void
     {
-        $route = RouteFacade::get('/test/{id}', fn () => 'test')
+        $route = RouteFacade::get('/test/{id}', fn (): string => 'test')
             ->action('resource.view', 'resource');
 
         $this->assertEquals('resource.view', $route->getAction('bouncer_action'));
@@ -341,7 +341,7 @@ class ActionGateTest extends TestCase
 
     public function test_route_bypass_gate_macro(): void
     {
-        $route = RouteFacade::get('/login', fn () => 'login')
+        $route = RouteFacade::get('/login', fn (): string => 'login')
             ->bypassGate();
 
         $this->assertTrue($route->getAction('bypass_gate'));
@@ -382,7 +382,7 @@ class ActionGateTest extends TestCase
     protected function createMockRequest(Route $route): Request
     {
         $request = Request::create('/test', 'GET');
-        $request->setRouteResolver(fn () => $route);
+        $request->setRouteResolver(fn (): Route => $route);
 
         return $request;
     }

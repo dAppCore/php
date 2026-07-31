@@ -94,7 +94,7 @@ class ServiceOgImageService
         $image = $this->createGradientBackground($config['gradient']);
 
         // Add overlay for better text contrast
-        $image->rectangle(0, 0, $this->width, $this->height, function ($draw) {
+        $image->rectangle(0, 0, $this->width, $this->height, function ($draw): void {
             $draw->background('rgba(0, 0, 0, 0.35)');
         });
 
@@ -124,7 +124,7 @@ class ServiceOgImageService
             return null;
         }
 
-        return url("/og/services/{$service}.png");
+        return url(sprintf('/og/services/%s.png', $service));
     }
 
     /**
@@ -143,7 +143,7 @@ class ServiceOgImageService
      */
     protected function getFilename(string $service): string
     {
-        return "og-images/services/{$service}.png";
+        return sprintf('og-images/services/%s.png', $service);
     }
 
     /**
@@ -162,7 +162,7 @@ class ServiceOgImageService
 
             // Diagonal gradient from top-left to bottom-right
             $x = (int) ($this->width * $ratio);
-            $image->rectangle($x, 0, $this->width, $this->height, function ($draw) use ($color) {
+            $image->rectangle($x, 0, $this->width, $this->height, function ($draw) use ($color): void {
                 $draw->background($color);
             });
         }
@@ -202,8 +202,8 @@ class ServiceOgImageService
             $x = $this->width - 100;
             $y = 100;
 
-            $image->circle($size, $x, $y, function ($draw) use ($opacity) {
-                $draw->background("rgba(255, 255, 255, {$opacity})");
+            $image->circle($size, $x, $y, function ($draw) use ($opacity): void {
+                $draw->background(sprintf('rgba(255, 255, 255, %s)', $opacity));
             });
         }
 
@@ -214,8 +214,8 @@ class ServiceOgImageService
             $x = 100;
             $y = $this->height - 80;
 
-            $image->circle($size, $x, $y, function ($draw) use ($opacity) {
-                $draw->background("rgba(255, 255, 255, {$opacity})");
+            $image->circle($size, $x, $y, function ($draw) use ($opacity): void {
+                $draw->background(sprintf('rgba(255, 255, 255, %s)', $opacity));
             });
         }
     }
@@ -240,10 +240,11 @@ class ServiceOgImageService
         $nameY = 220;
 
         // Draw "Service" part
-        $image->text($serviceName, 100, $nameY, function ($font) use ($fontBold) {
+        $image->text($serviceName, 100, $nameY, function ($font) use ($fontBold): void {
             if ($fontBold) {
                 $font->file($fontBold);
             }
+
             $font->size(72);
             $font->color('#ffffff');
             $font->align('left');
@@ -255,10 +256,11 @@ class ServiceOgImageService
         $dotX = 100 + (strlen($serviceName) * $charWidth);
 
         // Draw the coloured dot
-        $image->text('.', $dotX, $nameY, function ($font) use ($fontBold, $accentColor) {
+        $image->text('.', $dotX, $nameY, function ($font) use ($fontBold, $accentColor): void {
             if ($fontBold) {
                 $font->file($fontBold);
             }
+
             $font->size(72);
             $font->color($accentColor);
             $font->align('left');
@@ -267,10 +269,11 @@ class ServiceOgImageService
 
         // Draw "Host"
         $hostX = $dotX + 20;
-        $image->text('Host', $hostX, $nameY, function ($font) use ($fontBold) {
+        $image->text('Host', $hostX, $nameY, function ($font) use ($fontBold): void {
             if ($fontBold) {
                 $font->file($fontBold);
             }
+
             $font->size(72);
             $font->color('#ffffff');
             $font->align('left');
@@ -278,10 +281,11 @@ class ServiceOgImageService
         });
 
         // Draw tagline
-        $image->text($config['tagline'], 100, $nameY + 80, function ($font) use ($fontSemiBold) {
+        $image->text($config['tagline'], 100, $nameY + 80, function ($font) use ($fontSemiBold): void {
             if ($fontSemiBold) {
                 $font->file($fontSemiBold);
             }
+
             $font->size(32);
             $font->color('#e5e7eb');
             $font->align('left');
@@ -289,10 +293,11 @@ class ServiceOgImageService
         });
 
         // Draw description
-        $image->text($config['description'], 100, $nameY + 140, function ($font) use ($fontRegular) {
+        $image->text($config['description'], 100, $nameY + 140, function ($font) use ($fontRegular): void {
             if ($fontRegular) {
                 $font->file($fontRegular);
             }
+
             $font->size(24);
             $font->color('#9ca3af');
             $font->align('left');
@@ -300,10 +305,11 @@ class ServiceOgImageService
         });
 
         // Draw Host UK branding at bottom
-        $image->text('host.uk.com', 100, $this->height - 60, function ($font) use ($fontMedium) {
+        $image->text('host.uk.com', 100, $this->height - 60, function ($font) use ($fontMedium): void {
             if ($fontMedium) {
                 $font->file($fontMedium);
             }
+
             $font->size(20);
             $font->color('#6b7280');
             $font->align('left');
@@ -329,17 +335,18 @@ class ServiceOgImageService
             $y - $badgeHeight / 2,
             $x,
             $y + $badgeHeight / 2,
-            function ($draw) {
+            function ($draw): void {
                 $draw->background('rgba(139, 92, 246, 0.3)'); // violet with transparency
                 $draw->border(1, '#8b5cf6');
             }
         );
 
         // Draw badge text
-        $image->text('BETA', $x - $badgeWidth / 2, $y, function ($font) use ($fontMedium) {
+        $image->text('BETA', $x - $badgeWidth / 2, $y, function ($font) use ($fontMedium): void {
             if ($fontMedium) {
                 $font->file($fontMedium);
             }
+
             $font->size(12);
             $font->color('#a78bfa');
             $font->align('center');
@@ -353,13 +360,13 @@ class ServiceOgImageService
     protected function getFontPath(string $filename): ?string
     {
         // Check in public/fonts first
-        $path = public_path("fonts/{$filename}");
+        $path = public_path('fonts/' . $filename);
         if (file_exists($path)) {
             return $path;
         }
 
         // Check in resources/fonts
-        $path = resource_path("fonts/{$filename}");
+        $path = resource_path('fonts/' . $filename);
         if (file_exists($path)) {
             return $path;
         }

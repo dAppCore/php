@@ -86,7 +86,7 @@ class SchemaBuilderService
             '@type' => 'HowTo',
             'name' => $item->title,
             'description' => $item->excerpt,
-            'step' => array_map(fn ($step, $i) => [
+            'step' => array_map(fn ($step, $i): array => [
                 '@type' => 'HowToStep',
                 'position' => $i + 1,
                 'name' => $step['title'] ?? 'Step '.($i + 1),
@@ -105,7 +105,7 @@ class SchemaBuilderService
         return [
             '@context' => 'https://schema.org',
             '@type' => 'FAQPage',
-            'mainEntity' => array_map(fn ($faq) => [
+            'mainEntity' => array_map(fn (array $faq): array => [
                 '@type' => 'Question',
                 'name' => $faq['question'],
                 'acceptedAnswer' => [
@@ -124,7 +124,7 @@ class SchemaBuilderService
         return [
             '@context' => 'https://schema.org',
             '@type' => 'BreadcrumbList',
-            'itemListElement' => array_map(fn ($item, $i) => [
+            'itemListElement' => array_map(fn ($item, $i): array => [
                 '@type' => 'ListItem',
                 'position' => $i + 1,
                 'name' => $item['name'],
@@ -143,7 +143,7 @@ class SchemaBuilderService
         return [
             '@type' => 'Organization',
             'name' => $workspace?->name ?? 'Host UK',
-            'url' => $workspace !== null ? "https://{$workspace->domain}" : 'https://host.uk.com',
+            'url' => $workspace !== null ? 'https://' . $workspace->domain : 'https://host.uk.com',
             'logo' => [
                 '@type' => 'ImageObject',
                 'url' => 'https://host.uk.com/images/logo.png',
@@ -162,12 +162,12 @@ class SchemaBuilderService
             '@context' => 'https://schema.org',
             '@type' => 'WebSite',
             'name' => $workspace->name,
-            'url' => "https://{$workspace->domain}",
+            'url' => 'https://' . $workspace->domain,
             'potentialAction' => [
                 '@type' => 'SearchAction',
                 'target' => [
                     '@type' => 'EntryPoint',
-                    'urlTemplate' => "https://{$workspace->domain}/search?q={search_term_string}",
+                    'urlTemplate' => sprintf('https://%s/search?q={search_term_string}', $workspace->domain),
                 ],
                 'query-input' => 'required name=search_term_string',
             ],
@@ -230,7 +230,7 @@ class SchemaBuilderService
     {
         return [
             '@context' => 'https://schema.org',
-            '@graph' => array_map(function ($schema) {
+            '@graph' => array_map(function (array $schema): array {
                 unset($schema['@context']);
 
                 return $schema;
@@ -260,21 +260,21 @@ class SchemaBuilderService
         $domain = $item->workspace?->domain ?? 'host.uk.com';
 
         if ($item->type === 'post') {
-            return "https://{$domain}/blog/{$item->slug}";
+            return sprintf('https://%s/blog/%s', $domain, $item->slug);
         }
 
-        return "https://{$domain}/{$item->slug}";
+        return sprintf('https://%s/%s', $domain, $item->slug);
     }
 
     /**
      * Calculate total time for HowTo steps (placeholder).
      */
-    private function calculateTotalTime(array $steps): ?string
+    private function calculateTotalTime(array $steps): string
     {
         // Estimate 2 minutes per step
         $minutes = count($steps) * 2;
 
-        return "PT{$minutes}M";
+        return sprintf('PT%dM', $minutes);
     }
 
     /**

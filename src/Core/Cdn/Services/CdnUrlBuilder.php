@@ -63,7 +63,7 @@ class CdnUrlBuilder
      */
     public function cdn(string $path, ?string $baseUrl = null): string
     {
-        $baseUrl = $baseUrl ?? config('cdn.urls.cdn');
+        $baseUrl ??= config('cdn.urls.cdn');
 
         return $this->build($baseUrl, $path);
     }
@@ -77,7 +77,7 @@ class CdnUrlBuilder
      */
     public function origin(string $path, ?string $baseUrl = null): string
     {
-        $baseUrl = $baseUrl ?? config('cdn.urls.public');
+        $baseUrl ??= config('cdn.urls.public');
 
         return $this->build($baseUrl, $path);
     }
@@ -91,7 +91,7 @@ class CdnUrlBuilder
      */
     public function private(string $path, ?string $baseUrl = null): string
     {
-        $baseUrl = $baseUrl ?? config('cdn.urls.private');
+        $baseUrl ??= config('cdn.urls.private');
 
         return $this->build($baseUrl, $path);
     }
@@ -105,7 +105,7 @@ class CdnUrlBuilder
      */
     public function apex(string $path, ?string $baseUrl = null): string
     {
-        $baseUrl = $baseUrl ?? config('cdn.urls.apex');
+        $baseUrl ??= config('cdn.urls.apex');
 
         return $this->build($baseUrl, $path);
     }
@@ -121,7 +121,7 @@ class CdnUrlBuilder
      */
     public function signed(string $path, int|Carbon|null $expiry = null, ?string $token = null): ?string
     {
-        $token = $token ?? config('cdn.bunny.private.token');
+        $token ??= config('cdn.bunny.private.token');
 
         if (empty($token)) {
             return null;
@@ -142,7 +142,7 @@ class CdnUrlBuilder
         // Build base URL from config
         $baseUrl = $this->buildSignedUrlBase();
 
-        return "{$baseUrl}{$path}?token={$hash}&expires={$expires}";
+        return sprintf('%s%s?token=%s&expires=%d', $baseUrl, $path, $hash, $expires);
     }
 
     /**
@@ -155,7 +155,7 @@ class CdnUrlBuilder
      */
     public function vBucket(string $domain, string $path, ?string $baseUrl = null): string
     {
-        $vBucketId = $this->vBucketId($domain);
+        $this->vBucketId($domain);
         $scopedPath = $this->vBucketPath($domain, $path);
 
         return $this->cdn($scopedPath, $baseUrl);
@@ -185,7 +185,7 @@ class CdnUrlBuilder
     {
         $vBucketId = $this->vBucketId($domain);
 
-        return "{$vBucketId}/".ltrim($path, '/');
+        return $vBucketId . '/'.ltrim($path, '/');
     }
 
     /**
@@ -209,13 +209,13 @@ class CdnUrlBuilder
      */
     public function withVersion(string $url, ?string $version): string
     {
-        if (empty($version)) {
+        if (in_array($version, [null, '', '0'], true)) {
             return $url;
         }
 
         $separator = str_contains($url, '?') ? '&' : '?';
 
-        return "{$url}{$separator}id={$version}";
+        return sprintf('%s%sid=%s', $url, $separator, $version);
     }
 
     /**
@@ -258,7 +258,7 @@ class CdnUrlBuilder
     public function vBucketUrls(string $domain, string $path): array
     {
         $vBucketId = $this->vBucketId($domain);
-        $scopedPath = "{$vBucketId}/{$path}";
+        $scopedPath = sprintf('%s/%s', $vBucketId, $path);
 
         return [
             'cdn' => $this->cdn($scopedPath),
@@ -276,7 +276,7 @@ class CdnUrlBuilder
      */
     public function build(?string $baseUrl, string $path): string
     {
-        if (empty($baseUrl)) {
+        if (in_array($baseUrl, [null, '', '0'], true)) {
             // Fallback to apex domain if no base URL configured
             $baseUrl = config('cdn.urls.apex', config('app.url'));
         }
@@ -284,7 +284,7 @@ class CdnUrlBuilder
         $baseUrl = rtrim($baseUrl, '/');
         $path = ltrim($path, '/');
 
-        return "{$baseUrl}/{$path}";
+        return sprintf('%s/%s', $baseUrl, $path);
     }
 
     /**
@@ -301,7 +301,7 @@ class CdnUrlBuilder
             return rtrim($pullZone, '/');
         }
 
-        return "https://{$pullZone}";
+        return 'https://' . $pullZone;
     }
 
     /**
@@ -329,7 +329,7 @@ class CdnUrlBuilder
      */
     public function pathPrefix(string $category): string
     {
-        return config("cdn.paths.{$category}", $category);
+        return config('cdn.paths.' . $category, $category);
     }
 
     /**
@@ -343,6 +343,6 @@ class CdnUrlBuilder
     {
         $prefix = $this->pathPrefix($category);
 
-        return "{$prefix}/{$path}";
+        return sprintf('%s/%s', $prefix, $path);
     }
 }

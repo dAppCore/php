@@ -45,7 +45,7 @@ class SystemLogs
 
             if ($size >= self::MAX_SAFE_SIZE) {
                 $humanSize = $this->formatBytes($size);
-                $error = "Warning: Error log file {$filename} is {$humanSize}";
+                $error = sprintf('Warning: Error log file %s is %s', $filename, $humanSize);
             }
 
             $handle = fopen($file, 'r');
@@ -87,9 +87,9 @@ class SystemLogs
     {
         $files = glob($this->basePathForLogs().'*.log');
 
-        $files = array_map('realpath', $files);
+        $files = array_map(realpath(...), $files);
 
-        return array_filter($files, 'is_file');
+        return array_filter($files, is_file(...));
     }
 
     /**
@@ -103,7 +103,7 @@ class SystemLogs
         $size = (float) $bytes;
 
         while (($size / 1024) > 1) {
-            $size = $size / 1024;
+            $size /= 1024;
             $i++;
         }
 

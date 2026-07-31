@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Core\Config;
 
 use Core\Config\Enums\ConfigType;
+use Core\Config\Enums\ScopeType;
 use Core\Config\Events\ConfigChanged;
 use Core\Config\Events\ConfigInvalidated;
 use Core\Config\Events\ConfigLocked;
@@ -162,7 +163,7 @@ class ConfigService
      */
     public function getForWorkspace(string $key, object $workspace, mixed $default = null): mixed
     {
-        $result = $this->resolve($key, $workspace, null);
+        $result = $this->resolve($key, $workspace);
 
         return $result->get($default);
     }
@@ -192,7 +193,7 @@ class ConfigService
             // Get full result from ConfigResolved (indexed lookup with metadata)
             $resolved = ConfigResolved::lookup($key, $workspaceId, $channelId);
 
-            if ($resolved !== null) {
+            if ($resolved instanceof ConfigResolved) {
                 return $resolved->toResult();
             }
 
@@ -213,7 +214,7 @@ class ConfigService
             if (ConfigResolver::has($key)) {
                 $resolved = ConfigResolved::lookup($key, $workspaceId, $channelId);
 
-                if ($resolved !== null) {
+                if ($resolved instanceof ConfigResolved) {
                     return $resolved->toResult();
                 }
 
@@ -308,7 +309,7 @@ class ConfigService
 
             $resolved = ConfigResolved::lookup($parentKey, $workspaceId, $channelId);
 
-            if ($resolved !== null && is_array($resolved->value)) {
+            if ($resolved instanceof ConfigResolved && is_array($resolved->value)) {
                 $subValue = data_get($resolved->value, $subPath);
 
                 if ($subValue !== null) {
@@ -344,7 +345,7 @@ class ConfigService
 
         // Check if it's a direct key
         $resolved = ConfigResolved::lookup($keyOrPrefix, $workspaceId, $channelId);
-        if ($resolved !== null && $resolved->value !== null) {
+        if ($resolved instanceof ConfigResolved && $resolved->value !== null) {
             return true;
         }
 
@@ -354,7 +355,7 @@ class ConfigService
 
         return ConfigResolved::where('workspace_id', $workspaceId)
             ->where('channel_id', $channelId)
-            ->where('key_code', 'LIKE', "{$escapedPrefix}.%")
+            ->where('key_code', 'LIKE', $escapedPrefix . '.%')
             ->whereNotNull('value')
             ->exists();
     }
@@ -379,8 +380,8 @@ class ConfigService
         // Get key from DB (only during set, not reads)
         $key = ConfigKey::byCode($keyCode);
 
-        if ($key === null) {
-            throw new \InvalidArgumentException("Unknown config key: {$keyCode}");
+        if (!$key instanceof ConfigKey) {
+            throw new \InvalidArgumentException('Unknown config key: ' . $keyCode);
         }
 
         // Validate value type against schema
@@ -396,7 +397,7 @@ class ConfigService
 
         // Re-prime affected scope
         $workspaceId = match ($profile->scope_type) {
-            Enums\ScopeType::WORKSPACE => $profile->scope_id,
+            ScopeType::WORKSPACE => $profile->scope_id,
             default => null,
         };
 
@@ -415,15 +416,15 @@ class ConfigService
         // Get key from DB (only during lock, not reads)
         $key = ConfigKey::byCode($keyCode);
 
-        if ($key === null) {
-            throw new \InvalidArgumentException("Unknown config key: {$keyCode}");
+        if (!$key instanceof ConfigKey) {
+            throw new \InvalidArgumentException('Unknown config key: ' . $keyCode);
         }
 
         $channelId = $this->resolveChannelId($channel, null);
         $value = ConfigValue::findValue($profile->id, $key->id, $channelId);
 
-        if ($value === null) {
-            throw new \InvalidArgumentException("No value set for {$keyCode} in profile {$profile->id}");
+        if (!$value instanceof ConfigValue) {
+            throw new \InvalidArgumentException(sprintf('No value set for %s in profile %d', $keyCode, $profile->id));
         }
 
         $value->update(['locked' => true]);
@@ -443,14 +444,14 @@ class ConfigService
         // Get key from DB (only during unlock, not reads)
         $key = ConfigKey::byCode($keyCode);
 
-        if ($key === null) {
+        if (!$key instanceof ConfigKey) {
             return;
         }
 
         $channelId = $this->resolveChannelId($channel, null);
         $value = ConfigValue::findValue($profile->id, $key->id, $channelId);
 
-        if ($value === null) {
+        if (!$value instanceof ConfigValue) {
             return;
         }
 
@@ -514,7 +515,7 @@ class ConfigService
 
         $resolved = ConfigResolved::where('workspace_id', $workspaceId)
             ->where('channel_id', $channelId)
-            ->where('key_code', 'LIKE', "{$escapedCategory}.%")
+            ->where('key_code', 'LIKE', $escapedCategory . '.%')
             ->get();
 
         $values = [];
@@ -605,6 +606,7 @@ class ConfigService
         if ($workspaceId !== null && class_exists(\Core\Tenant\Models\Workspace::class)) {
             $workspace = \Core\Tenant\Models\Workspace::find($workspaceId);
         }
+
         $channel = $channelId ? Channel::find($channelId) : null;
 
         $result = $this->resolver->resolve($keyCode, $workspace, $channel);
@@ -635,11 +637,11 @@ class ConfigService
     public function primeAll(): void
     {
         // Prime system config
-        $this->prime(null);
+        $this->prime();
 
         // Prime each workspace (requires Tenant module)
         if (class_exists(\Core\Tenant\Models\Workspace::class)) {
-            \Core\Tenant\Models\Workspace::chunk(100, function ($workspaces) {
+            \Core\Tenant\Models\Workspace::chunk(100, function ($workspaces): void {
                 foreach ($workspaces as $workspace) {
                     $this->prime($workspace);
                 }
@@ -816,7 +818,7 @@ class ConfigService
         if (! $valid) {
             $actualType = get_debug_type($value);
             throw new \InvalidArgumentException(
-                "Invalid value type for config key '{$keyCode}': expected {$type->value}, got {$actualType}"
+                sprintf("Invalid value type for config key '%s': expected %s, got %s", $keyCode, $type->value, $actualType)
             );
         }
     }

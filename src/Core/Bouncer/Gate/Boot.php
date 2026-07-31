@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Bouncer\Gate;
 
+use Core\Bouncer\Gate\Models\ActionRequest;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -101,7 +102,7 @@ class Boot extends ServiceProvider
         Route::middleware(['web', 'auth'])
             ->prefix('_bouncer')
             ->name('bouncer.gate.')
-            ->group(function () {
+            ->group(function (): void {
                 // Approve an action
                 Route::post('/approve', function () {
                     $action = request('action');
@@ -124,14 +125,14 @@ class Boot extends ServiceProvider
                         trainedBy: auth()->id(),
                     );
 
-                    return redirect($redirect)->with('success', "Action '{$action}' has been approved.");
+                    return redirect($redirect)->with('success', sprintf("Action '%s' has been approved.", $action));
                 })->name('approve');
 
                 // List pending actions
                 Route::get('/pending', function () {
-                    $pending = Models\ActionRequest::pending()
+                    $pending = ActionRequest::pending()
                         ->groupBy('action')
-                        ->map(fn ($requests) => [
+                        ->map(fn ($requests): array => [
                             'action' => $requests->first()->action,
                             'count' => $requests->count(),
                             'routes' => $requests->pluck('route')->unique()->values(),

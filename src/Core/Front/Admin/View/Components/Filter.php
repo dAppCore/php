@@ -31,8 +31,8 @@ class Filter extends Component
         public string $valueKey = 'id',
         public string $labelKey = 'name',
     ) {
-        $this->wireModel = $this->model ? "wire:model.live=\"{$this->model}\"" : '';
-        $this->placeholderText = $this->placeholder ?? ($this->label ? "All {$this->label}s" : 'All');
+        $this->wireModel = $this->model ? sprintf('wire:model.live="%s"', $this->model) : '';
+        $this->placeholderText = $this->placeholder ?? ($this->label ? sprintf('All %ss', $this->label) : 'All');
         $this->normalizedOptions = $this->normalizeOptions();
     }
 
@@ -42,6 +42,7 @@ class Filter extends Component
             if (is_object($item)) {
                 return ['value' => $item->{$this->valueKey}, 'label' => $item->{$this->labelKey}];
             }
+
             if (is_array($item) && isset($item['value'])) {
                 return $item;
             }

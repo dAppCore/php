@@ -20,15 +20,12 @@ namespace Core\Front\Components;
  */
 class Heading extends Component
 {
-    protected string $text = '';
-
     protected int $level = 2;
 
     protected ?string $description = null;
 
-    public function __construct(string $text = '')
+    public function __construct(protected string $text = '')
     {
-        $this->text = $text;
     }
 
     /**

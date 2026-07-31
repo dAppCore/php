@@ -41,7 +41,7 @@ class DetectLocation
         }
 
         // Check for CDN/proxy headers first (faster, no lookup needed)
-        if ($request) {
+        if ($request instanceof Request) {
             $headerResult = $this->lookupFromHeaders($request);
             if ($headerResult['country_code']) {
                 return $headerResult;
@@ -50,9 +50,9 @@ class DetectLocation
 
         // Cache results to avoid repeated lookups
         return Cache::remember(
-            "geoip:{$ip}",
+            'geoip:' . $ip,
             self::CACHE_TTL,
-            fn () => $this->lookupFromDatabase($ip)
+            fn (): array => $this->lookupFromDatabase($ip)
         );
     }
 

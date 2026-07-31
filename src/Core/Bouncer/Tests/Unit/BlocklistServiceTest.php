@@ -34,7 +34,7 @@ class BlocklistServiceTest extends TestCase
     protected function defineDatabaseMigrations(): void
     {
         // Create blocked_ips table for testing
-        Schema::create('blocked_ips', function ($table) {
+        Schema::create('blocked_ips', function ($table): void {
             $table->id();
             $table->string('ip_address', 45);
             $table->string('ip_range', 18)->nullable();
@@ -53,7 +53,7 @@ class BlocklistServiceTest extends TestCase
         });
 
         // Create honeypot_hits table for testing syncFromHoneypot
-        Schema::create('honeypot_hits', function ($table) {
+        Schema::create('honeypot_hits', function ($table): void {
             $table->id();
             $table->string('ip_address', 45);
             $table->string('path');
@@ -350,7 +350,7 @@ class BlocklistServiceTest extends TestCase
         // Insert multiple blocked IPs
         for ($i = 1; $i <= 10; $i++) {
             DB::table('blocked_ips')->insert([
-                'ip_address' => "192.168.1.{$i}",
+                'ip_address' => '192.168.1.' . $i,
                 'reason' => 'test',
                 'status' => BlocklistService::STATUS_APPROVED,
                 'blocked_at' => now(),
@@ -403,7 +403,7 @@ class BlocklistServiceTest extends TestCase
             ['ip_address' => '192.168.1.2', 'reason' => 'test', 'status' => BlocklistService::STATUS_PENDING, 'blocked_at' => now()],
         ]);
 
-        $result = $this->service->getPending(null);
+        $result = $this->service->getPending();
 
         $this->assertIsArray($result);
         $this->assertCount(2, $result);

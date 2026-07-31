@@ -232,10 +232,16 @@ class MenuItemGroup
      */
     public static function isStructural(array $item): bool
     {
-        return self::isSeparator($item)
-            || self::isHeader($item)
-            || self::isDivider($item)
-            || self::isCollapsible($item);
+        if (self::isSeparator($item)) {
+            return true;
+        }
+        if (self::isHeader($item)) {
+            return true;
+        }
+        if (self::isDivider($item)) {
+            return true;
+        }
+        return self::isCollapsible($item);
     }
 
     /**

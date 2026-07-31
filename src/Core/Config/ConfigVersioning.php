@@ -124,7 +124,7 @@ class ConfigVersioning
         $version = ConfigVersion::find($versionId);
 
         if ($version === null) {
-            throw new \InvalidArgumentException("Version not found: {$versionId}");
+            throw new \InvalidArgumentException('Version not found: ' . $versionId);
         }
 
         // Verify scope matches
@@ -185,11 +185,11 @@ class ConfigVersioning
         $newVersion = ConfigVersion::find($newVersionId);
 
         if ($oldVersion === null) {
-            throw new \InvalidArgumentException("Old version not found: {$oldVersionId}");
+            throw new \InvalidArgumentException('Old version not found: ' . $oldVersionId);
         }
 
         if ($newVersion === null) {
-            throw new \InvalidArgumentException("New version not found: {$newVersionId}");
+            throw new \InvalidArgumentException('New version not found: ' . $newVersionId);
         }
 
         // Parse snapshots
@@ -213,7 +213,7 @@ class ConfigVersioning
         $version = ConfigVersion::find($versionId);
 
         if ($version === null) {
-            throw new \InvalidArgumentException("Version not found: {$versionId}");
+            throw new \InvalidArgumentException('Version not found: ' . $versionId);
         }
 
         // Get current state
@@ -261,6 +261,7 @@ class ConfigVersioning
                 if ($oldValue['value'] !== $newValue['value']) {
                     $diff->addChanged($key, $oldValue['value'], $newValue['value']);
                 }
+
                 if (($oldValue['locked'] ?? false) !== ($newValue['locked'] ?? false)) {
                     $diff->addLockChanged($key, $oldValue['locked'] ?? false, $newValue['locked'] ?? false);
                 }
@@ -282,7 +283,7 @@ class ConfigVersioning
         $version = ConfigVersion::find($versionId);
 
         if ($version === null) {
-            throw new \InvalidArgumentException("Version not found: {$versionId}");
+            throw new \InvalidArgumentException('Version not found: ' . $versionId);
         }
 
         $version->delete();

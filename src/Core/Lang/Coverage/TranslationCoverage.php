@@ -186,7 +186,7 @@ class TranslationCoverage
                     $files[] = $filePath;
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // Directory not readable, skip
         }
 
@@ -206,14 +206,16 @@ class TranslationCoverage
             $content = File::get($filePath);
             $lines = explode("\n", $content);
 
-            foreach (self::PATTERNS as $name => $pattern) {
+            foreach (self::PATTERNS as $pattern) {
                 if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
                     foreach ($matches[1] as $match) {
                         $key = $match[0];
                         $offset = $match[1];
-
                         // Skip dynamic keys (containing variables)
-                        if (str_contains($key, '$') || str_contains($key, '{')) {
+                        if (str_contains($key, '$')) {
+                            continue;
+                        }
+                        if (str_contains($key, '{')) {
                             continue;
                         }
 
@@ -241,7 +243,7 @@ class TranslationCoverage
                     }
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // File not readable, skip
         }
 
@@ -271,7 +273,7 @@ class TranslationCoverage
             // Load PHP translation files
             foreach (File::glob($localePath.'/*.php') as $file) {
                 $filename = pathinfo($file, PATHINFO_FILENAME);
-                $prefix = $namespace ? "{$namespace}::{$filename}" : $filename;
+                $prefix = $namespace ? sprintf('%s::%s', $namespace, $filename) : $filename;
 
                 try {
                     $translations = require $file;
@@ -281,10 +283,11 @@ class TranslationCoverage
                             if (! isset($defined[$locale][$key])) {
                                 $defined[$locale][$key] = [];
                             }
+
                             $defined[$locale][$key][] = $file;
                         }
                     }
-                } catch (\Exception $e) {
+                } catch (\Exception) {
                     // Invalid translation file, skip
                 }
             }
@@ -295,14 +298,15 @@ class TranslationCoverage
                     $translations = json_decode(File::get($file), true);
                     if (is_array($translations)) {
                         foreach (array_keys($translations) as $key) {
-                            $fullKey = $namespace ? "{$namespace}::{$key}" : $key;
+                            $fullKey = $namespace ? sprintf('%s::%s', $namespace, $key) : $key;
                             if (! isset($defined[$locale][$fullKey])) {
                                 $defined[$locale][$fullKey] = [];
                             }
+
                             $defined[$locale][$fullKey][] = $file;
                         }
                     }
-                } catch (\Exception $e) {
+                } catch (\Exception) {
                     // Invalid JSON file, skip
                 }
             }
@@ -322,7 +326,7 @@ class TranslationCoverage
         $keys = [];
 
         foreach ($translations as $key => $value) {
-            $fullKey = $prefix ? "{$prefix}.{$key}" : $key;
+            $fullKey = $prefix ? sprintf('%s.%s', $prefix, $key) : $key;
 
             if (is_array($value)) {
                 $keys = array_merge($keys, $this->flattenTranslations($value, $fullKey));
@@ -399,7 +403,7 @@ class TranslationCoverage
             resource_path('js'),
             base_path('packages'),
             base_path('src'),
-        ], fn ($path) => is_dir($path));
+        ], is_dir(...));
     }
 
     /**

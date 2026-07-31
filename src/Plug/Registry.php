@@ -43,10 +43,12 @@ class Registry
             }
 
             foreach (scandir($categoryPath) as $provider) {
-                if ($provider === '.' || $provider === '..') {
+                if ($provider === '.') {
                     continue;
                 }
-
+                if ($provider === '..') {
+                    continue;
+                }
                 $providerPath = $categoryPath.'/'.$provider;
 
                 if (! is_dir($providerPath)) {
@@ -58,7 +60,7 @@ class Registry
                 $this->providers[$identifier] = [
                     'category' => $category,
                     'name' => $provider,
-                    'namespace' => "Plug\\{$category}\\{$provider}",
+                    'namespace' => sprintf('Plug\%s\%s', $category, $provider),
                     'path' => $providerPath,
                 ];
             }
@@ -164,7 +166,7 @@ class Registry
         $this->discover();
 
         return collect($this->providers)
-            ->filter(fn ($meta) => $meta['category'] === $category)
+            ->filter(fn ($meta): bool => $meta['category'] === $category)
             ->keys();
     }
 
@@ -176,7 +178,7 @@ class Registry
         $this->discover();
 
         return collect($this->providers)->filter(
-            fn ($meta, $id) => $this->supports($id, $operation)
+            fn ($meta, string $id): bool => $this->supports($id, $operation)
         );
     }
 

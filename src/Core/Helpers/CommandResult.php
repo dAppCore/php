@@ -14,7 +14,7 @@ namespace Core\Helpers;
 /**
  * Represents the result of a remote command execution.
  */
-class CommandResult
+class CommandResult implements \Stringable
 {
     public function __construct(
         public readonly string $output,

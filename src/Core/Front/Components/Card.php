@@ -89,32 +89,34 @@ class Card extends Component
             if ($this->title !== null) {
                 $html .= '<h3 class="text-lg font-semibold">'.$this->resolve($this->title).'</h3>';
             }
+
             if ($this->description !== null) {
                 $html .= '<p class="text-sm text-zinc-500 dark:text-zinc-400">'.$this->resolve($this->description).'</p>';
             }
+
             $html .= '</div>';
         }
 
         // Body
-        if (! empty($this->body)) {
+        if ($this->body !== []) {
             $html .= '<div class="card-body px-4 py-3">';
             foreach ($this->body as $item) {
                 $html .= $this->raw($item);
             }
+
             $html .= '</div>';
         }
 
         // Actions
-        if (! empty($this->actions)) {
+        if ($this->actions !== []) {
             $html .= '<div class="card-actions px-4 py-3 border-t dark:border-zinc-700 flex gap-2 justify-end">';
             foreach ($this->actions as $action) {
                 $html .= $this->raw($action);
             }
+
             $html .= '</div>';
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 }

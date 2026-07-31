@@ -71,7 +71,7 @@ class ProcessMediaConversion implements ShouldQueue
 
         try {
             if (! class_exists($this->conversionClass)) {
-                throw new \RuntimeException("Conversion class not found: {$this->conversionClass}");
+                throw new \RuntimeException('Conversion class not found: ' . $this->conversionClass);
             }
 
             /** @var MediaConversion $conversion */
@@ -134,7 +134,7 @@ class ProcessMediaConversion implements ShouldQueue
                 'filepath' => $filepath,
                 'output_path' => $result?->path,
             ]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             // Dispatch failed event
             $engineName = $this->conversionClass::class ?? 'unknown';
             // Try to get engine name from the conversion class
@@ -147,7 +147,7 @@ class ProcessMediaConversion implements ShouldQueue
                 }
             }
 
-            Event::dispatch(ConversionProgress::failed($filepath, $engineName, $e->getMessage(), [
+            Event::dispatch(ConversionProgress::failed($filepath, $engineName, $throwable->getMessage(), [
                 'queued' => true,
                 'job_id' => $this->job?->getJobId(),
                 'attempt' => $this->attempts(),
@@ -156,10 +156,10 @@ class ProcessMediaConversion implements ShouldQueue
             Log::error('ProcessMediaConversion: Conversion failed', [
                 'class' => $this->conversionClass,
                 'filepath' => $filepath,
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
-            throw $e;
+            throw $throwable;
         }
     }
 

@@ -19,7 +19,7 @@ return new class () extends Migration {
      */
     public function up(): void
     {
-        Schema::create('search_analytics', function (Blueprint $table) {
+        Schema::create('search_analytics', function (Blueprint $table): void {
             $table->id();
             $table->string('query', 255)->index();
             $table->string('query_hash', 32)->index();
@@ -39,7 +39,7 @@ return new class () extends Migration {
             $table->index(['query_hash', 'created_at']);
         });
 
-        Schema::create('search_analytics_clicks', function (Blueprint $table) {
+        Schema::create('search_analytics_clicks', function (Blueprint $table): void {
             $table->id();
             $table->string('query_hash', 32)->index();
             $table->string('result_type', 50)->index();

@@ -82,7 +82,7 @@ class CoreDatabaseSeeder extends Seeder
     {
         $seeders = $this->getSeedersToRun();
 
-        if (empty($seeders)) {
+        if ($seeders === []) {
             $this->info('No seeders found to run.');
 
             return;
@@ -93,7 +93,7 @@ class CoreDatabaseSeeder extends Seeder
 
         foreach ($seeders as $seeder) {
             $shortName = $this->getShortName($seeder);
-            $this->info("Running: {$shortName}");
+            $this->info('Running: ' . $shortName);
 
             $this->call($seeder);
         }
@@ -113,9 +113,8 @@ class CoreDatabaseSeeder extends Seeder
 
         // Apply filters
         $seeders = $this->applyExcludeFilter($seeders);
-        $seeders = $this->applyOnlyFilter($seeders);
 
-        return $seeders;
+        return $this->applyOnlyFilter($seeders);
     }
 
     /**
@@ -152,7 +151,7 @@ class CoreDatabaseSeeder extends Seeder
      */
     protected function getDiscovery(): SeederDiscovery
     {
-        if ($this->discovery === null) {
+        if (!$this->discovery instanceof SeederDiscovery) {
             $this->discovery = new SeederDiscovery(
                 $this->getSeederPaths(),
                 $this->getExcludedSeeders()
@@ -167,7 +166,7 @@ class CoreDatabaseSeeder extends Seeder
      */
     protected function getRegistry(): SeederRegistry
     {
-        if ($this->registry === null) {
+        if (!$this->registry instanceof SeederRegistry) {
             $this->registry = new SeederRegistry();
             $this->registerSeeders($this->registry);
         }
@@ -199,7 +198,7 @@ class CoreDatabaseSeeder extends Seeder
         // Use config if available, otherwise use defaults
         $config = config('core.seeders.paths');
 
-        if (is_array($config) && ! empty($config)) {
+        if (is_array($config) && $config !== []) {
             return $config;
         }
 
@@ -250,7 +249,7 @@ class CoreDatabaseSeeder extends Seeder
 
         $excludePatterns = is_array($excludes) ? $excludes : [$excludes];
 
-        return array_filter($seeders, function ($seeder) use ($excludePatterns) {
+        return array_filter($seeders, function (string $seeder) use ($excludePatterns): bool {
             foreach ($excludePatterns as $pattern) {
                 if ($this->matchesPattern($seeder, $pattern)) {
                     return false;
@@ -277,7 +276,7 @@ class CoreDatabaseSeeder extends Seeder
 
         $onlyPatterns = is_array($only) ? $only : [$only];
 
-        return array_values(array_filter($seeders, function ($seeder) use ($onlyPatterns) {
+        return array_values(array_filter($seeders, function (string $seeder) use ($onlyPatterns): bool {
             foreach ($onlyPatterns as $pattern) {
                 if ($this->matchesPattern($seeder, $pattern)) {
                     return true;
@@ -311,13 +310,8 @@ class CoreDatabaseSeeder extends Seeder
         if ($shortName === $pattern) {
             return true;
         }
-
         // Partial match (contains)
-        if (str_contains($shortName, $pattern) || str_contains($seeder, $pattern)) {
-            return true;
-        }
-
-        return false;
+        return str_contains($shortName, $pattern) || str_contains($seeder, $pattern);
     }
 
     /**

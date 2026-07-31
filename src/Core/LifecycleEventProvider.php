@@ -16,6 +16,7 @@ use Core\Events\ApiRoutesRegistering;
 use Core\Events\ClientRoutesRegistering;
 use Core\Events\ConsoleBooting;
 use Core\Events\FrameworkBooted;
+use Core\Events\LifecycleEvent;
 use Core\Events\McpRoutesRegistering;
 use Core\Events\McpToolsRegistering;
 use Core\Events\QueueWorkerBooting;
@@ -198,9 +199,7 @@ class LifecycleEventProvider extends ServiceProvider
     {
         // Register infrastructure
         $this->app->singleton(ModuleScanner::class);
-        $this->app->singleton(ModuleRegistry::class, function ($app) {
-            return new ModuleRegistry($app->make(ModuleScanner::class));
-        });
+        $this->app->singleton(ModuleRegistry::class, fn ($app) => new ModuleRegistry($app->make(ModuleScanner::class)));
 
         // Scan and wire lazy listeners
         // Start with configured application module paths
@@ -216,7 +215,7 @@ class LifecycleEventProvider extends ServiceProvider
         $this->scanPaths[] = $frameworkSrcPath.'/Mod';   // Mod\*\Boot
 
         // Filter to only existing directories
-        $this->scanPaths = array_filter($this->scanPaths, 'is_dir');
+        $this->scanPaths = array_filter($this->scanPaths, is_dir(...));
 
         $registry = $this->app->make(ModuleRegistry::class);
         $registry->register($this->scanPaths);
@@ -241,7 +240,7 @@ class LifecycleEventProvider extends ServiceProvider
         }
 
         // Framework booted event fires after all providers have booted
-        $this->app->booted(function () {
+        $this->app->booted(function (): void {
             event(new FrameworkBooted());
         });
     }
@@ -252,7 +251,7 @@ class LifecycleEventProvider extends ServiceProvider
      * Every fire* method calls this so modules can register middleware
      * aliases via `$event->middleware('alias', Class::class)` on any event.
      */
-    protected static function processMiddleware(Events\LifecycleEvent $event): void
+    protected static function processMiddleware(LifecycleEvent $event): void
     {
         /** @var Router $router */
         $router = app('router');
@@ -265,7 +264,7 @@ class LifecycleEventProvider extends ServiceProvider
     /**
      * Register view namespaces collected by a lifecycle event.
      */
-    protected static function processViews(Events\LifecycleEvent $event): void
+    protected static function processViews(LifecycleEvent $event): void
     {
         foreach ($event->viewRequests() as [$namespace, $path]) {
             if (is_dir($path)) {
@@ -277,7 +276,7 @@ class LifecycleEventProvider extends ServiceProvider
     /**
      * Register Livewire components collected by a lifecycle event.
      */
-    protected static function processLivewire(Events\LifecycleEvent $event): void
+    protected static function processLivewire(LifecycleEvent $event): void
     {
         if (! class_exists(Livewire::class)) {
             return;
@@ -322,8 +321,10 @@ class LifecycleEventProvider extends ServiceProvider
 
         foreach ($routes->getRoutes() as $route) {
             $name = $route->getName();
-
-            if ($name === null || $name === '') {
+            if ($name === null) {
+                continue;
+            }
+            if ($name === '') {
                 continue;
             }
 

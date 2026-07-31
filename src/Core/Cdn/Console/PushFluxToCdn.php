@@ -27,7 +27,7 @@ class PushFluxToCdn extends Command
 
         $assets = $flux->getCdnAssetPaths();
 
-        if (empty($assets)) {
+        if ($assets === []) {
             $this->warn('No Flux assets found to push.');
 
             return self::SUCCESS;
@@ -37,7 +37,7 @@ class PushFluxToCdn extends Command
 
         foreach ($assets as $sourcePath => $cdnPath) {
             if (! file_exists($sourcePath)) {
-                $this->warn("Source file not found: {$sourcePath}");
+                $this->warn('Source file not found: ' . $sourcePath);
 
                 continue;
             }
@@ -45,12 +45,12 @@ class PushFluxToCdn extends Command
             $size = $this->formatBytes(filesize($sourcePath));
 
             if ($dryRun) {
-                $this->line("  [DRY-RUN] Would upload: {$cdnPath} ({$size})");
+                $this->line(sprintf('  [DRY-RUN] Would upload: %s (%s)', $cdnPath, $size));
 
                 continue;
             }
 
-            $this->line("  Uploading: {$cdnPath} ({$size})");
+            $this->line(sprintf('  Uploading: %s (%s)', $cdnPath, $size));
 
             $contents = file_get_contents($sourcePath);
             $success = $cdn->storePublic($cdnPath, $contents, pushToCdn: true);

@@ -96,7 +96,7 @@ class FuzzyMatcher
         $normalizedSource = $this->normalize($source);
 
         return $entries
-            ->map(function (TranslationMemoryEntry $entry) use ($normalizedSource) {
+            ->map(function (TranslationMemoryEntry $entry) use ($normalizedSource): array {
                 $similarity = $this->calculateSimilarity($normalizedSource, $this->normalize($entry->getSource()));
 
                 // Combine similarity with quality score for overall confidence
@@ -108,7 +108,7 @@ class FuzzyMatcher
                     'confidence' => round($confidence, 4),
                 ];
             })
-            ->filter(fn (array $match) => $match['similarity'] >= $minSimilarity)
+            ->filter(fn (array $match): bool => $match['similarity'] >= $minSimilarity)
             ->sortByDesc('confidence')
             ->take($maxResults)
             ->values();
@@ -132,7 +132,7 @@ class FuzzyMatcher
         // First, try exact match
         $exact = $this->repository->findExact($source, $sourceLocale, $targetLocale);
 
-        if ($exact !== null) {
+        if ($exact instanceof TranslationMemoryEntry) {
             return [
                 'entry' => $exact,
                 'similarity' => 1.0,
@@ -157,7 +157,7 @@ class FuzzyMatcher
             return 1.0;
         }
 
-        if (empty($a) || empty($b)) {
+        if ($a === '' || $a === '0' || ($b === '' || $b === '0')) {
             return 0.0;
         }
 
@@ -210,11 +210,11 @@ class FuzzyMatcher
         $tokensA = $this->tokenize($a);
         $tokensB = $this->tokenize($b);
 
-        if (empty($tokensA) && empty($tokensB)) {
+        if ($tokensA === [] && $tokensB === []) {
             return 1.0;
         }
 
-        if (empty($tokensA) || empty($tokensB)) {
+        if ($tokensA === [] || $tokensB === []) {
             return 0.0;
         }
 
@@ -236,18 +236,18 @@ class FuzzyMatcher
         $ngramsA = $this->getNgrams($a);
         $ngramsB = $this->getNgrams($b);
 
-        if (empty($ngramsA) && empty($ngramsB)) {
+        if ($ngramsA === [] && $ngramsB === []) {
             return 1.0;
         }
 
-        if (empty($ngramsA) || empty($ngramsB)) {
+        if ($ngramsA === [] || $ngramsB === []) {
             return 0.0;
         }
 
         $intersection = array_intersect_key($ngramsA, $ngramsB);
         $intersectionCount = 0;
 
-        foreach ($intersection as $ngram => $_) {
+        foreach (array_keys($intersection) as $ngram) {
             $intersectionCount += min($ngramsA[$ngram], $ngramsB[$ngram]);
         }
 
@@ -351,6 +351,7 @@ class FuzzyMatcher
         if ($m === 0) {
             return $n;
         }
+
         if ($n === 0) {
             return $m;
         }
@@ -361,6 +362,7 @@ class FuzzyMatcher
         for ($i = 0; $i <= $m; $i++) {
             $d[$i][0] = $i;
         }
+
         for ($j = 0; $j <= $n; $j++) {
             $d[0][$j] = $j;
         }
@@ -431,12 +433,15 @@ class FuzzyMatcher
         if ($similarity >= $thresholds['exact']) {
             return 'exact';
         }
+
         if ($similarity >= $thresholds['high']) {
             return 'high';
         }
+
         if ($similarity >= $thresholds['medium']) {
             return 'medium';
         }
+
         if ($similarity >= $thresholds['low']) {
             return 'low';
         }

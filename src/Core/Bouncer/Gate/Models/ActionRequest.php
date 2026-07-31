@@ -152,7 +152,7 @@ class ActionRequest extends Model
             ->orderByDesc('count')
             ->get()
             ->keyBy('action')
-            ->map(fn ($row) => [
+            ->map(fn ($row): array => [
                 'action' => $row->action,
                 'count' => (int) $row->count,
                 'last_at' => $row->last_at,

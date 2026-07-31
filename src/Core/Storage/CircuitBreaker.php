@@ -333,7 +333,7 @@ class CircuitBreaker
      */
     protected function getStateCache(): CacheRepository
     {
-        if ($this->stateCache === null) {
+        if (!$this->stateCache instanceof CacheRepository) {
             // Use file or database cache to avoid Redis dependency
             $driver = config('core.storage.circuit_breaker.state_driver', 'file');
 

@@ -34,7 +34,7 @@ class EditableTable extends Component
 
     protected function processColumns(): array
     {
-        return array_map(function ($column) {
+        return array_map(function ($column): array {
             if (is_array($column)) {
                 return [
                     'label' => $column['label'] ?? '',

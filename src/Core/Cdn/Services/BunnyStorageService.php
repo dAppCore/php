@@ -134,7 +134,7 @@ class BunnyStorageService implements HealthCheckable
      */
     public function publicClient(): ?Client
     {
-        if ($this->publicClient === null && $this->isConfigured('public')) {
+        if (!$this->publicClient instanceof Client && $this->isConfigured('public')) {
             $this->publicClient = new Client(
                 $this->config->get('cdn.bunny.storage.public.api_key'),
                 $this->config->get('cdn.bunny.storage.public.name'),
@@ -150,7 +150,7 @@ class BunnyStorageService implements HealthCheckable
      */
     public function privateClient(): ?Client
     {
-        if ($this->privateClient === null && $this->isConfigured('private')) {
+        if (!$this->privateClient instanceof Client && $this->isConfigured('private')) {
             $this->privateClient = new Client(
                 $this->config->get('cdn.bunny.storage.private.api_key'),
                 $this->config->get('cdn.bunny.storage.private.name'),
@@ -166,7 +166,7 @@ class BunnyStorageService implements HealthCheckable
      */
     public function isConfigured(string $zone = 'public'): bool
     {
-        return $this->config->isConfigured("cdn.bunny.storage.{$zone}");
+        return $this->config->isConfigured('cdn.bunny.storage.' . $zone);
     }
 
     /**
@@ -184,17 +184,17 @@ class BunnyStorageService implements HealthCheckable
     {
         $client = $zone === 'private' ? $this->privateClient() : $this->publicClient();
 
-        if (! $client) {
+        if (!$client instanceof Client) {
             return [];
         }
 
         try {
             return $client->listFiles($path);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('BunnyStorage: Failed to list files', [
                 'path' => $path,
                 'zone' => $zone,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return [];
@@ -208,7 +208,7 @@ class BunnyStorageService implements HealthCheckable
     {
         $client = $zone === 'private' ? $this->privateClient() : $this->publicClient();
 
-        if (! $client) {
+        if (!$client instanceof Client) {
             Log::warning('BunnyStorage: Client not configured', ['zone' => $zone]);
 
             return false;
@@ -235,7 +235,7 @@ class BunnyStorageService implements HealthCheckable
 
         $contentType = $this->detectContentType($localPath);
 
-        return $this->executeWithRetry(function () use ($client, $localPath, $remotePath, $contentType) {
+        return $this->executeWithRetry(function () use ($client, $localPath, $remotePath, $contentType): true {
             // The Bunny SDK upload method accepts optional headers parameter
             // Pass content-type for proper CDN handling
             $client->upload($localPath, $remotePath, ['Content-Type' => $contentType]);
@@ -344,7 +344,7 @@ class BunnyStorageService implements HealthCheckable
                     $delayMs = self::RETRY_BASE_DELAY_MS * (2 ** ($attempt - 1));
                     usleep($delayMs * 1000);
 
-                    Log::warning("BunnyStorage: {$operationName} attempt {$attempt} failed, retrying", array_merge($context, [
+                    Log::warning(sprintf('BunnyStorage: %s attempt %d failed, retrying', $operationName, $attempt), array_merge($context, [
                         'attempt' => $attempt,
                         'next_delay_ms' => $delayMs * 2,
                     ]));
@@ -352,7 +352,7 @@ class BunnyStorageService implements HealthCheckable
             }
         }
 
-        Log::error("BunnyStorage: {$operationName} failed after ".self::MAX_RETRY_ATTEMPTS.' attempts', array_merge($context, [
+        Log::error(sprintf('BunnyStorage: %s failed after ', $operationName).self::MAX_RETRY_ATTEMPTS.' attempts', array_merge($context, [
             'error' => $lastException?->getMessage() ?? 'Unknown error',
         ]));
 
@@ -366,7 +366,7 @@ class BunnyStorageService implements HealthCheckable
     {
         $client = $zone === 'private' ? $this->privateClient() : $this->publicClient();
 
-        if (! $client) {
+        if (!$client instanceof Client) {
             return false;
         }
 
@@ -385,7 +385,7 @@ class BunnyStorageService implements HealthCheckable
 
         $contentType = $this->detectContentType($remotePath, $contents);
 
-        return $this->executeWithRetry(function () use ($client, $remotePath, $contents, $contentType) {
+        return $this->executeWithRetry(function () use ($client, $remotePath, $contents, $contentType): true {
             // The Bunny SDK putContents method accepts optional headers parameter
             // Pass content-type for proper CDN handling
             $client->putContents($remotePath, $contents, ['Content-Type' => $contentType]);
@@ -405,17 +405,17 @@ class BunnyStorageService implements HealthCheckable
     {
         $client = $zone === 'private' ? $this->privateClient() : $this->publicClient();
 
-        if (! $client) {
+        if (!$client instanceof Client) {
             return null;
         }
 
         try {
             return $client->getContents($remotePath);
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('BunnyStorage: getContents failed', [
                 'remote' => $remotePath,
                 'zone' => $zone,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return null;
@@ -429,7 +429,7 @@ class BunnyStorageService implements HealthCheckable
     {
         $client = $zone === 'private' ? $this->privateClient() : $this->publicClient();
 
-        if (! $client) {
+        if (!$client instanceof Client) {
             return false;
         }
 
@@ -437,11 +437,11 @@ class BunnyStorageService implements HealthCheckable
             $client->delete($remotePath);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::error('BunnyStorage: Delete failed', [
                 'remote' => $remotePath,
                 'zone' => $zone,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return false;
@@ -639,7 +639,7 @@ class BunnyStorageService implements HealthCheckable
         try {
             $client = $zone === 'private' ? $this->privateClient() : $this->publicClient();
 
-            if (! $client) {
+            if (!$client instanceof Client) {
                 return [
                     'success' => false,
                     'latency_ms' => 0,
@@ -657,19 +657,19 @@ class BunnyStorageService implements HealthCheckable
                 'success' => true,
                 'latency_ms' => round($latencyMs, 2),
             ];
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             $latencyMs = (microtime(true) - $startTime) * 1000;
 
             Log::warning('BunnyStorage: Health check failed', [
                 'zone' => $zone,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
                 'latency_ms' => $latencyMs,
             ]);
 
             return [
                 'success' => false,
                 'latency_ms' => round($latencyMs, 2),
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ];
         }
     }

@@ -99,7 +99,7 @@ class OgImageValidator
         // Check file extension
         $extension = $this->getExtension($imageUrl);
         if ($extension && ! in_array(strtolower($extension), self::SUPPORTED_FORMATS, true)) {
-            $warnings[] = "Image format '$extension' may not be supported by all platforms. Recommended: JPG, PNG";
+            $warnings[] = sprintf("Image format '%s' may not be supported by all platforms. Recommended: JPG, PNG", $extension);
         }
 
         // Check protocol
@@ -124,14 +124,14 @@ class OgImageValidator
                 // Validate file size
                 if ($fileSize !== null && $fileSize > self::MAX_FILE_SIZE) {
                     $sizeMb = round($fileSize / 1024 / 1024, 2);
-                    $warnings[] = "Image file size ({$sizeMb}MB) exceeds recommended maximum of 5MB";
+                    $warnings[] = sprintf('Image file size (%sMB) exceeds recommended maximum of 5MB', $sizeMb);
                 }
             } else {
                 $warnings[] = 'Could not fetch image to validate dimensions';
             }
         }
 
-        return $this->result(empty($errors), $errors, $warnings, $width, $height);
+        return $this->result($errors === [], $errors, $warnings, $width, $height);
     }
 
     /**
@@ -250,9 +250,7 @@ class OgImageValidator
     {
         $cacheKey = 'og_image_dims:'.md5($imageUrl);
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($imageUrl) {
-            return $this->fetchDimensions($imageUrl);
-        });
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->fetchDimensions($imageUrl));
     }
 
     /**
@@ -290,10 +288,10 @@ class OgImageValidator
                 'height' => $imageInfo[1],
                 'size' => $fileSize,
             ];
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             Log::debug('Failed to fetch OG image dimensions', [
                 'url' => $imageUrl,
-                'error' => $e->getMessage(),
+                'error' => $exception->getMessage(),
             ]);
 
             return null;
@@ -374,7 +372,7 @@ class OgImageValidator
 
                 return $contentLength !== null ? (int) $contentLength : null;
             }
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // Ignore errors
         }
 

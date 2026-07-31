@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Core\Media\Thumbnail;
 
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
@@ -153,22 +154,22 @@ class ThumbnailController extends Controller
 
         // Check for conditional request
         $ifNoneMatch = request()->header('If-None-Match');
-        if ($ifNoneMatch === "\"{$etag}\"") {
+        if ($ifNoneMatch === sprintf('"%s"', $etag)) {
             return response('', 304);
         }
 
         $cacheTtl = config('images.lazy_thumbnails.browser_cache_ttl', 604800); // 7 days
 
         return response()->stream(
-            function () use ($disk, $thumbnailPath) {
+            function () use ($disk, $thumbnailPath): void {
                 echo $disk->get($thumbnailPath);
             },
             200,
             [
                 'Content-Type' => $mimeType,
                 'Content-Length' => $disk->size($thumbnailPath),
-                'Cache-Control' => "public, max-age={$cacheTtl}",
-                'ETag' => "\"{$etag}\"",
+                'Cache-Control' => 'public, max-age=' . $cacheTtl,
+                'ETag' => sprintf('"%s"', $etag),
                 'Last-Modified' => gmdate('D, d M Y H:i:s', $lastModified).' GMT',
             ]
         );
@@ -179,7 +180,7 @@ class ThumbnailController extends Controller
      *
      * @return Response|StreamedResponse
      */
-    protected function returnPlaceholder(LazyThumbnail $lazyThumbnail, int $width, int $height)
+    protected function returnPlaceholder(LazyThumbnail $lazyThumbnail, int $width, int $height): ResponseFactory|Response
     {
         $placeholder = $lazyThumbnail->getPlaceholder($width, $height);
 
@@ -243,13 +244,8 @@ SVG;
         if (str_starts_with($path, '/') || preg_match('/^[a-zA-Z]:/', $path)) {
             return true;
         }
-
         // Block null bytes
-        if (str_contains($path, "\0")) {
-            return true;
-        }
-
-        return false;
+        return str_contains($path, "\0");
     }
 
     /**

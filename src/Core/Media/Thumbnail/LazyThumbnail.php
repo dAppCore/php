@@ -182,7 +182,7 @@ class LazyThumbnail
                 Log::debug('LazyThumbnail: Generated thumbnail', [
                     'source' => $sourcePath,
                     'thumbnail' => $thumbnailPath,
-                    'dimensions' => "{$width}x{$height}",
+                    'dimensions' => sprintf('%dx%d', $width, $height),
                 ]);
 
                 return $thumbnailPath;
@@ -190,14 +190,14 @@ class LazyThumbnail
 
             Log::warning('LazyThumbnail: Failed to generate thumbnail', [
                 'source' => $sourcePath,
-                'dimensions' => "{$width}x{$height}",
+                'dimensions' => sprintf('%dx%d', $width, $height),
             ]);
 
             return null;
-        } catch (\Throwable $e) {
+        } catch (\Throwable $throwable) {
             Log::error('LazyThumbnail: Exception during generation', [
                 'source' => $sourcePath,
-                'error' => $e->getMessage(),
+                'error' => $throwable->getMessage(),
             ]);
 
             return null;
@@ -235,7 +235,7 @@ class LazyThumbnail
 
         Log::debug('LazyThumbnail: Queued thumbnail generation', [
             'source' => $sourcePath,
-            'dimensions' => "{$width}x{$height}",
+            'dimensions' => sprintf('%dx%d', $width, $height),
             'queue' => $queue,
         ]);
     }
@@ -430,7 +430,7 @@ class LazyThumbnail
         $filename = pathinfo($sourcePath, PATHINFO_FILENAME);
         $extension = pathinfo($sourcePath, PATHINFO_EXTENSION) ?: 'jpg';
 
-        return "{$directory}/{$filename}_{$width}x{$height}.{$extension}";
+        return sprintf('%s/%s_%dx%d.%s', $directory, $filename, $width, $height, $extension);
     }
 
     /**
@@ -441,7 +441,7 @@ class LazyThumbnail
         // Create a hash-based subdirectory to avoid too many files in one folder
         $hash = substr(md5($sourcePath), 0, 4);
 
-        return "{$this->thumbnailPrefix}/{$hash}";
+        return sprintf('%s/%s', $this->thumbnailPrefix, $hash);
     }
 
     /**
@@ -470,7 +470,7 @@ class LazyThumbnail
      */
     protected function getCacheKey(string $sourcePath, int $width, int $height): string
     {
-        return 'lazy_thumb:'.md5("{$this->sourceDisk}:{$sourcePath}:{$width}x{$height}");
+        return 'lazy_thumb:'.md5(sprintf('%s:%s:%dx%d', $this->sourceDisk, $sourcePath, $width, $height));
     }
 
     /**
@@ -497,7 +497,7 @@ class LazyThumbnail
     public function generateSignature(string $sourcePath, int $width, int $height): string
     {
         $key = config('app.key');
-        $data = "{$sourcePath}:{$width}:{$height}";
+        $data = sprintf('%s:%d:%d', $sourcePath, $width, $height);
 
         return substr(hash_hmac('sha256', $data, $key), 0, 16);
     }

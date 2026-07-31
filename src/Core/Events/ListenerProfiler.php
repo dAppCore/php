@@ -234,6 +234,7 @@ class ListenerProfiler
         if ($memoryPeak > self::$profiles[$profileKey]['memory_peak_bytes']) {
             self::$profiles[$profileKey]['memory_peak_bytes'] = $memoryPeak;
         }
+
         self::$profiles[$profileKey]['memory_delta_bytes'] += $memoryDelta;
 
         // Update average
@@ -323,7 +324,7 @@ class ListenerProfiler
     {
         return array_filter(
             self::$profiles,
-            fn ($profile) => $profile['event'] === $eventClass
+            fn (array $profile): bool => $profile['event'] === $eventClass
         );
     }
 
@@ -348,7 +349,7 @@ class ListenerProfiler
     {
         return array_filter(
             self::$profiles,
-            fn ($profile) => $profile['handler'] === $handlerClass
+            fn (array $profile): bool => $profile['handler'] === $handlerClass
         );
     }
 
@@ -372,7 +373,7 @@ class ListenerProfiler
     {
         return array_filter(
             self::$profiles,
-            fn ($profile) => $profile['is_slow']
+            fn (array $profile) => $profile['is_slow']
         );
     }
 
@@ -396,7 +397,7 @@ class ListenerProfiler
     public static function getSlowest(int $limit = 10): array
     {
         $profiles = self::$profiles;
-        uasort($profiles, fn ($a, $b) => $b['duration_ms'] <=> $a['duration_ms']);
+        uasort($profiles, fn ($a, $b): int => $b['duration_ms'] <=> $a['duration_ms']);
 
         return array_slice($profiles, 0, $limit, true);
     }
@@ -421,7 +422,7 @@ class ListenerProfiler
     public static function getHighestMemory(int $limit = 10): array
     {
         $profiles = self::$profiles;
-        uasort($profiles, fn ($a, $b) => $b['memory_delta_bytes'] <=> $a['memory_delta_bytes']);
+        uasort($profiles, fn ($a, $b): int => $b['memory_delta_bytes'] <=> $a['memory_delta_bytes']);
 
         return array_slice($profiles, 0, $limit, true);
     }
@@ -465,6 +466,7 @@ class ListenerProfiler
                     'calls' => 0,
                 ];
             }
+
             $byEvent[$event]['listeners']++;
             $byEvent[$event]['duration_ms'] += $profile['duration_ms'];
             $byEvent[$event]['calls'] += $profile['call_count'];
@@ -527,7 +529,7 @@ class ListenerProfiler
     {
         $uniqueId = bin2hex(random_bytes(8));
 
-        return "{$eventClass}|{$handlerClass}|{$method}|{$uniqueId}";
+        return sprintf('%s|%s|%s|%s', $eventClass, $handlerClass, $method, $uniqueId);
     }
 
     /**
@@ -547,6 +549,6 @@ class ListenerProfiler
      */
     private static function makeProfileKey(string $eventClass, string $handlerClass): string
     {
-        return "{$eventClass}::{$handlerClass}";
+        return sprintf('%s::%s', $eventClass, $handlerClass);
     }
 }
