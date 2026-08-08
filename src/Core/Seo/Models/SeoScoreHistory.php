@@ -108,7 +108,7 @@ class SeoScoreHistory extends Model
     /**
      * Get the score color for UI display.
      */
-    public function getScoreColorAttribute(): string
+    protected function getScoreColorAttribute(): string
     {
         return match (true) {
             $this->score >= 80 => 'green',
@@ -120,7 +120,7 @@ class SeoScoreHistory extends Model
     /**
      * Get the issue count.
      */
-    public function getIssueCountAttribute(): int
+    protected function getIssueCountAttribute(): int
     {
         return count($this->issues ?? []);
     }

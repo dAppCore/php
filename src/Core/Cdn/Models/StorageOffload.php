@@ -150,7 +150,7 @@ class StorageOffload extends Model
     /**
      * Get human-readable file size.
      */
-    public function getFileSizeHumanAttribute(): string
+    protected function getFileSizeHumanAttribute(): string
     {
         $bytes = $this->file_size ?? 0;
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
