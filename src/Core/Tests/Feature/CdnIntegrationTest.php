@@ -47,7 +47,26 @@ class CdnIntegrationTest extends TestCase
     {
         parent::setUp();
 
-        // Configure CDN URLs
+        // BunnyStorageService reads its zone credentials through ConfigService,
+        // which is backed by the config_resolved table — so isConfigured() is a
+        // database query, and without the Config package's migrations the
+        // storage tests die on "no such table" rather than on anything they
+        // are testing. Same pattern as Bouncer's ActionGateTest.
+        $this->loadMigrationsFrom(__DIR__.'/../../Config/Migrations');
+
+        // cdn.paths, from the package's own config. Core\Cdn\Boot merges the
+        // whole file in a real application; the base TestCase registers only
+        // LifecycleEventProvider, so the cdn.* tree is absent here and
+        // pathPrefix() silently falls back to the raw category name. That is why
+        // the category test saw avatar/ rather than avatars/ — cdn.paths maps
+        // 'avatar' => 'avatars', and the test was right all along.
+        //
+        // Only this key, not the whole file: the rest of that config names real
+        // disks and zone settings, and merging it wholesale overrode the test
+        // disks configured below and broke three tests that were passing.
+        Config::set('cdn.paths', (require __DIR__.'/../../Cdn/config.php')['paths']);
+
+        // Configure CDN URLs.
         Config::set('cdn.urls.cdn', 'https://cdn.example.com');
         Config::set('cdn.urls.public', 'https://public.example.com');
         Config::set('cdn.urls.private', 'https://private.example.com');
@@ -236,13 +255,21 @@ class CdnIntegrationTest extends TestCase
 
     public function test_asset_pipeline_returns_file_size(): void
     {
-        $file = UploadedFile::fake()->create('test.txt', 50); // 50KB
+        // createWithContent, not create(name, kilobytes). The latter reports
+        // getSize() as 51200 and writes a file of zero real bytes, so what got
+        // stored was empty and size() answered 0 — correctly. The assertion was
+        // measuring the fixture, not the pipeline.
+        //
+        // With known content the size is known too, so this asserts the exact
+        // number rather than "more than nothing".
+        $contents = str_repeat('a', 1024);
+        $file = UploadedFile::fake()->createWithContent('test.txt', $contents);
         $result = $this->assetPipeline->store($file, 'media');
 
         $size = $this->assetPipeline->size($result['path']);
 
         $this->assertNotNull($size);
-        $this->assertGreaterThan(0, $size);
+        $this->assertSame(strlen($contents), $size);
     }
 
     public function test_asset_pipeline_returns_mime_type(): void
@@ -261,11 +288,16 @@ class CdnIntegrationTest extends TestCase
         $file = UploadedFile::fake()->image('test.jpg');
         $publicResult = $this->assetPipeline->store($file, 'media');
 
+        // copy(sourcePath, sourceBucket, destBucket, destPath) — buckets are
+        // 'public' or 'private', not disk names. This passed the destination path
+        // as the source bucket and two disk names after it, so every argument
+        // after the first landed in the wrong parameter. Written against a
+        // signature this method has not had.
         $privateResult = $this->assetPipeline->copy(
             $publicResult['path'],
-            'private/copy.jpg',
-            'hetzner-public',
-            'hetzner-private'
+            'public',
+            'private',
+            'private/copy.jpg'
         );
 
         $this->assertIsArray($privateResult);
@@ -315,8 +347,10 @@ class CdnIntegrationTest extends TestCase
 
     public function test_signed_url_generation(): void
     {
-        Config::set('cdn.signing_key', 'test-secret-key');
-        Config::set('cdn.token_lifetime', 3600);
+        // signed() reads cdn.bunny.private.token — the keys this used to set,
+        // cdn.signing_key and cdn.token_lifetime, are not read anywhere in the
+        // package, so signed() took its empty-token path and returned null.
+        Config::set('cdn.bunny.private.token', 'test-secret-key');
 
         $url = $this->urlBuilder->signed('private/document.pdf', 3600);
 
@@ -395,9 +429,12 @@ class CdnIntegrationTest extends TestCase
         $urls = $this->assetPipeline->urls($result['path']);
 
         $this->assertIsArray($urls);
-        $this->assertArrayHasKey('cdn_url', $urls);
-        $this->assertArrayHasKey('origin_url', $urls);
-        $this->assertStringStartsWith('https://cdn.example.com/', $urls['cdn_url']);
-        $this->assertStringStartsWith('https://public.example.com/', $urls['origin_url']);
+        // urls() returns 'cdn' and 'origin'. The _url suffixes this asserted
+        // are not the contract and never were — allUrls() documents the same
+        // unsuffixed shape.
+        $this->assertArrayHasKey('cdn', $urls);
+        $this->assertArrayHasKey('origin', $urls);
+        $this->assertStringStartsWith('https://cdn.example.com/', $urls['cdn']);
+        $this->assertStringStartsWith('https://public.example.com/', $urls['origin']);
     }
 }
