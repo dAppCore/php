@@ -46,11 +46,12 @@ use ReflectionClass;
  *
  * ## Namespace Detection
  *
- * The scanner automatically determines namespaces based on path:
- * - `/Core` paths map to `Core\` namespace
- * - `/Mod` paths map to `Mod\` namespace
- * - `/Website` paths map to `Website\` namespace
- * - `/Plug` paths map to `Plug\` namespace
+ * The class name is read out of the file's own `namespace` declaration, so a
+ * package may lay itself out however it likes and still be found. Only a
+ * Boot.php that declares no namespace falls back to the directory convention
+ * (`/Core` → `Core\`, `/Mod` → `Mod\`, `/Website` → `Website\`, `/Plug` → `Plug\`).
+ *
+ * {@see classFromFile} says why the convention stopped being the primary rule.
  *
  * ## Usage Example
  *
@@ -170,9 +171,68 @@ class ModuleScanner
     }
 
     /**
-     * Derive fully qualified class name from file path.
+     * Determine the fully qualified class name a Boot.php file declares.
      *
-     * Maps file paths to PSR-4 namespaces based on directory structure:
+     * Read out of the file, not guessed from its path. The file says which
+     * namespace it is in; nothing else has to agree with it.
+     *
+     * It used to be derived from the path — `/Core` meant `Core\`, `/Mod` meant
+     * `Mod\` — and that is a convention rather than a fact. It held for a
+     * consuming application laid out the way the scaffolding lays one out, and
+     * broke everywhere else, including in this framework: `src/Mod/Trees/Boot.php`
+     * declares `Core\Mod\Trees` and the path rule produced `Mod\Trees\Boot`.
+     *
+     * That failure was not a miss. In an application that happens to own a
+     * module of the same name — host.uk.com has an `app/Mod/Trees` — the wrong
+     * name *resolves*, and the scanner wires the consumer's unrelated class in
+     * place of this one, silently, for a Boot file it read from vendor. A rule
+     * that can attribute one package's file to another package's class is not a
+     * rule worth keeping.
+     *
+     * The path convention survives only as a fallback for a Boot.php with no
+     * namespace declaration at all.
+     *
+     * @param  string  $file  Absolute path to the Boot.php file
+     * @param  string  $basePath  Base directory path (e.g., app_path('Mod'))
+     * @return string|null Fully qualified class name, or null if it cannot be determined
+     */
+    private function classFromFile(string $file, string $basePath): ?string
+    {
+        $declared = $this->namespaceFromSource($file);
+
+        if ($declared !== null) {
+            return $declared.'\\'.basename($file, '.php');
+        }
+
+        return $this->classFromPath($file, $basePath);
+    }
+
+    /**
+     * Read the namespace a file declares, without loading it.
+     *
+     * Only the head of the file is read: a namespace declaration is required to
+     * be the first statement, so 8KB is more than enough, and this runs for
+     * every Boot.php on every request.
+     *
+     * @return string|null the declared namespace, or null for the global one
+     */
+    private function namespaceFromSource(string $file): ?string
+    {
+        $head = @file_get_contents($file, false, null, 0, 8192);
+
+        if ($head === false) {
+            return null;
+        }
+
+        return preg_match('/^\s*namespace\s+([A-Za-z0-9_\x80-\xff\\\\]+)\s*;/m', $head, $matches) === 1
+            ? $matches[1]
+            : null;
+    }
+
+    /**
+     * The old path-derived name, kept for a Boot.php that declares no namespace.
+     *
+     * Maps file paths to namespaces by directory convention:
      *
      * - `app/Mod/Commerce/Boot.php` becomes `Mod\Commerce\Boot`
      * - `app/Core/Cdn/Boot.php` becomes `Core\Cdn\Boot`
@@ -183,7 +243,7 @@ class ModuleScanner
      * @param  string  $basePath  Base directory path (e.g., app_path('Mod'))
      * @return string|null Fully qualified class name, or null if path doesn't match expected structure
      */
-    private function classFromFile(string $file, string $basePath): ?string
+    private function classFromPath(string $file, string $basePath): ?string
     {
         // Normalise paths
         $file = str_replace('\\', '/', realpath($file) ?: $file);

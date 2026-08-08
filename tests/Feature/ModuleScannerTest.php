@@ -231,4 +231,57 @@ PHP);
         // Should have multiple listeners for WebRoutesRegistering
         $this->assertGreaterThanOrEqual(2, count($result[WebRoutesRegistering::class]));
     }
+
+    /**
+     * The class name comes from the file, not from the directory above it.
+     *
+     * A Boot.php under a /Mod path that declares something else entirely is not
+     * exotic — this framework's own src/Mod/Trees declares Core\Mod\Trees, and
+     * php-commerce keeps Core\Service\Commerce under Service/.
+     */
+    public function test_scan_reads_the_declared_namespace_not_the_path(): void
+    {
+        $modules = $this->scannedClasses([__DIR__.'/../Fixtures/Mod']);
+
+        $this->assertContains(
+            \Core\Tests\Fixtures\Mod\Displaced\Boot::class,
+            $modules,
+            'the fixture declares its namespace and the scanner must use it',
+        );
+        $this->assertNotContains('Mod\Displaced\Boot', $modules);
+    }
+
+    /**
+     * The regression this replaces a convention for.
+     *
+     * src/Mod/Trees/Boot.php declares Core\Mod\Trees. The old path rule derived
+     * Mod\Trees\Boot — a name this package does not own. In a consuming
+     * application that happens to have its own app/Mod/Trees, that name
+     * *resolves*, so the scanner wired the consumer's unrelated class for a Boot
+     * file it read out of vendor. Nothing failed. The wrong code ran.
+     */
+    public function test_scan_does_not_attribute_framework_boot_files_to_consumer_classes(): void
+    {
+        $modules = $this->scannedClasses([__DIR__.'/../../src/Mod']);
+
+        $this->assertContains(\Core\Mod\Trees\Boot::class, $modules);
+        $this->assertNotContains('Mod\Trees\Boot', $modules);
+    }
+
+    /**
+     * @param  array<string>  $paths
+     * @return array<int, string>
+     */
+    private function scannedClasses(array $paths): array
+    {
+        $classes = [];
+
+        foreach ((new ModuleScanner())->scan($paths) as $listeners) {
+            foreach (array_keys($listeners) as $class) {
+                $classes[$class] = true;
+            }
+        }
+
+        return array_keys($classes);
+    }
 }
