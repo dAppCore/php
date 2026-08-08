@@ -14,8 +14,6 @@ namespace Core\Cdn\Services;
 use Bunny\Storage\Client;
 use Core\Config\ConfigService;
 use Core\Crypt\LthnHash;
-use Core\Service\Contracts\HealthCheckable;
-use Core\Service\HealthCheckResult;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -27,9 +25,11 @@ use Illuminate\Support\Facades\Storage;
  * - Private zone: DRM/gated content
  *
  * Supports vBucket scoping for workspace-isolated CDN paths.
- * Implements HealthCheckable for monitoring CDN connectivity.
+ * Zone reachability is exposed through checkZoneHealth() and isReachable();
+ * turning that into a service health report belongs to dappcore/service,
+ * which is the package that depends on this one.
  */
-class BunnyStorageService implements HealthCheckable
+class BunnyStorageService
 {
     protected ?Client $publicClient = null;
 
@@ -555,84 +555,19 @@ class BunnyStorageService implements HealthCheckable
         return $this->list($scopedPath, $zone);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────────
-    // Health Check (implements HealthCheckable)
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Perform a health check on the CDN storage zones.
-     *
-     * Tests connectivity by listing the root directory of configured storage zones.
-     * Returns a HealthCheckResult with status, latency, and zone information.
-     */
-    public function healthCheck(): HealthCheckResult
-    {
-        $publicConfigured = $this->isConfigured('public');
-        $privateConfigured = $this->isConfigured('private');
-
-        if (! $publicConfigured && ! $privateConfigured) {
-            return HealthCheckResult::unknown('No CDN storage zones configured');
-        }
-
-        $results = [];
-        $startTime = microtime(true);
-        $hasError = false;
-        $isDegraded = false;
-
-        // Check public zone
-        if ($publicConfigured) {
-            $publicResult = $this->checkZoneHealth('public');
-            $results['public'] = $publicResult;
-            if (! $publicResult['success']) {
-                $hasError = true;
-            } elseif ($publicResult['latency_ms'] > 1000) {
-                $isDegraded = true;
-            }
-        }
-
-        // Check private zone
-        if ($privateConfigured) {
-            $privateResult = $this->checkZoneHealth('private');
-            $results['private'] = $privateResult;
-            if (! $privateResult['success']) {
-                $hasError = true;
-            } elseif ($privateResult['latency_ms'] > 1000) {
-                $isDegraded = true;
-            }
-        }
-
-        $totalLatency = (microtime(true) - $startTime) * 1000;
-
-        if ($hasError) {
-            return HealthCheckResult::unhealthy(
-                'One or more CDN storage zones are unreachable',
-                ['zones' => $results],
-                $totalLatency
-            );
-        }
-
-        if ($isDegraded) {
-            return HealthCheckResult::degraded(
-                'CDN storage zones responding slowly',
-                ['zones' => $results],
-                $totalLatency
-            );
-        }
-
-        return HealthCheckResult::healthy(
-            'All configured CDN storage zones operational',
-            ['zones' => $results],
-            $totalLatency
-        );
-    }
-
     /**
      * Check health of a specific storage zone.
+     *
+     * Public because it is the seam the health-reporting decorator in
+     * dappcore/service consumes. That decorator composes this service rather
+     * than extending it, so a protected probe would be unreachable and the
+     * relocation would cost the detail — latency and the error string — that
+     * makes a health report worth reading.
      *
      * @param  string  $zone  'public' or 'private'
      * @return array{success: bool, latency_ms: float, error?: string}
      */
-    protected function checkZoneHealth(string $zone): array
+    public function checkZoneHealth(string $zone): array
     {
         $startTime = microtime(true);
 
@@ -677,7 +612,8 @@ class BunnyStorageService implements HealthCheckable
     /**
      * Perform a quick connectivity check.
      *
-     * Simpler than healthCheck() - just returns true/false.
+     * A boolean answer, for callers that only need reachability. The detailed
+     * per-zone probe is checkZoneHealth().
      *
      * @param  string  $zone  'public', 'private', or 'any' (default)
      */
