@@ -135,4 +135,75 @@ class ModuleRegistryTest extends TestCase
         // The Example module registers views
         $this->assertNotEmpty($event->viewRequests());
     }
+
+    /**
+     * The vendor registration path: a class registers itself by name.
+     *
+     * No path, no directory convention, no guess — the Boot class already knows
+     * what it is called.
+     */
+    public function test_register_class_wires_a_boot_class_by_name(): void
+    {
+        $registry = new ModuleRegistry(new ModuleScanner());
+
+        $registry->registerClass(\Core\Tests\Fixtures\Mod\Displaced\Boot::class);
+
+        $this->assertContains(
+            \Core\Tests\Fixtures\Mod\Displaced\Boot::class,
+            $registry->getModules(),
+        );
+        $this->assertArrayHasKey(
+            \Core\Tests\Fixtures\Mod\Displaced\Boot::class,
+            $registry->getListenersFor(WebRoutesRegistering::class),
+        );
+    }
+
+    /**
+     * The handler actually runs when the event fires — registering is not the
+     * same claim as being called, which is the whole reason this method exists.
+     */
+    public function test_register_class_listener_runs_when_the_event_fires(): void
+    {
+        $registry = new ModuleRegistry(new ModuleScanner());
+        $registry->registerClass(\Core\Tests\Fixtures\Mod\Displaced\Boot::class);
+
+        $event = new WebRoutesRegistering();
+        Event::dispatch($event);
+
+        $namespaces = array_map(fn (array $request): string => $request[0], $event->viewRequests());
+        $this->assertContains('displaced', $namespaces);
+    }
+
+    /**
+     * A package that is both scanned and self-registering must not run twice.
+     */
+    public function test_register_class_is_idempotent(): void
+    {
+        $registry = new ModuleRegistry(new ModuleScanner());
+
+        $registry->registerClass(\Core\Tests\Fixtures\Mod\Displaced\Boot::class);
+        $registry->registerClass(\Core\Tests\Fixtures\Mod\Displaced\Boot::class);
+
+        $event = new WebRoutesRegistering();
+        Event::dispatch($event);
+
+        $displaced = array_filter(
+            $event->viewRequests(),
+            fn (array $request): bool => $request[0] === 'displaced',
+        );
+
+        $this->assertCount(1, $displaced, 'the handler ran more than once');
+    }
+
+    /**
+     * A class with no $listens registers nothing rather than erroring.
+     */
+    public function test_register_class_ignores_a_class_without_listens(): void
+    {
+        $registry = new ModuleRegistry(new ModuleScanner());
+
+        $registry->registerClass(\Mod\NoListens\Boot::class);
+
+        $this->assertSame([], $registry->getModules());
+    }
 }

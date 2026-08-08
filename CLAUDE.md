@@ -96,6 +96,37 @@ class Boot
 
 Scaffold new modules with artisan: `make:mod`, `make:website`, `make:plug`.
 
+**Modules inside this package or the consuming app** are found by `ModuleScanner`,
+which walks the configured `core.module_paths` plus this package's own `src/Core`
+and `src/Mod`. Declaring `$listens` is enough.
+
+**Modules in any other package are not scanned, and must register themselves:**
+
+```php
+class Boot extends ServiceProvider
+{
+    public static array $listens = [
+        AdminPanelBooting::class => 'onAdmin',
+    ];
+
+    public function register(): void
+    {
+        $this->app->make(ModuleRegistry::class)->registerClass(static::class);
+    }
+}
+```
+
+A `$listens` array on a class nothing scans is dead code that reads as live: the
+handlers are declared, never called, and nothing reports a problem — the feature
+is simply absent. `registerClass()` takes the name from `static::class`, so no
+directory convention has to be true for it to work.
+
+Scanning cannot do this job for vendor packages. It has to derive a class name
+from a path, and packages lay themselves out differently — `php-uptelligence`
+puts `Core\Mod\Uptelligence` at its package root, `php-commerce` keeps
+`Core\Service\Commerce` under `Service/`. A derivation that guesses wrong
+produces a name that does not exist, and the module is skipped in silence.
+
 ### Namespace Mapping
 
 | Path | Namespace |
