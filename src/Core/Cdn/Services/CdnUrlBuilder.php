@@ -203,6 +203,17 @@ class CdnUrlBuilder
     /**
      * Build a URL with version query parameter for cache busting.
      *
+     * The parameter is `v`, which is what {@see \Core\Helpers\Cdn::versioned()}
+     * has always emitted — and that helper is the one applications actually call
+     * from their templates. This method emitted `id` instead, so the same package
+     * cache-busted the same assets under two different parameter names depending
+     * on which door you came in by. Nothing required `id`: no CDN documentation
+     * here mentions it, every docblock describes the purpose rather than the name,
+     * and its only appearance in the history is an unrelated Rector pass.
+     *
+     * One deploy's worth of cache misses when this changes, which is what a
+     * version parameter is for.
+     *
      * @param  string  $url  The base URL
      * @param  string|null  $version  Version hash for cache busting
      * @return string URL with version parameter
@@ -215,7 +226,7 @@ class CdnUrlBuilder
 
         $separator = str_contains($url, '?') ? '&' : '?';
 
-        return sprintf('%s%sid=%s', $url, $separator, $version);
+        return sprintf('%s%sv=%s', $url, $separator, $version);
     }
 
     /**
@@ -294,7 +305,12 @@ class CdnUrlBuilder
      */
     protected function buildSignedUrlBase(): string
     {
-        $pullZone = config('cdn.bunny.private.pull_zone');
+        // Cast, because an unconfigured pull zone is null and this method is
+        // typed to return a string. str_starts_with(null, ...) is a TypeError on
+        // PHP 8, so signing with a token set and no pull zone configured did not
+        // fail politely — it threw from inside the URL builder. Reachable only
+        // once a token exists, which is why no test had ever got here.
+        $pullZone = (string) config('cdn.bunny.private.pull_zone', '');
 
         // Support both full URL and just hostname in config
         if (str_starts_with($pullZone, 'https://') || str_starts_with($pullZone, 'http://')) {
