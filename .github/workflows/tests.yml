@@ -59,12 +59,14 @@ jobs:
   # The Module suite — src/**/*Test.php — reported, never gating.
   #
   # It carries known failures, and the number is worth seeing rather than
-  # hiding: 448 at the time of writing, and they are not 448 bugs. Roughly 114
-  # are class-not-found for classes owned by sibling packages (Core\Tenant\Models,
-  # Core\Agentic\Services) — tests that cannot pass in this repository at all;
-  # about 30 are one real defect, StorageUrlResolver being handed a CdnUrlBuilder
-  # where it wants a BunnyStorageService; the rest are ordinary assertion and
-  # status-code failures.
+  # hiding — but it is not one number. 110 of them are tests referencing classes
+  # owned by dappcore/php-tenant, dappcore/agent, or the consuming application,
+  # and since every one of those already requires dappcore/php, no dependency
+  # could make them pass here. They are in the wrong repository rather than
+  # broken. docs/misfiled-tests.md names them by owner and file.
+  #
+  # The rest are this package's own: assertion mismatches, status codes, and a
+  # missing offload:migrate command registration.
   #
   # continue-on-error rather than `|| true`, and the difference matters: this
   # way the step's own result is visible in the run, so the count can be driven
