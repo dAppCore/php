@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Core\Tests\Feature;
 
 use Core\Cdn\Services\AssetPipeline;
+use Core\Cdn\Services\BunnyStorageService;
 use Core\Cdn\Services\CdnUrlBuilder;
 use Core\Cdn\Services\StorageUrlResolver;
 use Core\Tests\TestCase;
@@ -67,9 +68,24 @@ class CdnIntegrationTest extends TestCase
             'visibility' => 'private',
         ]);
 
-        // Initialize services
+        // Initialize services.
+        //
+        // StorageUrlResolver takes the storage service first and the URL builder
+        // second, and the builder is the optional one. This passed the builder
+        // into the first parameter and omitted the required argument entirely,
+        // so every test in this file died in setUp on a TypeError — 30 of them,
+        // reported as 30 failures rather than as the one line they are.
+        //
+        // BunnyStorageService comes from the container, which is how production
+        // gets it: Core\Cdn\Boot registers StorageUrlResolver as a singleton and
+        // lets Laravel autowire the chain. Resolving it here rather than
+        // hand-building BunnyStorageService(ConfigService) keeps the test on the
+        // same path the application uses.
         $this->urlBuilder = new CdnUrlBuilder();
-        $this->urlResolver = new StorageUrlResolver($this->urlBuilder);
+        $this->urlResolver = new StorageUrlResolver(
+            app(BunnyStorageService::class),
+            $this->urlBuilder,
+        );
         $this->assetPipeline = new AssetPipeline($this->urlResolver);
     }
 
