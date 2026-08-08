@@ -100,7 +100,7 @@ class ImageOptimization extends Model
      *
      * Example: "45% saved (120KB → 66KB)"
      */
-    public function getSavingsHumanAttribute(): string
+    protected function getSavingsHumanAttribute(): string
     {
         // Format with appropriate unit
         $original = $this->formatBytes($this->original_size);
@@ -117,7 +117,7 @@ class ImageOptimization extends Model
     /**
      * Get human-readable size saved.
      */
-    public function getSizeSavedHumanAttribute(): string
+    protected function getSizeSavedHumanAttribute(): string
     {
         $saved = $this->original_size - $this->optimized_size;
 

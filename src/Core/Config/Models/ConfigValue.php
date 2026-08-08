@@ -64,7 +64,7 @@ class ConfigValue extends Model
     /**
      * Get the value attribute with automatic decryption for sensitive keys.
      */
-    public function getValueAttribute(mixed $value): mixed
+    protected function getValueAttribute(mixed $value): mixed
     {
         if ($value === null) {
             return null;
@@ -91,7 +91,7 @@ class ConfigValue extends Model
     /**
      * Set the value attribute with automatic encryption for sensitive keys.
      */
-    public function setValueAttribute(mixed $value): void
+    protected function setValueAttribute(mixed $value): void
     {
         // Check if the key is sensitive (need to load it if not already)
         $key = $this->relationLoaded('key')

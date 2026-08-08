@@ -17,9 +17,19 @@ jobs:
           coverage: none
       - name: Composer install
         run: composer install --prefer-dist --no-interaction --no-progress
+      # Without `|| true`. Every one of these swallowed its exit code, so this
+      # job reported success whatever happened — the only check in the repository
+      # that could not fail, sitting next to a Tests workflow that could not
+      # pass. Neither told anyone anything.
+      #
+      # Pest is scoped to the gate suites for the same reason tests.yml is: the
+      # Module suite is tracked debt, reported by its own non-gating job.
       - name: Pint
-        run: vendor/bin/pint --test || true
+        run: vendor/bin/pint --test
       - name: PHPStan
-        run: vendor/bin/phpstan analyse --no-progress || true
+        run: vendor/bin/phpstan analyse --no-progress
+      # No --no-interaction: that is a PHPUnit flag, and Pest rejects it with
+      # `Unknown option` and exit 2. The `|| true` had been hiding a broken
+      # invocation, not merely failing tests — this step has never run the suite.
       - name: Pest
-        run: vendor/bin/pest --no-coverage --no-interaction || true
+        run: vendor/bin/pest --testsuite=Feature,Unit --no-coverage

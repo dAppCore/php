@@ -97,7 +97,7 @@ class SeoMetadata extends Model
      *
      * @return array<string, mixed>|null
      */
-    public function getSchemaMarkupAttribute(): ?array
+    protected function getSchemaMarkupAttribute(): ?array
     {
         if ($this->schemaMarkupLoaded) {
             return $this->parsedSchemaMarkup;
@@ -132,7 +132,7 @@ class SeoMetadata extends Model
      *
      * @param  array<string, mixed>|string|null  $value
      */
-    public function setSchemaMarkupAttribute(array|string|null $value): void
+    protected function setSchemaMarkupAttribute(array|string|null $value): void
     {
         // Reset the lazy loading cache
         $this->parsedSchemaMarkup = null;
@@ -183,7 +183,7 @@ class SeoMetadata extends Model
      *
      * Uses JSON_HEX_TAG to prevent XSS via </script> in content.
      */
-    public function getJsonLdAttribute(): string
+    protected function getJsonLdAttribute(): string
     {
         if (empty($this->schema_markup)) {
             return '';
@@ -197,7 +197,7 @@ class SeoMetadata extends Model
     /**
      * Generate all meta tags as HTML.
      */
-    public function getMetaTagsAttribute(): string
+    protected function getMetaTagsAttribute(): string
     {
         $tags = [];
 
@@ -241,7 +241,7 @@ class SeoMetadata extends Model
     /**
      * Get SEO score colour for UI display.
      */
-    public function getScoreColorAttribute(): string
+    protected function getScoreColorAttribute(): string
     {
         if ($this->seo_score === null) {
             return 'zinc';
@@ -265,7 +265,7 @@ class SeoMetadata extends Model
     /**
      * Get the count of issues.
      */
-    public function getIssueCountAttribute(): int
+    protected function getIssueCountAttribute(): int
     {
         return count($this->seo_issues ?? []);
     }
