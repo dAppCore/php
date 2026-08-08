@@ -100,7 +100,11 @@ Scaffold new modules with artisan: `make:mod`, `make:website`, `make:plug`.
 which walks the configured `core.module_paths` plus this package's own `src/Core`
 and `src/Mod`. Declaring `$listens` is enough.
 
-**Modules in any other package are not scanned, and must register themselves:**
+**Modules in any other package are not scanned by default.** Their path can be
+added to `core.module_paths` — the scanner reads each `Boot.php`'s declared
+namespace, so a package laid out any way at all resolves correctly once its path
+is configured. But that puts the burden on every consumer to know about the
+package, so a package should register itself instead:
 
 ```php
 class Boot extends ServiceProvider
@@ -121,11 +125,11 @@ handlers are declared, never called, and nothing reports a problem — the featu
 is simply absent. `registerClass()` takes the name from `static::class`, so no
 directory convention has to be true for it to work.
 
-Scanning cannot do this job for vendor packages. It has to derive a class name
-from a path, and packages lay themselves out differently — `php-uptelligence`
-puts `Core\Mod\Uptelligence` at its package root, `php-commerce` keeps
-`Core\Service\Commerce` under `Service/`. A derivation that guesses wrong
-produces a name that does not exist, and the module is skipped in silence.
+`registerClass()` is preferred over configuring a path because it needs nothing
+from the consumer: the package declares its own participation, and a consumer
+that merely installs it gets working behaviour. Configuring `core.module_paths`
+works, but it means every application must be told about every package, and a
+package that is installed and not configured looks installed and does nothing.
 
 ### Namespace Mapping
 

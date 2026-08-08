@@ -276,13 +276,18 @@ class LifecycleEventProvider extends ServiceProvider
     /**
      * Register Livewire components collected by a lifecycle event.
      *
-     * Installed and booted are different questions, and only the second one
+     * Installed and wired are different questions, and only the second one
      * matters here. `class_exists(Livewire::class)` is true the moment the
      * package is in vendor/, which says nothing about whether its service
-     * provider has run — and `Livewire::component()` resolves `livewire.finder`
-     * out of the container, so on an application that ships Livewire without
-     * booting it the call throws BindingResolutionException rather than doing
-     * nothing.
+     * provider has run — and registering a component resolves Livewire's own
+     * services out of the container, so on an application that ships Livewire
+     * without booting it the call throws BindingResolutionException rather than
+     * doing nothing.
+     *
+     * The container check is deliberately the facade's own binding rather than
+     * any particular internal service, so it does not have to be revisited when
+     * Livewire moves those around between versions. It confirms the registration
+     * path is reachable; it is not a claim that Livewire has finished booting.
      *
      * A module asking to register a component in an application that has no
      * Livewire should be a no-op, the same way {@see processViews} skips a view
