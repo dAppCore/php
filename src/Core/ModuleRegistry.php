@@ -106,12 +106,18 @@ class ModuleRegistry
             return;
         }
 
-        $this->mappings = $this->scanner->scan($paths);
+        // Merged into what is already here, not assigned over it. A package that
+        // calls registerClass() from its own provider may well do so before this
+        // runs — provider order is Laravel's to decide — and assigning threw that
+        // record away, so the guard below could not see it. The class was then
+        // wired a second time and its handler ran twice on every event.
+        foreach ($this->scanner->scan($paths) as $event => $listeners) {
+            foreach ($this->sortByPriority($listeners) as $moduleClass => $config) {
+                if (isset($this->mappings[$event][$moduleClass])) {
+                    continue;
+                }
 
-        foreach ($this->mappings as $event => $listeners) {
-            $sorted = $this->sortByPriority($listeners);
-
-            foreach ($sorted as $moduleClass => $config) {
+                $this->mappings[$event][$moduleClass] = $config;
                 Event::listen($event, new LazyModuleListener($moduleClass, $config['method']));
             }
         }

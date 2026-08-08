@@ -206,4 +206,32 @@ class ModuleRegistryTest extends TestCase
 
         $this->assertSame([], $registry->getModules());
     }
+
+    /**
+     * A self-registered class must not be registered a second time by a later scan.
+     *
+     * register() replaced $mappings wholesale, which threw away the record that
+     * registerClass() had already wired a class — so the idempotency guard could
+     * not see it, and a class that both self-registers and is scanned got two
+     * listeners and ran its handler twice. The order is not hypothetical: a
+     * package provider's register() runs whenever Laravel gets to it, which may
+     * be before the framework's own scan.
+     */
+    public function test_register_does_not_duplicate_a_self_registered_class(): void
+    {
+        $registry = new ModuleRegistry(new ModuleScanner());
+
+        $registry->registerClass(\Core\Tests\Fixtures\Mod\Displaced\Boot::class);
+        $registry->register([__DIR__.'/../Fixtures/Mod']);
+
+        $event = new WebRoutesRegistering();
+        Event::dispatch($event);
+
+        $displaced = array_filter(
+            $event->viewRequests(),
+            fn (array $request): bool => $request[0] === 'displaced',
+        );
+
+        $this->assertCount(1, $displaced, 'the handler ran more than once');
+    }
 }
