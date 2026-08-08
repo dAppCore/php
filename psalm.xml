@@ -64,22 +64,6 @@
                 <referencedClass name="Core\Tenant\Models\User" />
                 <referencedClass name="Core\Tenant\Services\EntitlementService" />
                 <referencedClass name="Core\Config\Workspace" />
-                <!-- Pending Core\Service module (see plans/code/core/lint/RFC.md) -->
-                <referencedClass name="Core\Service\Contracts\HealthCheckable" />
-                <referencedClass name="Core\Service\HealthCheckResult" />
-                <!-- Pending Front\Client frontage subpackage -->
-                <referencedClass name="Core\Front\Client\Boot" />
-                <!-- Laravel framework classes Psalm CI doesn't always resolve -->
-                <referencedClass name="Illuminate\Foundation\Auth\User" />
-            </errorLevel>
-        </UndefinedClass>
-
-        <!-- Pending Core\Service module — referenced by Cdn BunnyStorageService and app variant -->
-        <MissingDependency>
-            <errorLevel type="suppress">
-                <directory name="src/Core/Cdn" />
-            </errorLevel>
-        </MissingDependency>
 
         <!-- Suppress false positives from strict type analysis -->
         <NoValue>
