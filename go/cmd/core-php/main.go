@@ -3,9 +3,9 @@
 package main
 
 import (
-	php "dappco.re/go/php/pkg/php"
+	php "github.com/dappcore/php/go/pkg/php"
 
-	"dappco.re/go/cli/pkg/cli"
+	"github.com/dappcore/cli/go/pkg/cli"
 )
 
 func main() {

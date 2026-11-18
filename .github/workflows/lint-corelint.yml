@@ -41,7 +41,7 @@ jobs:
 
       - name: Install core-lint
         run: |
-          go install dappco.re/go/lint/cmd/core-lint@latest || \
+          go install github.com/dappcore/lint/go/cmd/core-lint@latest || \
             go install github.com/dappcore/lint/cmd/core-lint@latest
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 

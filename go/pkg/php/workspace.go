@@ -1,8 +1,8 @@
 package php
 
 import (
-	core "dappco.re/go"
-	"dappco.re/go/io"
+	core "github.com/dappcore/go"
+	"github.com/dappcore/go-io/go"
 	"gopkg.in/yaml.v3"
 )
 
